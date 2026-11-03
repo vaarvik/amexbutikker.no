@@ -5,17 +5,24 @@ import type { RuleId, Violation } from '../violation.js';
 import type { WorkspacePaths } from '../workspace-paths.js';
 
 /**
- * Rule (c): classes declared in packages/application or apps/api/src/infrastructure are only
- * constructed with `new` in a composition root or in tests.
+ * Rule (c): application classes and infrastructure classes are only constructed with `new` in a
+ * composition root or in tests. Application classes live in packages/application. Infrastructure
+ * classes live in apps/api/src under any folder named after a mechanism, e.g.
+ * `apps/api/src/places/postgres/` or `apps/api/src/imports/importers/`.
  */
 export class ConstructionOutsideCompositionRootRule implements Rule {
   public readonly id: RuleId = 'construction-outside-composition-root';
 
   public constructor(
-    private readonly protectedDirs: readonly string[] = [
-      'packages/application',
-      'apps/api/src/infrastructure',
-    ],
+    private readonly protectedDirs: readonly string[] = ['packages/application'],
+    private readonly infrastructureRoot = 'apps/api/src',
+    private readonly infrastructureSegments: ReadonlySet<string> = new Set([
+      'infrastructure',
+      'postgres',
+      'in-memory',
+      'importers',
+      'http',
+    ]),
   ) {}
 
   public check(sourceFile: SourceFile, paths: WorkspacePaths): readonly Violation[] {
@@ -30,9 +37,7 @@ export class ConstructionOutsideCompositionRootRule implements Rule {
       if (declarationFile === undefined) {
         continue;
       }
-      const dir = this.protectedDirs.find((protectedDir) =>
-        paths.isWithin(declarationFile, protectedDir),
-      );
+      const dir = this.protectedLocationOf(declarationFile, paths);
       if (dir !== undefined) {
         violations.push({
           ruleId: this.id,
@@ -43,6 +48,19 @@ export class ConstructionOutsideCompositionRootRule implements Rule {
       }
     }
     return violations;
+  }
+
+  private protectedLocationOf(filePath: string, paths: WorkspacePaths): string | undefined {
+    const dir = this.protectedDirs.find((protectedDir) => paths.isWithin(filePath, protectedDir));
+    if (dir !== undefined) {
+      return dir;
+    }
+    if (!paths.isWithin(filePath, this.infrastructureRoot)) {
+      return undefined;
+    }
+    const segments = paths.relative(filePath).split('/').slice(0, -1);
+    const segment = segments.find((name) => this.infrastructureSegments.has(name));
+    return segment === undefined ? undefined : `${this.infrastructureRoot}/**/${segment}`;
   }
 
   private declarationFileOf(expression: NewExpression): string | undefined {

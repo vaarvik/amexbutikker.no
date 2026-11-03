@@ -63,6 +63,11 @@ describe('contract-check', () => {
       },
       {
         ruleId: 'construction-outside-composition-root',
+        file: 'apps/api/src/reports/http/reports-controller.ts',
+        line: 9,
+      },
+      {
+        ruleId: 'construction-outside-composition-root',
         file: 'packages/application/src/create-place-use-case.ts',
         line: 5,
       },

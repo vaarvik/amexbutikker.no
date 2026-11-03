@@ -102,7 +102,7 @@ an online place with mixed reports.
 ## Phase 3: Persistence
 
 ```
-In apps/api/src/infrastructure/postgres:
+In apps/api/src, using the feature folders from CLAUDE.md (`<feature>/postgres/`, `<feature>/in-memory/`, migrations in `apps/api/src/migrations/`):
 
 - Kysely migrations (with down migrations) for: chains, places, evidence, place_status, import_runs, devices.
   - places: kind, chain_id null, name, category, street, postcode, city, geom geography(Point,4326) null for online,
@@ -146,7 +146,7 @@ In apps/api/src/infrastructure/postgres:
 ## Phase 5: Seed data
 
 ```
-SourceImporter implementations in apps/api/src/infrastructure/importers, run with `pnpm import <source>`.
+SourceImporter implementations in apps/api/src/imports/importers/<source>/, run with `pnpm import <source>`.
 Every importer is idempotent on sourceRef, writes an import_runs row with counts, and never deletes evidence.
 
 1. OverpassOsmImporter: Oslo municipality first.

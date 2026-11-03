@@ -26,6 +26,74 @@ data/                  Curated seed files (YAML), share-payload fixtures
 docs/adr/              Architecture decision records
 ```
 
+Packages are layers; inside each layer, code is grouped by feature (see Domain-driven design below). Same feature names in every layer:
+
+```
+packages/contracts/src/<feature>/      types + schemas, ports, use case interfaces, DTOs
+packages/contracts/src/shared/         ids, errors, geo, http-dtos, clock/id/logger/rate-limiter ports
+packages/contracts/src/unit-of-work.ts cross-feature
+packages/contracts/test-kit/<feature>/ contract suites; fixture.ts and test-data.ts at the root
+packages/domain/src/<feature>/         domain services
+packages/application/src/<feature>/    use case classes
+apps/api/src/<feature>/http/           controllers
+apps/api/src/<feature>/postgres/       Pg* adapters
+apps/api/src/<feature>/in-memory/      InMemory* adapters
+apps/api/src/imports/importers/<source>/
+apps/api/src/migrations/               all migrations, one ordered sequence (not per feature)
+apps/api/src/composition-root.ts
+```
+
+Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`.
+
+- Folders are one level deep. Relationships between features are expressed by imports, not by nesting.
+- Nest X under Y only if X cannot exist without Y and nothing else uses X.
+- `shared/` holds what two or more features use. `shared/` never imports from a feature.
+- Each package exposes everything through its root `index.ts`; consumers import `@amexbutikker/<package>`, never deep paths.
+- contract-check rule (c) treats any `apps/api/src/**/{postgres,in-memory,importers,http,infrastructure}/` folder as infrastructure.
+
+## Domain-driven design
+
+Code follows DDD's tactical patterns inside the layering above (ports and adapters).
+
+### Ubiquitous language
+
+Use these words, with these meanings, in code, docs and conversation. UI copy uses the Norwegian in brackets.
+
+- **Place** (sted/butikk): something that may accept the card. `physical` (has a location, may belong to a chain) or `online` (a checkout, no location). Not "store" or "merchant" in code.
+- **Chain** (kjede): a brand with several physical places.
+- **Evidence**: one observation that a place or chain accepts or rejects the card. Append-only.
+- **Report** (rapport): evidence a user submits from the app (`user_report`). Can be withdrawn by appending `withdrawn`.
+- **Status** (svar): the computed answer for a place: accepted (Ja), rejected (Nei), mixed (Varierer), unknown (Ukjent).
+- **Basis**: the strongest evidence kind behind a status.
+- **Chain hint**: "7 of 9 places in this chain accept". Shown next to a status, never used as one.
+- **Claim**: one entry from a curated or external list, imported as evidence.
+- **Shared place**: text shared from a maps app, before it is matched to a place.
+
+### Building blocks
+
+| DDD concept           | Here                                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Entity                | `Place`, `Chain` (identity via branded id)                                                                    |
+| Value object          | `GeoPoint`, `Address`, `PlaceStatus`, `ChainHint`. Immutable, compared by value                               |
+| Aggregate root        | `Place` (with its status snapshot), `Chain` (with its hint). Others refer to them by id only                  |
+| Repository            | `*Reader` / `*Writer` ports, split by consumer                                                                |
+| Domain service        | `packages/domain` classes, e.g. `DecayingAcceptanceStatusCalculator`. Pure                                    |
+| Application service   | One use case class per `packages/application` file. Orchestrates, holds no business rules                     |
+| Anti-corruption layer | Importers and `SharedTextParser`: translate outside data into the model; outside formats never reach `domain` |
+
+### Bounded contexts
+
+- **Acceptance** (core domain): places, chains, evidence, status, reports. Most design effort goes here.
+- **Imports**: OSM, Brreg, curated claims, statements. Own record types (`PlaceSourceRecord`, `ChainSourceRecord`) and translation into the core.
+- **Shared match**: parsing shared text and matching it to places. Own type (`ParsedSharedPlace`).
+- **Devices** (generic): anonymous auth and rate limiting. Keep it simple.
+
+### Deliberate deviations
+
+- Entities are plain data (rule 4), not classes with methods. Behaviour lives in domain services. This is a conscious trade-off for zod validation and serialisation, not an oversight.
+- No event sourcing: evidence is append-only, but the status is a stored snapshot recalculated on change, not rebuilt by replay.
+- No domain events yet. Introduce them only when a second consumer of the same fact appears.
+
 ## Non-negotiable rules
 
 ### Interface first
