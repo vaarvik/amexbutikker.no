@@ -29,3 +29,15 @@ export interface EvidenceWriter {
    */
   append(evidence: Evidence): Promise<AppendOutcome>;
 }
+
+/** Decides which evidence is still current. Pure. */
+export interface CurrentEvidenceSelector {
+  /**
+   * Applies supersession: per user only their latest evidence counts, and a `withdrawn` latest
+   * removes the user entirely. Evidence without a user is superseded per (kind, source).
+   * "Latest" is newest observedAt, then newest importedAt, then the larger id.
+   *
+   * @returns the current evidence, with `withdrawn` entries removed. Order is unspecified.
+   */
+  current(evidence: readonly Evidence[]): Evidence[];
+}

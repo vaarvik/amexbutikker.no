@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@amexbutikker/contracts": "workspace:*",
-    "@amexbutikker/domain": "workspace:*"
+    "@amexbutikker/domain": "workspace:*",
+    "zod": "^4.6.7"
   }
 }

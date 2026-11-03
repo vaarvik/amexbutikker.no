@@ -106,8 +106,9 @@ export type CreatePlaceInput =
 export interface CreatePlace {
   /**
    * @returns the created place.
+   * Duplicate detection (same website, same name nearby) is not done yet; see open questions.
+   *
    * @throws ValidationError when the input is invalid.
-   * @throws ConflictError when an online place with the same website host exists.
    * @throws RateLimitedError when the user creates too many places.
    */
   execute(input: CreatePlaceInput): Promise<Place>;

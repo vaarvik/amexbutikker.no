@@ -34,6 +34,7 @@ export class InMemoryUnitOfWork implements UnitOfWork {
       evidence: new Map(tables.evidence),
       statuses: new Map(tables.statuses),
       importRuns: new Map(tables.importRuns),
+      devices: new Map(tables.devices),
     };
   }
 
@@ -44,6 +45,7 @@ export class InMemoryUnitOfWork implements UnitOfWork {
     this.replace(this.tables.evidence, draft.evidence);
     this.replace(this.tables.statuses, draft.statuses);
     this.replace(this.tables.importRuns, draft.importRuns);
+    this.replace(this.tables.devices, draft.devices);
   }
 
   private replace<K, V>(target: Map<K, V>, source: ReadonlyMap<K, V>): void {

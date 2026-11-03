@@ -2,6 +2,7 @@ export * from './unit-of-work.js';
 export * from './chains/chains.model.js';
 export * from './chains/chains.ports.js';
 export * from './devices/devices.dtos.js';
+export * from './devices/devices.model.js';
 export * from './devices/devices.ports.js';
 export * from './devices/devices.use-cases.js';
 export * from './evidence/evidence.model.js';

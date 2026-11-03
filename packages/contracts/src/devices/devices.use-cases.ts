@@ -1,6 +1,5 @@
 import type { UserId } from '../shared/shared.model.js';
-
-export type DevicePlatform = 'ios' | 'android' | 'web';
+import type { DevicePlatform } from './devices.model.js';
 
 export interface RegisterDeviceInput {
   readonly platform: DevicePlatform;

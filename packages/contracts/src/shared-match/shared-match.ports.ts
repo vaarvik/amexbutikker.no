@@ -1,3 +1,4 @@
+import type { MatchDecision } from './shared-match.use-cases.js';
 import type {
   ParsedSharedPlace,
   PlaceCandidate,
@@ -29,4 +30,14 @@ export interface PlaceMatcher {
    * @returns at most 3 candidates, best first. Empty when nothing is plausible.
    */
   match(parsed: ParsedSharedPlace): Promise<PlaceCandidate[]>;
+}
+
+/** Decides what the app does with match candidates. Pure. */
+export interface MatchDecider {
+  /**
+   * @param candidates best first, as PlaceMatcher returns them.
+   * @returns `open` when the top candidate clears the threshold and is clearly ahead of the
+   *   second, `choose` when there are candidates otherwise, `none` when there are none.
+   */
+  decide(candidates: readonly PlaceCandidate[]): MatchDecision;
 }

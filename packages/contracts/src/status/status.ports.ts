@@ -1,5 +1,8 @@
-import type { Evidence, EvidenceKind } from '../evidence/evidence.model.js';
-import type { ChainId, PlaceId } from '../shared/shared.model.js';
+import type { AcceptanceResult, Evidence, EvidenceKind } from '../evidence/evidence.model.js';
+import type { ReportNote, StatusBasisExplanation } from '../places/places.use-cases.js';
+import type { StatusChangeOutput } from '../reports/reports.use-cases.js';
+import type { TransactionalPorts } from '../unit-of-work.js';
+import type { ChainId, PlaceId, UserId } from '../shared/shared.model.js';
 import type { ChainHint, PlaceStatus, PlaceStatusSnapshot } from './status.model.js';
 
 /** Read access to calculated place statuses. */
@@ -67,4 +70,38 @@ export interface ChainHintCalculator {
    * @returns a hint with `calculatedAt = now`.
    */
   calculate(chainId: ChainId, statuses: readonly PlaceStatus[], now: Date): ChainHint;
+}
+
+export interface EvidenceSummary {
+  readonly basis: StatusBasisExplanation;
+  /** Up to `noteLimit` notes from users' current reports, newest first. */
+  readonly latestNotes: readonly ReportNote[];
+  /** The given user's current report on the place, or null. */
+  readonly myReport: AcceptanceResult | null;
+}
+
+/** Explains a status in terms of the evidence behind it, for the place screen. Pure. */
+export interface EvidenceSummarizer {
+  /**
+   * @param status the status calculated from the same evidence.
+   * @param userId the caller, or null when anonymous; fills `myReport`.
+   */
+  summarize(
+    placeEvidence: readonly Evidence[],
+    chainEvidence: readonly Evidence[],
+    status: PlaceStatus,
+    userId: UserId | null,
+  ): EvidenceSummary;
+}
+
+/** Recalculates and stores a place's status and its chain's hint. An application service. */
+export interface PlaceStatusRefresher {
+  /**
+   * Reads the place's and chain's evidence through `ports`, calculates the status, saves the
+   * snapshot and, for a chain place, recalculates and saves the chain hint.
+   * Must run inside the unit of work that changed the evidence.
+   *
+   * @throws NotFoundError when the place does not exist.
+   */
+  refresh(ports: TransactionalPorts, placeId: PlaceId): Promise<StatusChangeOutput>;
 }

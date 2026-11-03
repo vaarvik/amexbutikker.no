@@ -1,5 +1,6 @@
 import type {
   Chain,
+  Device,
   ChainHint,
   ChainId,
   Evidence,
@@ -11,6 +12,7 @@ import type {
   PlaceId,
   PlaceStatusSnapshot,
   TransactionalPorts,
+  UserId,
 } from '@amexbutikker/contracts';
 
 export interface InMemoryImportRun {
@@ -32,6 +34,7 @@ export interface InMemoryTables {
   readonly evidence: Map<EvidenceId, Evidence>;
   readonly statuses: Map<PlaceId, PlaceStatusSnapshot>;
   readonly importRuns: Map<ImportRunId, InMemoryImportRun>;
+  readonly devices: Map<UserId, Device>;
 }
 
 /** Creates empty tables. */
@@ -48,6 +51,7 @@ export class EmptyInMemoryTablesFactory implements InMemoryTablesFactory {
       evidence: new Map(),
       statuses: new Map(),
       importRuns: new Map(),
+      devices: new Map(),
     };
   }
 }

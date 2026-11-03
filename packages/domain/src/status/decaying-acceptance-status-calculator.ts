@@ -1,3 +1,4 @@
+import { SupersedingEvidenceSelector } from '../evidence/superseding-evidence-selector.js';
 import {
   DIRECT_EVIDENCE_KINDS,
   EVIDENCE_KINDS,
@@ -7,6 +8,7 @@ import {
 import type {
   AcceptanceResult,
   AcceptanceStatusCalculator,
+  CurrentEvidenceSelector,
   Evidence,
   EvidenceKind,
   EvidenceWeightPolicy,
@@ -59,6 +61,7 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
   public constructor(
     private readonly policy: EvidenceWeightPolicy,
     options: AcceptanceStatusOptions = {},
+    private readonly selector: CurrentEvidenceSelector = new SupersedingEvidenceSelector(),
   ) {
     this.decisiveShare = options.decisiveShare ?? 0.8;
     this.minimumTotalWeight = options.minimumTotalWeight ?? 0.05;
@@ -96,23 +99,16 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
     return this.decide(pool);
   }
 
-  /** Applies supersession and drops withdrawals. */
+  /** Applies supersession; withdrawals are already gone. */
   private current(
     evidence: readonly Evidence[],
   ): (Evidence & { readonly result: AcceptanceResult })[] {
-    const latest = new Map<string, Evidence>();
-    for (const item of evidence) {
-      const key =
-        item.userId !== null ? `user:${item.userId}` : `source:${item.kind}:${item.source}`;
-      const existing = latest.get(key);
-      if (existing === undefined || DecayingAcceptanceStatusCalculator.isNewer(item, existing)) {
-        latest.set(key, item);
-      }
-    }
-    return [...latest.values()].filter(
-      (item): item is Evidence & { readonly result: AcceptanceResult } =>
-        item.result !== 'withdrawn',
-    );
+    return this.selector
+      .current(evidence)
+      .filter(
+        (item): item is Evidence & { readonly result: AcceptanceResult } =>
+          item.result !== 'withdrawn',
+      );
   }
 
   private weigh(
@@ -166,18 +162,5 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
   private static strongestKind(pool: readonly WeightedEvidence[]): EvidenceKind | null {
     const present = new Set(pool.map((item) => item.kind));
     return EVIDENCE_KINDS.find((kind) => present.has(kind)) ?? null;
-  }
-
-  /** Newer observedAt wins; ties go to newer importedAt, then the larger id. */
-  private static isNewer(candidate: Evidence, current: Evidence): boolean {
-    const observed = candidate.observedAt.getTime() - current.observedAt.getTime();
-    if (observed !== 0) {
-      return observed > 0;
-    }
-    const imported = candidate.importedAt.getTime() - current.importedAt.getTime();
-    if (imported !== 0) {
-      return imported > 0;
-    }
-    return candidate.id > current.id;
   }
 }

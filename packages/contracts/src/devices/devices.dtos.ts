@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { DevicePlatform } from './devices.use-cases.js';
+import { DevicePlatformSchema } from './devices.model.js';
+import type { DevicePlatform } from './devices.model.js';
 import { UserIdSchema } from '../shared/shared.model.js';
 import type { UserId } from '../shared/shared.model.js';
 
@@ -11,7 +12,7 @@ export interface RegisterDeviceRequestDto {
 }
 
 export const RegisterDeviceRequestDtoSchema: z.ZodType<RegisterDeviceRequestDto> = z.object({
-  platform: z.enum(['ios', 'android', 'web']),
+  platform: DevicePlatformSchema,
 });
 
 export interface RegisterDeviceResponseDto {

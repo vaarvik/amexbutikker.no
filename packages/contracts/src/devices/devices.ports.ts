@@ -1,4 +1,5 @@
 import type { UserId } from '../shared/shared.model.js';
+import type { Device } from './devices.model.js';
 
 export interface IssuedDeviceToken {
   readonly token: string;
@@ -16,4 +17,10 @@ export interface DeviceTokenService {
    * @throws UnauthenticatedError when the token is malformed, has a bad signature or has expired.
    */
   verify(token: string): Promise<UserId>;
+}
+
+/** Records registered devices. */
+export interface DeviceWriter {
+  /** @throws ConflictError when a device with this user id exists. */
+  register(device: Device): Promise<void>;
 }

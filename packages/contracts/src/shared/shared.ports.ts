@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import type { ChainId, EvidenceId, ImportRunId, PlaceId, UserId } from './shared.model.js';
 
 /** The current time. Injected so tests can fix it. */
@@ -57,4 +58,13 @@ export interface NameSimilarity {
    * @returns 0..1; 1 for equal normalised texts, 0 when they share no trigram.
    */
   similarity(a: string, b: string): number;
+}
+
+/** Validates input against a schema at a use case boundary. */
+export interface InputValidator {
+  /**
+   * @returns the parsed value.
+   * @throws ValidationError listing every issue when `input` does not match.
+   */
+  validate<T>(schema: z.ZodType<T>, input: unknown): T;
 }
