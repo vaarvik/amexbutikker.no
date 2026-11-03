@@ -1,3 +1,3 @@
 import { CompositionRoot } from './composition-root.js';
 
-await new CompositionRoot().start();
+await CompositionRoot.fromEnv(process.env).start();

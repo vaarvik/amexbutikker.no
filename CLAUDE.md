@@ -189,11 +189,12 @@ pnpm install                 # install everything
 pnpm typecheck               # tsc -b over the project references + tsc --noEmit for apps/mobile
 pnpm lint                    # ESLint (strict-type-checked), zero warnings allowed
 pnpm format                  # Prettier write; `pnpm format:check` in CI
-pnpm test                    # Vitest, all projects; `pnpm test --project domain` for one
+pnpm test                    # Vitest, all projects; needs Docker (Testcontainers). `pnpm test --project domain` for one
 pnpm contract-check          # architecture rules (a)-(d) from tools/contract-check
 pnpm db:up                   # Postgres 16 + PostGIS/pg_trgm/unaccent via Docker Compose
 pnpm db:down                 # stop it (data persists in the db-data volume)
-pnpm db:migrate              # placeholder until phase 3
+pnpm db:migrate              # build api, migrate DATABASE_URL (from .env) to latest
+pnpm db:migrate:down         # revert the last migration
 pnpm --filter mobile start   # Expo dev server (QR code for Expo Go)
 ```
 

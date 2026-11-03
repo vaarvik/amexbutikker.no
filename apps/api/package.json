@@ -4,12 +4,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node dist/src/server.js",
-    "db:migrate": "node -e \"console.log('No migrations yet. They arrive in phase 3.')\""
+    "start": "node --env-file-if-exists=../../.env dist/src/server.js",
+    "db:migrate": "tsc -b && node --env-file-if-exists=../../.env dist/src/migrate.js"
   },
   "dependencies": {
     "@amexbutikker/application": "workspace:*",
     "@amexbutikker/contracts": "workspace:*",
-    "@amexbutikker/domain": "workspace:*"
+    "@amexbutikker/domain": "workspace:*",
+    "kysely": "^0.29.8",
+    "pg": "^8.23.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^12.2.1",
+    "@types/pg": "^8.23.1",
+    "testcontainers": "^12.2.1"
   }
 }
