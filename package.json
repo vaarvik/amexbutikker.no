@@ -12,6 +12,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
+    "test:unit": "TEST_SCOPE=unit vitest run",
+    "test:coverage": "vitest run --coverage",
     "contract-check": "tsc -b tools/contract-check && node tools/contract-check/dist/src/cli.js .",
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.19.2",
+    "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",

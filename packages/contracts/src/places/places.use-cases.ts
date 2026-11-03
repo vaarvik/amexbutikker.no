@@ -68,7 +68,7 @@ export interface SearchPlaces {
 }
 
 /** The "nær deg" list. */
-export interface FindNearbyPlaces {
+export interface ListNearbyPlaces {
   /** @throws ValidationError when the query fails NearbyQuerySchema. */
   execute(input: NearbyQuery): Promise<PlaceListOutput>;
 }

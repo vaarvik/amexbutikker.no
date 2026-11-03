@@ -1,7 +1,7 @@
 import {
   CalculatingPlaceStatusRefresher,
   CreatePlaceUseCase,
-  FindNearbyPlacesUseCase,
+  ListNearbyPlacesUseCase,
   GetPlaceDetailsUseCase,
   RegisterDeviceUseCase,
   RemoveMyReportUseCase,
@@ -32,35 +32,37 @@ import { Migrator } from 'kysely/migration';
 import pg from 'pg';
 import { pino } from 'pino';
 import { z } from 'zod';
-import { InMemoryChainRepository } from './chains/in-memory/in-memory-chain-repository.js';
-import { PgChainRepository } from './chains/postgres/pg-chain-repository.js';
-import { DevicesController } from './devices/http/devices-controller.js';
-import { InMemoryDeviceRepository } from './devices/in-memory/in-memory-device-repository.js';
-import { HmacDeviceTokenService } from './devices/infrastructure/hmac-device-token-service.js';
-import { PgDeviceRepository } from './devices/postgres/pg-device-repository.js';
-import { InMemoryEvidenceRepository } from './evidence/in-memory/in-memory-evidence-repository.js';
-import { PgEvidenceRepository } from './evidence/postgres/pg-evidence-repository.js';
-import { AllMigrationsProvider } from './migrations/all-migrations-provider.js';
-import { PlacesController } from './places/http/places-controller.js';
-import { InMemoryPlaceRepository } from './places/in-memory/in-memory-place-repository.js';
-import { PgPlaceRepository } from './places/postgres/pg-place-repository.js';
-import { ReportsController } from './reports/http/reports-controller.js';
-import { FastifyHttpServer } from './shared/http/fastify-http-server.js';
-import type { HttpServer } from './shared/http/fastify-http-server.js';
-import { DomainHttpErrorMapper } from './shared/http/http-error-mapper.js';
-import { DefaultHttpDtoMapper } from './shared/http/http-dto-mapper.js';
-import { BearerTokenAuthenticator } from './shared/http/request-authenticator.js';
-import { InMemoryRateLimiter } from './shared/in-memory/in-memory-rate-limiter.js';
-import { EmptyInMemoryTablesFactory } from './shared/in-memory/in-memory-tables.js';
-import type { InMemoryTables } from './shared/in-memory/in-memory-tables.js';
-import { InMemoryUnitOfWork } from './shared/in-memory/in-memory-unit-of-work.js';
-import { SystemClock } from './shared/infrastructure/system-clock.js';
-import { UuidV7IdGenerator } from './shared/infrastructure/uuid-v7-id-generator.js';
-import type { Database } from './shared/postgres/database.js';
-import { PgDatabaseErrorTranslator } from './shared/postgres/database-error-translator.js';
-import { PgUnitOfWork } from './shared/postgres/pg-unit-of-work.js';
-import { InMemoryPlaceStatusRepository } from './status/in-memory/in-memory-place-status-repository.js';
-import { PgPlaceStatusRepository } from './status/postgres/pg-place-status-repository.js';
+import {
+  EmptyInMemoryTablesFactory,
+  InMemoryChainRepository,
+  InMemoryDeviceRepository,
+  InMemoryEvidenceRepository,
+  InMemoryPlaceRepository,
+  InMemoryPlaceStatusRepository,
+  InMemoryRateLimiter,
+  InMemoryUnitOfWork,
+} from '@amexbutikker/in-memory';
+import { PgChainRepository } from './chains/pg-chain.repository.js';
+import { DevicesController } from './devices/devices.controller.js';
+import { HmacDeviceTokenService } from './devices/hmac-device-token.service.js';
+import { PgDeviceRepository } from './devices/pg-device.repository.js';
+import { PgEvidenceRepository } from './evidence/pg-evidence.repository.js';
+import { AllMigrationsProvider } from './migrations/all-migrations.provider.js';
+import { PlacesController } from './places/places.controller.js';
+import { PgPlaceRepository } from './places/pg-place.repository.js';
+import { ReportsController } from './reports/reports.controller.js';
+import { FastifyHttpServer } from './shared/fastify-http.server.js';
+import type { HttpServer } from './shared/fastify-http.server.js';
+import { DomainHttpErrorMapper } from './shared/domain-http-error.mapper.js';
+import { DefaultHttpDtoMapper } from './shared/default-http-dto.mapper.js';
+import { BearerTokenAuthenticator } from './shared/bearer-token.authenticator.js';
+import type { InMemoryTables } from '@amexbutikker/in-memory';
+import { SystemClock } from './shared/system.clock.js';
+import { UuidV7IdGenerator } from './shared/uuid-v7-id.generator.js';
+import type { Database } from './shared/database.model.js';
+import { PgDatabaseErrorTranslator } from './shared/pg-database-error.translator.js';
+import { PgUnitOfWork } from './shared/pg.unit-of-work.js';
+import { PgPlaceStatusRepository } from './status/pg-place-status.repository.js';
 
 const RateLimitRuleSchema = z.object({
   limit: z.int().positive(),
@@ -160,7 +162,7 @@ export class CompositionRoot {
       [
         new PlacesController(
           new SearchPlacesUseCase(places, statuses, validator),
-          new FindNearbyPlacesUseCase(places, statuses, validator),
+          new ListNearbyPlacesUseCase(places, statuses, validator),
           new GetPlaceDetailsUseCase(
             places,
             chains,

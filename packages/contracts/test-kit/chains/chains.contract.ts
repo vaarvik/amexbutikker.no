@@ -62,12 +62,12 @@ export function describeChainReaderContract(
       await expect(fixture.current.reader.findByName('Deli de Luca')).resolves.toEqual(older);
     });
 
-    it('getHint returns null before a hint is saved, also for unknown chains', async () => {
+    it('findHint returns null before a hint is saved, also for unknown chains', async () => {
       const chain = new TestData().chain();
       await fixture.current.writer.create(chain);
 
-      await expect(fixture.current.reader.getHint(chain.id)).resolves.toBeNull();
-      await expect(fixture.current.reader.getHint(new TestData().chainId())).resolves.toBeNull();
+      await expect(fixture.current.reader.findHint(chain.id)).resolves.toBeNull();
+      await expect(fixture.current.reader.findHint(new TestData().chainId())).resolves.toBeNull();
     });
   });
 }
@@ -160,7 +160,7 @@ export function describeChainWriterContract(
       await fixture.current.writer.saveHint(first);
       await fixture.current.writer.saveHint(second);
 
-      await expect(fixture.current.reader.getHint(chain.id)).resolves.toEqual(second);
+      await expect(fixture.current.reader.findHint(chain.id)).resolves.toEqual(second);
     });
 
     it('saveHint throws NotFoundError for an unknown chain', async () => {

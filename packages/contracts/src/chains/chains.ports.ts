@@ -20,7 +20,7 @@ export interface ChainReader {
   /**
    * @returns the stored hint, or null when none has been calculated yet. Does not throw for an unknown chain.
    */
-  getHint(chainId: ChainId): Promise<ChainHint | null>;
+  findHint(chainId: ChainId): Promise<ChainHint | null>;
 }
 
 /** A chain as an importer sees it, before it has an id. */

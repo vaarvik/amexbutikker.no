@@ -19,5 +19,5 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
-      - run: pnpm test
+      - run: pnpm test:coverage
       - run: pnpm contract-check

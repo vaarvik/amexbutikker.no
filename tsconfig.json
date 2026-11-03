@@ -3,6 +3,7 @@
   "references": [
     { "path": "packages/contracts" },
     { "path": "packages/domain" },
+    { "path": "packages/in-memory" },
     { "path": "packages/application" },
     { "path": "apps/api" },
     { "path": "tools/contract-check" }

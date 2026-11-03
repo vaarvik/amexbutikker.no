@@ -11,6 +11,7 @@
     "@amexbutikker/application": "workspace:*",
     "@amexbutikker/contracts": "workspace:*",
     "@amexbutikker/domain": "workspace:*",
+    "@amexbutikker/in-memory": "workspace:*",
     "fastify": "^5.12.8",
     "kysely": "^0.29.8",
     "pg": "^8.23.1",

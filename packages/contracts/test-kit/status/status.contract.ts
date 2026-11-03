@@ -30,7 +30,7 @@ export function describePlaceStatusContract(
       const place = new TestData().physicalPlace();
       await fixture.current.places.create(place);
 
-      await expect(fixture.current.reader.get(place.id)).resolves.toBeNull();
+      await expect(fixture.current.reader.find(place.id)).resolves.toBeNull();
     });
 
     it('save stores the snapshot exactly and replaces an earlier one', async () => {
@@ -52,7 +52,7 @@ export function describePlaceStatusContract(
       await fixture.current.writer.save(first);
       await fixture.current.writer.save(second);
 
-      await expect(fixture.current.reader.get(place.id)).resolves.toEqual(second);
+      await expect(fixture.current.reader.find(place.id)).resolves.toEqual(second);
     });
 
     it('stores an unknown status with null basis and lastEvidenceAt', async () => {
@@ -71,10 +71,10 @@ export function describePlaceStatusContract(
 
       await fixture.current.writer.save(snapshot);
 
-      await expect(fixture.current.reader.get(place.id)).resolves.toEqual(snapshot);
+      await expect(fixture.current.reader.find(place.id)).resolves.toEqual(snapshot);
     });
 
-    it('getMany returns only places that have a snapshot', async () => {
+    it('findMany returns only places that have a snapshot', async () => {
       const data = new TestData();
       const withStatus = data.physicalPlace();
       const without = data.physicalPlace();
@@ -83,7 +83,7 @@ export function describePlaceStatusContract(
       const snapshot = data.statusSnapshot(withStatus.id);
       await fixture.current.writer.save(snapshot);
 
-      const found = await fixture.current.reader.getMany([
+      const found = await fixture.current.reader.findMany([
         withStatus.id,
         without.id,
         data.placeId(),
@@ -92,8 +92,8 @@ export function describePlaceStatusContract(
       expect([...found.entries()]).toEqual([[withStatus.id, snapshot]]);
     });
 
-    it('getMany of nothing is an empty map', async () => {
-      await expect(fixture.current.reader.getMany([])).resolves.toEqual(new Map());
+    it('findMany of nothing is an empty map', async () => {
+      await expect(fixture.current.reader.findMany([])).resolves.toEqual(new Map());
     });
 
     it('listForChain returns snapshots of that chain only', async () => {

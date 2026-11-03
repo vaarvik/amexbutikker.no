@@ -19,6 +19,7 @@ Not affiliated with American Express. Never use Amex logos or brand assets.
 packages/contracts     Interfaces only: ports, use case interfaces, DTOs, branded IDs, zod schemas, typed errors, contract test kits
 packages/domain        Domain services and value objects. Pure, no I/O
 packages/application   Use cases, one class per use case
+packages/in-memory     InMemory* adapters for every port (tests, local dev, `STORAGE=memory`)
 apps/api               Fastify adapter, Postgres adapters, importers, composition root
 apps/mobile            Expo app
 tools/contract-check   ts-morph script that enforces the rules below in CI
@@ -35,12 +36,12 @@ packages/contracts/src/unit-of-work.ts cross-feature
 packages/contracts/test-kit/<feature>/ <feature>.contract.ts; fixture.ts and test-data.ts at the root
 packages/domain/src/<feature>/         domain services
 packages/application/src/<feature>/    use case classes
-apps/api/src/<feature>/http/           controllers
-apps/api/src/<feature>/postgres/       Pg* adapters
-apps/api/src/<feature>/in-memory/      InMemory* adapters
+packages/in-memory/src/<feature>/      InMemory* adapters
+apps/api/src/<feature>/                controllers, Pg* adapters, other adapters, side by side
 apps/api/src/imports/importers/<source>/
 apps/api/src/migrations/               all migrations, one ordered sequence (not per feature)
 apps/api/src/composition-root.ts
+<package>/test/<feature>/              tests, mirroring src (see Testing)
 ```
 
 Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`.
@@ -49,7 +50,7 @@ Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `
 - Nest X under Y only if X cannot exist without Y and nothing else uses X.
 - `shared/` holds what two or more features use. `shared/` never imports from a feature.
 - Each package exposes everything through its root `index.ts`; consumers import `@amexbutikker/<package>`, never deep paths.
-- contract-check rule (c) treats any `apps/api/src/**/{postgres,in-memory,importers,http,infrastructure}/` folder as infrastructure.
+- Feature folders in `apps/api/src` are flat: the role is in the file name (`places.controller.ts`, `pg-place.repository.ts`), not in a subfolder.
 
 ### File naming
 
@@ -67,7 +68,27 @@ Contracts: a feature folder contains only these files, each prefixed with the fo
 
 Test kit: `<feature>.contract.ts` exports `describe<Port>Contract` functions.
 
-Everywhere else: one exported class per file, file named after the class in kebab-case (`SubmitReportUseCase` → `submit-report-use-case.ts`, `PgPlaceRepository` → `pg-place-repository.ts`). Tests mirror the file: `test/<feature>/<file>.test.ts`.
+Everywhere else (rule (f)): one exported class per file, Error subclasses aside. The file is named after the class in kebab-case with a dot before the role:
+
+- `CreatePlaceUseCase` → `create-place.use-case.ts`
+- `PgPlaceRepository` → `pg-place.repository.ts`
+- `PgUnitOfWork` → `pg.unit-of-work.ts`
+- `PlacesController` → `places.controller.ts`
+- `M0003EvidenceMigration` → `m0003-evidence.migration.ts`
+
+The class name must end in a known role:
+
+`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`.
+
+To add a role, add it to `ClassFileNamingRule` and this list in the same change.
+
+A file without a class is `*.ports.ts` (interfaces) or `*.model.ts` (data types and constants).
+
+Exempt from rule (f):
+
+- entry points: `index.ts`, `cli.ts`, `server.ts`, `migrate.ts`, `composition-root.ts`
+- tests and the test kit
+- `packages/contracts/src`, which rule (e) covers
 
 Code names:
 
@@ -77,6 +98,29 @@ Code names:
 - Methods do not repeat the noun: `placeReader.getById()`, not `getPlaceById()`.
 
 contract-check rule (e) enforces the contracts file names.
+
+## Architecture patterns
+
+Ports and adapters (the layering above), DDD inside it (below), and CQS / CQRS-lite between them.
+
+### CQRS-lite
+
+- **Commands** change state and are named by intent: `SubmitReport`, `RemoveMyReport`, `CreatePlace`, `RegisterDevice`, `RunImport`. The API is task-based (`POST /v1/places/:id/reports`), not CRUD on tables.
+- **Queries** read and never write: `SearchPlaces`, `ListNearbyPlaces`, `GetPlaceDetails`, `MatchSharedPlace`.
+- **Write model:** append-only `evidence`. **Read models:** `place_status` and `chain_hints`, recalculated by `PlaceStatusRefresher` in the same unit of work as the evidence change.
+- One database, one model package. No separate read store, no event bus. That is the "lite".
+- Commands return the new status on purpose, so the app can update without a second request. That is a deliberate deviation from strict CQS.
+
+### Method verbs
+
+| Verb      | Returns                         | When nothing matches   |
+| --------- | ------------------------------- | ---------------------- |
+| `get…`    | exactly one item                | throws `NotFoundError` |
+| `find…`   | one item or `null`              | `null`                 |
+| `list…`   | an array, possibly empty        | `[]`                   |
+| `search…` | ranked hits for free-text input | `[]`                   |
+
+Writes use `create`, `save` (replace), `append` (evidence) and `upsert…` (imports).
 
 ## Domain-driven design
 
@@ -120,6 +164,26 @@ Use these words, with these meanings, in code, docs and conversation. UI copy us
 - Entities are plain data (rule 4), not classes with methods. Behaviour lives in domain services. This is a conscious trade-off for zod validation and serialisation, not an oversight.
 - No event sourcing: evidence is append-only, but the status is a stored snapshot recalculated on change, not rebuilt by replay.
 - No domain events yet. Introduce them only when a second consumer of the same fact appears.
+
+## Testing
+
+- **Where:** each package has `test/` mirroring `src/`: `src/places/create-place.use-case.ts` is tested in `test/places/create-place.use-case.test.ts`. Shared test helpers sit in `test/shared/`.
+- **Suffixes:**
+  - `*.test.ts`: unit, no I/O.
+  - `*.integration.test.ts`: needs Docker (Testcontainers).
+  - `*.api.test.ts`: HTTP through Fastify `inject`.
+- **Contract suites:** each port's suite lives in `packages/contracts/test-kit/<feature>/<feature>.contract.ts`. It runs against every implementation: in-memory in `packages/in-memory/test/<feature>/`, Postgres in `apps/api/test/shared/postgres.contracts.integration.test.ts`, which uses one container for all Pg suites.
+- **When to write tests:**
+  - Test-first (TDD) for domain services and use cases.
+  - Contract-first for ports: the suite exists before any implementation.
+  - Adapters and wiring may be tested after, but before the change is done.
+- **Coverage floors:** enforced by `pnpm test:coverage`, which CI runs.
+  - `packages/domain/src`: 100 %
+  - `packages/application/src`: 95 %
+  - `packages/in-memory/src` and `apps/api/src`: 90 %
+  - Entry points and the composition root are excluded.
+  - A floor is a floor: cover a gap with a test of the behaviour, not a test of the line.
+  - Domain code must not need integration tests to reach 100 %.
 
 ## Non-negotiable rules
 
@@ -190,7 +254,9 @@ pnpm typecheck               # tsc -b over the project references + tsc --noEmit
 pnpm lint                    # ESLint (strict-type-checked), zero warnings allowed
 pnpm format                  # Prettier write; `pnpm format:check` in CI
 pnpm test                    # Vitest, all projects; needs Docker (Testcontainers). `pnpm test --project domain` for one
-pnpm contract-check          # architecture rules (a)-(d) from tools/contract-check
+pnpm test:unit               # everything except *.integration.test.ts; no Docker needed
+pnpm test:coverage           # all tests plus coverage floors (what CI runs)
+pnpm contract-check          # architecture rules (a)-(f) from tools/contract-check
 pnpm db:up                   # Postgres 16 + PostGIS/pg_trgm/unaccent via Docker Compose
 pnpm db:down                 # stop it (data persists in the db-data volume)
 pnpm db:migrate              # build api, migrate DATABASE_URL (from .env) to latest
@@ -203,7 +269,7 @@ Conventions:
 - Workspace packages are `@amexbutikker/*`. They export `src/*.ts` under the `@amexbutikker/source` condition (used by tsc, Vitest and contract-check) and `dist/` for Node at runtime.
 - Relative imports in Node packages use `.js` extensions (NodeNext).
 - Default exports are banned except where a tool requires them: `*.config.*`, `apps/mobile/src/app/**` (expo-router routes), `apps/mobile/app.config.ts`.
-- Tests live in `src/**/*.test.ts` or `test/**`. The contract-check treats `*.test.ts`, `*.spec.ts` and anything under `test/`, `tests/` or `__tests__/` as tests.
+- Tests live in `test/**` (see Testing). The contract-check treats `*.test.ts`, `*.spec.ts` and anything under `test/`, `tests/` or `__tests__/` as tests.
 - contract-check also exempts Error subclasses from rule (a).
 
 ## Git

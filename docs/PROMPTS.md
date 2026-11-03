@@ -60,7 +60,7 @@ Ports:
 - Clock, IdGenerator, Logger, DeviceTokenService (issue, verify)
 
 Use case interfaces, each with one execute method:
-SearchPlaces, FindNearbyPlaces, GetPlaceDetails, CreatePlace, SubmitReport, RemoveMyReport,
+SearchPlaces, ListNearbyPlaces, GetPlaceDetails, CreatePlace, SubmitReport, RemoveMyReport,
 MatchSharedPlace, RegisterDevice, RunImport.
 
 API request/response DTOs for every endpoint listed in phase 4, with zod schemas.
@@ -102,7 +102,7 @@ an online place with mixed reports.
 ## Phase 3: Persistence
 
 ```
-In apps/api/src, using the feature folders from CLAUDE.md (`<feature>/postgres/`, `<feature>/in-memory/`, migrations in `apps/api/src/migrations/`):
+Using the feature folders from CLAUDE.md (Pg adapters in `apps/api/src/<feature>/`, in-memory adapters in `packages/in-memory/src/<feature>/`, migrations in `apps/api/src/migrations/`):
 
 - Kysely migrations (with down migrations) for: chains, places, evidence, place_status, import_runs, devices.
   - places: kind, chain_id null, name, category, street, postcode, city, geom geography(Point,4326) null for online,
