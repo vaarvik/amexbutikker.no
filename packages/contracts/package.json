@@ -1,0 +1,26 @@
+{
+  "name": "@amexbutikker/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "@amexbutikker/source": "./src/index.ts",
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./test-kit": {
+      "@amexbutikker/source": "./test-kit/index.ts",
+      "types": "./dist/test-kit/index.d.ts",
+      "default": "./dist/test-kit/index.js"
+    }
+  },
+  "peerDependencies": {
+    "vitest": "^5.1.0"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@amexbutikker/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node dist/src/server.js",
+    "db:migrate": "node -e \"console.log('No migrations yet. They arrive in phase 3.')\""
+  },
+  "dependencies": {
+    "@amexbutikker/application": "workspace:*",
+    "@amexbutikker/contracts": "workspace:*",
+    "@amexbutikker/domain": "workspace:*"
+  }
+}

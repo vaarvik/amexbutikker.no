@@ -1,0 +1,22 @@
+services:
+  db:
+    # postgis/postgis publishes amd64 images only; on Apple Silicon this runs under emulation.
+    image: postgis/postgis:16-3.5
+    platform: linux/amd64
+    environment:
+      POSTGRES_USER: amexbutikker
+      POSTGRES_PASSWORD: amexbutikker
+      POSTGRES_DB: amexbutikker
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U amexbutikker -d amexbutikker']
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  db-data:

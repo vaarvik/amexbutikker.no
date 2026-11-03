@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+dist/
+coverage/
+apps/mobile/.expo/
+apps/mobile/ios/
+apps/mobile/android/
+apps/mobile/assets/
