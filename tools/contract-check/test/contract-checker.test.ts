@@ -76,8 +76,29 @@ describe('contract-check', () => {
 
   it('(d) flags classes in contracts/src other than Error subclasses, outside the test kit', () => {
     expect(checkFixture('fail-d')).toEqual([
-      { ruleId: 'contracts-class', file: 'packages/contracts/src/place.ts', line: 5 },
-      { ruleId: 'contracts-class', file: 'packages/contracts/src/place.ts', line: 9 },
+      { ruleId: 'contracts-class', file: 'packages/contracts/src/places/places.model.ts', line: 5 },
+      { ruleId: 'contracts-class', file: 'packages/contracts/src/places/places.model.ts', line: 9 },
+    ]);
+  });
+
+  it('(e) flags contracts files that break the feature-folder naming standard', () => {
+    expect(checkFixture('fail-e')).toEqual([
+      {
+        ruleId: 'contracts-file-naming',
+        file: 'packages/contracts/src/devices/device-ports.ts',
+        line: 1,
+      },
+      { ruleId: 'contracts-file-naming', file: 'packages/contracts/src/ids.ts', line: 1 },
+      {
+        ruleId: 'contracts-file-naming',
+        file: 'packages/contracts/src/places/nested/places.model.ts',
+        line: 1,
+      },
+      {
+        ruleId: 'contracts-file-naming',
+        file: 'packages/contracts/src/places/queries.ts',
+        line: 1,
+      },
     ]);
   });
 });

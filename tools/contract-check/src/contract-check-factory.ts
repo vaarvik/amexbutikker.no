@@ -4,6 +4,7 @@ import type { ContractChecker } from './contract-checker.js';
 import { ClassImplementsInterfaceRule } from './rules/class-implements-interface-rule.js';
 import { ConstructionOutsideCompositionRootRule } from './rules/construction-outside-composition-root-rule.js';
 import { ContractsClassRule } from './rules/contracts-class-rule.js';
+import { ContractsFileNamingRule } from './rules/contracts-file-naming-rule.js';
 import { ForbiddenImportRule } from './rules/forbidden-import-rule.js';
 import { WorkspaceProjectLoader } from './workspace-project-loader.js';
 import { RootRelativeWorkspacePaths } from './workspace-paths.js';
@@ -24,6 +25,7 @@ export class DefaultContractCheckerFactory implements ContractCheckerFactory {
         new ForbiddenImportRule(),
         new ConstructionOutsideCompositionRootRule(),
         new ContractsClassRule(heritage),
+        new ContractsFileNamingRule(),
       ],
     );
   }

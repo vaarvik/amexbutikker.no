@@ -29,10 +29,10 @@ docs/adr/              Architecture decision records
 Packages are layers; inside each layer, code is grouped by feature (see Domain-driven design below). Same feature names in every layer:
 
 ```
-packages/contracts/src/<feature>/      types + schemas, ports, use case interfaces, DTOs
-packages/contracts/src/shared/         ids, errors, geo, http-dtos, clock/id/logger/rate-limiter ports
+packages/contracts/src/<feature>/      <feature>.{model,ports,use-cases,dtos}.ts (see File naming)
+packages/contracts/src/shared/         shared.{model,ports,dtos,errors}.ts
 packages/contracts/src/unit-of-work.ts cross-feature
-packages/contracts/test-kit/<feature>/ contract suites; fixture.ts and test-data.ts at the root
+packages/contracts/test-kit/<feature>/ <feature>.contract.ts; fixture.ts and test-data.ts at the root
 packages/domain/src/<feature>/         domain services
 packages/application/src/<feature>/    use case classes
 apps/api/src/<feature>/http/           controllers
@@ -50,6 +50,33 @@ Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `
 - `shared/` holds what two or more features use. `shared/` never imports from a feature.
 - Each package exposes everything through its root `index.ts`; consumers import `@amexbutikker/<package>`, never deep paths.
 - contract-check rule (c) treats any `apps/api/src/**/{postgres,in-memory,importers,http,infrastructure}/` folder as infrastructure.
+
+### File naming
+
+Every folder of the same kind looks alike. Names are kebab-case and start with the domain noun.
+
+Contracts: a feature folder contains only these files, each prefixed with the folder name, and only the ones it needs:
+
+| File                     | Contains                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `<feature>.model.ts`     | Data types and their zod schemas: entities, value objects, queries, read models, constants |
+| `<feature>.ports.ts`     | Repository and service interfaces                                                          |
+| `<feature>.use-cases.ts` | Use case interfaces with their input and output types                                      |
+| `<feature>.dtos.ts`      | HTTP request and response DTOs with schemas                                                |
+| `<feature>.errors.ts`    | Error classes (only `shared/` so far)                                                      |
+
+Test kit: `<feature>.contract.ts` exports `describe<Port>Contract` functions.
+
+Everywhere else: one exported class per file, file named after the class in kebab-case (`SubmitReportUseCase` → `submit-report-use-case.ts`, `PgPlaceRepository` → `pg-place-repository.ts`). Tests mirror the file: `test/<feature>/<file>.test.ts`.
+
+Code names:
+
+- Types, interfaces and ports start with the domain noun: `PlaceReader`, `PlaceStatus`, `ChainHint`.
+- Use cases are verb + noun, because they are commands: `SubmitReport`, implemented by `SubmitReportUseCase`.
+- One class may implement a feature's reader and writer ports together: `<Mechanism><Noun>Repository` (`InMemoryPlaceRepository`, `PgPlaceRepository`). Consumers still depend on the single port they use.
+- Methods do not repeat the noun: `placeReader.getById()`, not `getPlaceById()`.
+
+contract-check rule (e) enforces the contracts file names.
 
 ## Domain-driven design
 

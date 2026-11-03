@@ -1,7 +1,7 @@
-import type { ChainReader, ChainWriter } from './chains/chain-ports.js';
-import type { EvidenceReader, EvidenceWriter } from './evidence/evidence-ports.js';
-import type { PlaceReader, PlaceWriter } from './places/place-ports.js';
-import type { PlaceStatusReader, PlaceStatusWriter } from './status/place-status-ports.js';
+import type { ChainReader, ChainWriter } from './chains/chains.ports.js';
+import type { EvidenceReader, EvidenceWriter } from './evidence/evidence.ports.js';
+import type { PlaceReader, PlaceWriter } from './places/places.ports.js';
+import type { PlaceStatusReader, PlaceStatusWriter } from './status/status.ports.js';
 
 /**
  * Ports bound to one transaction. Readers are included so work can read what it just wrote

@@ -1,4 +1,4 @@
-import type { PlaceReader, SearchPlaces } from '../../contracts/src/ports.js';
+import type { PlaceReader, SearchPlaces } from '../../contracts/src/places/places.ports.js';
 
 export class SearchPlacesUseCase implements SearchPlaces {
   public constructor(private readonly reader: PlaceReader) {}

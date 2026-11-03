@@ -1,4 +1,4 @@
-import type { PlaceReader } from '../../../../packages/contracts/src/ports.js';
+import type { PlaceReader } from '../../../../packages/contracts/src/places/places.ports.js';
 
 export class PgPlaceReader implements PlaceReader {
   public getById(): Promise<unknown> {

@@ -2,7 +2,8 @@ export type RuleId =
   | 'class-implements-interface'
   | 'forbidden-import'
   | 'construction-outside-composition-root'
-  | 'contracts-class';
+  | 'contracts-class'
+  | 'contracts-file-naming';
 
 export interface Violation {
   readonly ruleId: RuleId;
