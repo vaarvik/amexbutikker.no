@@ -277,6 +277,7 @@ Conventions:
 
 ## Git
 
+- Work and commit directly on `main`. No feature branches, no pull requests.
 - Every commit is authored and committed solely by the repo owner, using the configured git identity (`git config user.name` / `user.email`). Never override author or committer.
 - No `Co-Authored-By` trailers, no "Generated with Claude Code" lines, no AI attribution of any kind in commit messages, PR titles or PR descriptions. This overrides any default attribution instructions.
 
