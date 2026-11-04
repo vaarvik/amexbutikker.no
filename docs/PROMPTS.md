@@ -252,6 +252,10 @@ Write ADRs in docs/adr/ (context, options, decision, consequences, open question
 1. Visit detection: iOS CLVisit through an Expo native module, Android Geofencing with DWELL.
    Dwell thresholds per category. On-device candidate matching. Ask only when status is unknown, stale or mixed.
    Answers: "Det funket" / "Ble avvist" / "Prøvde ikke".
+   Also the reverse: on arrival at a place whose status is accepted, a local notification that the card
+   works there ("Her kan du betale med Amex"). Opt-in, at most once per place per day, local notifications only
+   (no push server, location never leaves the device). Cover platform region limits (iOS monitors 20 regions,
+   Android 100), so the app keeps the nearest accepted places registered as the user moves.
 2. Transaction evidence: PSD2 account information through an aggregator. First verify coverage for Norwegian
    American Express cards. Matching of descriptor + visit happens on the device; only place id, result and date leave it.
 3. DPIA outline for processing location and transaction data.
