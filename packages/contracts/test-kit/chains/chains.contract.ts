@@ -146,6 +146,28 @@ export function describeChainWriterContract(
       expect(again).toEqual({ chainId: newId, outcome: 'unchanged' });
     });
 
+    it('upsertFromSource by name keeps the stored spelling, so sources cannot rename back and forth', async () => {
+      const data = new TestData();
+      const newId = data.chainId();
+      await fixture.current.writer.upsertFromSource({ name: 'Kiwi', brandWikidata: 'Q1' }, newId);
+
+      const byName = await fixture.current.writer.upsertFromSource(
+        { name: 'KIWI', brandWikidata: null },
+        data.chainId(),
+      );
+      const byWikidata = await fixture.current.writer.upsertFromSource(
+        { name: 'Kiwi', brandWikidata: 'Q1' },
+        data.chainId(),
+      );
+
+      expect(byName).toEqual({ chainId: newId, outcome: 'unchanged' });
+      expect(byWikidata).toEqual({ chainId: newId, outcome: 'unchanged' });
+      await expect(fixture.current.reader.getById(newId)).resolves.toMatchObject({
+        name: 'Kiwi',
+        brandWikidata: 'Q1',
+      });
+    });
+
     it('saveHint stores the hint and replaces an earlier one', async () => {
       const data = new TestData();
       const chain = data.chain();

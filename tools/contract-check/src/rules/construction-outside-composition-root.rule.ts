@@ -1,6 +1,7 @@
 import { Node, SyntaxKind } from 'ts-morph';
 import type { NewExpression, SourceFile } from 'ts-morph';
 import type { Rule } from '../rule.ports.js';
+import type { ClassHeritage } from '../type-checker-class.heritage.js';
 import type { RuleId, Violation } from '../violation.model.js';
 import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
@@ -8,11 +9,13 @@ import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
  * Rule (c): application, in-memory and api classes are only constructed with `new` in a
  * composition root or in tests. Migrations are exempt, because the migration provider builds
  * them. Classes declared in a composition root are exempt, so entry points can build the root.
+ * Error subclasses are exempt: throwing an error is not wiring.
  */
 export class ConstructionOutsideCompositionRootRule implements Rule {
   public readonly id: RuleId = 'construction-outside-composition-root';
 
   public constructor(
+    private readonly heritage: ClassHeritage,
     private readonly protectedDirs: readonly string[] = [
       'packages/application',
       'packages/in-memory',
@@ -65,6 +68,9 @@ export class ConstructionOutsideCompositionRootRule implements Rule {
     const declaration = target
       .getDeclarations()
       .find((node) => Node.isClassDeclaration(node) || Node.isClassExpression(node));
-    return declaration?.getSourceFile().getFilePath();
+    if (declaration === undefined || this.heritage.extendsError(declaration)) {
+      return undefined;
+    }
+    return declaration.getSourceFile().getFilePath();
   }
 }

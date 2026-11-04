@@ -63,10 +63,11 @@ export class InMemoryChainRepository implements ChainReader, ChainWriter {
       this.tables.chains.set(newId, { id: newId, createdAt: this.clock.now(), ...record });
       return { chainId: newId, outcome: 'created' };
     }
-    if (existing.name === record.name && existing.brandWikidata === record.brandWikidata) {
+    // Keyed by name there is nothing to update: the match already ignores case and accents.
+    if (record.brandWikidata === null || existing.name === record.name) {
       return { chainId: existing.id, outcome: 'unchanged' };
     }
-    this.tables.chains.set(existing.id, { ...existing, ...record });
+    this.tables.chains.set(existing.id, { ...existing, name: record.name });
     return { chainId: existing.id, outcome: 'updated' };
   }
 

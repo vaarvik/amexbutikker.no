@@ -5,6 +5,7 @@ import {
   GetPlaceDetailsUseCase,
   RegisterDeviceUseCase,
   RemoveMyReportUseCase,
+  RunImportUseCase,
   SearchPlacesUseCase,
   SubmitReportUseCase,
   ZodInputValidator,
@@ -13,9 +14,11 @@ import type {
   ChainReader,
   DeviceWriter,
   EvidenceReader,
+  ImportRunWriter,
   PlaceReader,
   PlaceStatusReader,
   PlaceWriter,
+  RunImport,
   TransactionalPorts,
   UnitOfWork,
 } from '@amexbutikker/contracts';
@@ -30,6 +33,7 @@ import {
 import { Kysely, PostgresDialect } from 'kysely';
 import { Migrator } from 'kysely/migration';
 import pg from 'pg';
+import { join } from 'node:path';
 import { pino } from 'pino';
 import { z } from 'zod';
 import {
@@ -37,6 +41,7 @@ import {
   InMemoryChainRepository,
   InMemoryDeviceRepository,
   InMemoryEvidenceRepository,
+  InMemoryImportRunRepository,
   InMemoryPlaceRepository,
   InMemoryPlaceStatusRepository,
   InMemoryRateLimiter,
@@ -47,6 +52,12 @@ import { DevicesController } from './devices/devices.controller.js';
 import { HmacDeviceTokenService } from './devices/hmac-device-token.service.js';
 import { PgDeviceRepository } from './devices/pg-device.repository.js';
 import { PgEvidenceRepository } from './evidence/pg-evidence.repository.js';
+import { DefaultOsmElementTranslator } from './imports/importers/osm/default-osm-element.translator.js';
+import { DiskCachingOverpassClient } from './imports/importers/osm/disk-caching-overpass.client.js';
+import { HttpOverpassClient } from './imports/importers/osm/http-overpass.client.js';
+import { OSLO_AREA_ID } from './imports/importers/osm/osm.model.js';
+import { OverpassOsmImporter } from './imports/importers/osm/overpass-osm.importer.js';
+import { PgImportRunRepository } from './imports/pg-import-run.repository.js';
 import { AllMigrationsProvider } from './migrations/all-migrations.provider.js';
 import { PlacesController } from './places/places.controller.js';
 import { PgPlaceRepository } from './places/pg-place.repository.js';
@@ -80,7 +91,24 @@ export interface ApiConfig {
   readonly logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
   readonly trustProxy: boolean;
   readonly rateLimits: Readonly<Record<string, z.infer<typeof RateLimitRuleSchema>>>;
+  readonly imports: ImportsConfig;
 }
+
+export interface ImportsConfig {
+  readonly overpassUrl: string;
+  /** Overpass area id; Oslo kommune by default. */
+  readonly overpassAreaId: number;
+  /** Where fetched source data is cached between runs. */
+  readonly cacheDir: string;
+  readonly cacheMaxAgeHours: number;
+}
+
+export const DEFAULT_IMPORTS: ImportsConfig = {
+  overpassUrl: 'https://overpass-api.de/api/interpreter',
+  overpassAreaId: OSLO_AREA_ID,
+  cacheDir: 'data/cache',
+  cacheMaxAgeHours: 7 * 24,
+};
 
 export const DEFAULT_RATE_LIMITS: ApiConfig['rateLimits'] = {
   submit_report: { limit: 30, windowSeconds: 3600 },
@@ -100,6 +128,14 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
       .default('info'),
     trustProxy: z.stringbool().default(false),
     rateLimits: z.record(z.string(), RateLimitRuleSchema).default(DEFAULT_RATE_LIMITS),
+    imports: z
+      .object({
+        overpassUrl: z.url({ protocol: /^https?$/ }).default(DEFAULT_IMPORTS.overpassUrl),
+        overpassAreaId: z.coerce.number().int().positive().default(DEFAULT_IMPORTS.overpassAreaId),
+        cacheDir: z.string().min(1).default(DEFAULT_IMPORTS.cacheDir),
+        cacheMaxAgeHours: z.coerce.number().nonnegative().default(DEFAULT_IMPORTS.cacheMaxAgeHours),
+      })
+      .default(DEFAULT_IMPORTS),
   })
   .refine((config) => config.storage === 'memory' || config.databaseUrl !== undefined, {
     message: 'DATABASE_URL is required when STORAGE is postgres',
@@ -112,6 +148,7 @@ interface Storage {
   readonly evidence: EvidenceReader;
   readonly statuses: PlaceStatusReader;
   readonly devices: DeviceWriter;
+  readonly importRuns: ImportRunWriter;
   readonly unitOfWork: UnitOfWork;
   close(): Promise<void>;
 }
@@ -122,6 +159,7 @@ interface Storage {
  */
 export class CompositionRoot {
   public readonly httpServer: HttpServer;
+  public readonly runImport: RunImport;
   private readonly db: Kysely<Database> | null;
   private readonly storage: Storage;
 
@@ -154,7 +192,7 @@ export class CompositionRoot {
         : null;
     this.storage =
       this.db === null ? this.inMemoryStorage(names, clock) : this.postgresStorage(this.db, names);
-    const { places, chains, evidence, statuses, devices, unitOfWork } = this.storage;
+    const { places, chains, evidence, statuses, devices, importRuns, unitOfWork } = this.storage;
 
     const auth = new BearerTokenAuthenticator(tokens);
     const dtos = new DefaultHttpDtoMapper();
@@ -194,6 +232,36 @@ export class CompositionRoot {
       pino({ level: config.logLevel }),
       { bodyLimit: 16 * 1024, trustProxy: config.trustProxy },
     );
+
+    const cache = { maxAgeMs: config.imports.cacheMaxAgeHours * 3_600_000 };
+    this.runImport = new RunImportUseCase(
+      [
+        new OverpassOsmImporter(
+          new DiskCachingOverpassClient(
+            new HttpOverpassClient(
+              {
+                endpoint: config.imports.overpassUrl,
+                userAgent:
+                  'amexbutikker-importer/0.1 (+https://github.com/vaarvik/amexbutikker.no)',
+                timeoutMs: 300_000,
+              },
+              globalThis.fetch,
+              clock,
+            ),
+            { ...cache, directory: join(config.imports.cacheDir, 'overpass') },
+            clock,
+          ),
+          new DefaultOsmElementTranslator(),
+          unitOfWork,
+          ids,
+          clock,
+          { areaId: config.imports.overpassAreaId, timeoutSeconds: 240, maxMessages: 50 },
+        ),
+      ],
+      importRuns,
+      ids,
+      clock,
+    );
   }
 
   /** Reads config from the environment. @throws ZodError when it is incomplete. */
@@ -207,6 +275,12 @@ export class CompositionRoot {
         port: env.PORT,
         logLevel: env.LOG_LEVEL,
         trustProxy: env.TRUST_PROXY,
+        imports: {
+          overpassUrl: env.OVERPASS_URL,
+          overpassAreaId: env.OVERPASS_AREA_ID,
+          cacheDir: env.IMPORT_CACHE_DIR,
+          cacheMaxAgeHours: env.IMPORT_CACHE_MAX_AGE_HOURS,
+        },
       }),
     );
   }
@@ -239,6 +313,7 @@ export class CompositionRoot {
     return {
       ...portsFor(db),
       devices: new PgDeviceRepository(db, errors),
+      importRuns: new PgImportRunRepository(db, errors),
       unitOfWork: new PgUnitOfWork(db, portsFor, errors),
       close: () => db.destroy(),
     };
@@ -255,6 +330,7 @@ export class CompositionRoot {
     return {
       ...portsFor(tables),
       devices: new InMemoryDeviceRepository(tables),
+      importRuns: new InMemoryImportRunRepository(tables),
       unitOfWork: new InMemoryUnitOfWork(tables, portsFor),
       close: () => Promise.resolve(),
     };

@@ -24,7 +24,7 @@ export class DefaultContractCheckerFactory implements ContractCheckerFactory {
       [
         new ClassImplementsInterfaceRule(heritage),
         new ForbiddenImportRule(),
-        new ConstructionOutsideCompositionRootRule(),
+        new ConstructionOutsideCompositionRootRule(heritage),
         new ContractsClassRule(heritage),
         new ContractsFileNamingRule(),
         new ClassFileNamingRule(heritage),

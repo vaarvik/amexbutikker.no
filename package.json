@@ -19,7 +19,8 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @amexbutikker/api db:migrate",
-    "db:migrate:down": "pnpm --filter @amexbutikker/api db:migrate down"
+    "db:migrate:down": "pnpm --filter @amexbutikker/api db:migrate down",
+    "import": "tsc -b apps/api && node --env-file-if-exists=.env apps/api/dist/src/cli.js import"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

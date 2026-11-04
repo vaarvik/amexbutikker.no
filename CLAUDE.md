@@ -78,7 +78,7 @@ Everywhere else (rule (f)): one exported class per file, Error subclasses aside.
 
 The class name must end in a known role:
 
-`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`.
+`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`.
 
 To add a role, add it to `ClassFileNamingRule` and this list in the same change.
 
@@ -264,6 +264,7 @@ pnpm db:up                   # Postgres 16 + PostGIS/pg_trgm/unaccent via Docker
 pnpm db:down                 # stop it (data persists in the db-data volume)
 pnpm db:migrate              # build api, migrate DATABASE_URL (from .env) to latest
 pnpm db:migrate:down         # revert the last migration
+pnpm run import <source>     # run an importer (osm_overpass, ...); add --dry-run to roll back. `pnpm import` is a pnpm builtin
 pnpm --filter mobile start   # Expo dev server (QR code for Expo Go)
 ```
 

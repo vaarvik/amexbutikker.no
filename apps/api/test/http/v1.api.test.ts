@@ -1,6 +1,10 @@
 import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CompositionRoot, DEFAULT_RATE_LIMITS } from '../../src/composition-root.js';
+import {
+  CompositionRoot,
+  DEFAULT_IMPORTS,
+  DEFAULT_RATE_LIMITS,
+} from '../../src/composition-root.js';
 import type { ApiConfig } from '../../src/composition-root.js';
 
 const config: ApiConfig = {
@@ -11,6 +15,7 @@ const config: ApiConfig = {
   logLevel: 'silent',
   trustProxy: false,
   rateLimits: DEFAULT_RATE_LIMITS,
+  imports: DEFAULT_IMPORTS,
 };
 
 const OSLO_S = { lat: 59.9111, lng: 10.7528 };

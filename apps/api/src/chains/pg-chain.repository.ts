@@ -119,11 +119,7 @@ export class PgChainRepository implements ChainReader, ChainWriter {
       await sql`INSERT INTO chains (id, name) VALUES (${newId}, ${record.name})`.execute(this.db);
       return { chainId: newId, outcome: 'created' };
     }
-    if (existing.name === record.name) {
-      return { chainId: existing.id, outcome: 'unchanged' };
-    }
-    await sql`UPDATE chains SET name = ${record.name} WHERE id = ${existing.id}`.execute(this.db);
-    return { chainId: existing.id, outcome: 'updated' };
+    return { chainId: existing.id, outcome: 'unchanged' };
   }
 
   public async saveHint(hint: ChainHint): Promise<void> {

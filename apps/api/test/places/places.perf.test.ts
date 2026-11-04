@@ -2,7 +2,11 @@ import { TrigramNameSimilarity } from '@amexbutikker/domain';
 import { CompiledQuery, Kysely, PostgresDialect, sql } from 'kysely';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CompositionRoot, DEFAULT_RATE_LIMITS } from '../../src/composition-root.js';
+import {
+  CompositionRoot,
+  DEFAULT_IMPORTS,
+  DEFAULT_RATE_LIMITS,
+} from '../../src/composition-root.js';
 import { PgPlaceRepository } from '../../src/places/pg-place.repository.js';
 import type { Database } from '../../src/shared/database.model.js';
 import { PgDatabaseErrorTranslator } from '../../src/shared/pg-database-error.translator.js';
@@ -172,6 +176,7 @@ beforeAll(async () => {
     logLevel: 'silent',
     trustProxy: false,
     rateLimits: DEFAULT_RATE_LIMITS,
+    imports: DEFAULT_IMPORTS,
   });
 }, 600_000);
 

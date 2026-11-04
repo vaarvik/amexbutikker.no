@@ -2,7 +2,7 @@ import type { PlaceReader } from '../../../../packages/contracts/src/places/plac
 
 export class PgPlaceReader implements PlaceReader {
   public getById(): Promise<unknown> {
-    return Promise.resolve(null);
+    return Promise.reject(new PgConnectionError('Errors may be constructed anywhere.'));
   }
 }
 

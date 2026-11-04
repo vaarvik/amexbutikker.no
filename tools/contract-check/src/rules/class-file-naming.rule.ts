@@ -58,6 +58,7 @@ export class ClassFileNamingRule implements Rule {
       'paths',
       'reader',
       'writer',
+      'client',
     ],
     private readonly classlessKinds: readonly string[] = ['ports', 'model'],
     private readonly exemptFiles: ReadonlySet<string> = new Set([

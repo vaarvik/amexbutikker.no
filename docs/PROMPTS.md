@@ -165,6 +165,21 @@ Every importer is idempotent on sourceRef, writes an import_runs row with counts
 
 ---
 
+## Phase 5b: Naming audit
+
+```
+Audit every file and folder in packages/*, apps/api and tools/* against the naming standards in CLAUDE.md
+(File naming, Code names, Method verbs, folder layout). Start with apps/api/src/imports/importers/.
+1. List every deviation with path, rule and proposed name. Decide open questions once, for example:
+   importer folder = source id (`osm` vs `osm_overpass`), the prefix of importer-local ports/model files,
+   whether a file name may start with the mechanism (`default-…`, `http-…`) or must start with the domain noun.
+2. Write each decision into CLAUDE.md.
+3. Extend tools/contract-check so each decided rule fails the build, with pass/fail fixtures.
+4. Rename in one commit per rule; all checks green after each.
+```
+
+---
+
 ## Phase 6: Mobile app
 
 ```

@@ -44,6 +44,9 @@ export interface ChainWriter {
 
   /**
    * Inserts or updates a chain keyed by `brandWikidata`, or by name when that is null.
+   * Keyed by wikidata, a new name renames the chain. Keyed by name (matched as in findByName),
+   * an existing chain is `unchanged` and keeps its stored spelling, so a brand spelled two ways
+   * cannot rename the chain back and forth.
    *
    * @param newId used only when the chain does not exist yet.
    */
