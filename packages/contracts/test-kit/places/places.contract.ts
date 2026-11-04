@@ -74,6 +74,36 @@ export function describePlaceReaderContract(
         expect(hits[0]?.place.id).toBe(exact.id);
       });
 
+      it('requires every word of the query to match a word of the name', async () => {
+        const data = new TestData();
+        const both = data.physicalPlace({ name: 'Rema 1000 Grønland' });
+        await fixture.current.writer.create(both);
+        await fixture.current.writer.create(data.physicalPlace({ name: 'Kiwi Grønland' }));
+        await fixture.current.writer.create(data.physicalPlace({ name: 'Rema 1000 Storo' }));
+
+        const hits = await fixture.current.reader.search({ text: 'rema gronland', limit: 10 });
+
+        expect(hits.map((hit) => hit.place.id)).toEqual([both.id]);
+      });
+
+      it('tolerates a typo in a word', async () => {
+        const place = new TestData().physicalPlace({ name: 'Rema 1000 Grønland' });
+        await fixture.current.writer.create(place);
+
+        const hits = await fixture.current.reader.search({ text: 'rema gronlad', limit: 10 });
+
+        expect(hits.map((hit) => hit.place.id)).toEqual([place.id]);
+      });
+
+      it('matches a word inside a longer word', async () => {
+        const place = new TestData().physicalPlace({ name: 'Vinmonopolet Bislett' });
+        await fixture.current.writer.create(place);
+
+        const hits = await fixture.current.reader.search({ text: 'monopol', limit: 10 });
+
+        expect(hits.map((hit) => hit.place.id)).toEqual([place.id]);
+      });
+
       it('returns an empty list when nothing matches', async () => {
         await fixture.current.writer.create(new TestData().physicalPlace({ name: 'Bakeriet' }));
 

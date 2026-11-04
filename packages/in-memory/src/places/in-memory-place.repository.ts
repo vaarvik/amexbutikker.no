@@ -18,13 +18,14 @@ import type {
 import type { InMemoryTables } from '../shared/in-memory.ports.js';
 
 const EARTH_RADIUS_M = 6_371_008.8;
+const WORD = /[\p{L}\p{N}]+/gu;
 
 export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
   public constructor(
     private readonly tables: InMemoryTables,
     private readonly names: NameSimilarity,
     private readonly clock: Clock,
-    private readonly minimumSimilarity = 0.3,
+    private readonly minimumWordSimilarity = 0.5,
   ) {}
 
   public getById(id: PlaceId): Promise<Place> {
@@ -36,16 +37,17 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
 
   public search(query: PlaceSearchQuery): Promise<PlaceSearchHit[]> {
     const text = this.names.normalize(query.text);
+    const words = this.words(text);
     const hits: PlaceSearchHit[] = [];
     for (const place of this.tables.places.values()) {
       if (query.kind !== undefined && place.kind !== query.kind) {
         continue;
       }
       const name = this.names.normalize(place.name);
-      const score = this.names.similarity(text, name);
-      if (score < this.minimumSimilarity && !name.includes(text)) {
+      if (words.length === 0 || !words.every((word) => this.matchesWord(word, name))) {
         continue;
       }
+      const score = this.names.similarity(text, name);
       const distanceM =
         query.near !== undefined && place.kind === 'physical'
           ? this.distance(query.near, place.location)
@@ -59,6 +61,20 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
         a.place.name.localeCompare(b.place.name),
     );
     return Promise.resolve(hits.slice(0, query.limit));
+  }
+
+  /** A query word matches a name that contains it, or a name word with a close spelling. */
+  private matchesWord(word: string, name: string): boolean {
+    return (
+      name.includes(word) ||
+      this.words(name).some(
+        (candidate) => this.names.similarity(word, candidate) >= this.minimumWordSimilarity,
+      )
+    );
+  }
+
+  private words(text: string): string[] {
+    return Array.from(text.matchAll(WORD), ([word]) => word);
   }
 
   public nearby(query: NearbyQuery): Promise<NearbyPlaceHit[]> {

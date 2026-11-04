@@ -20,6 +20,9 @@ import { z } from 'zod';
 import type { Database } from '../shared/database.model.js';
 import type { DatabaseErrorTranslator } from '../shared/pg-database-error.translator.js';
 
+/** The words pg_trgm extracts trigrams from; words contain no LIKE wildcards. */
+const WORD = /[\p{L}\p{N}]+/gu;
+
 const PlaceRowSchema = z.object({
   id: z.string(),
   kind: z.enum(['physical', 'online']),
@@ -64,7 +67,17 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
 
   public async search(query: PlaceSearchQuery): Promise<PlaceSearchHit[]> {
     const text = this.names.normalize(query.text);
-    const pattern = `%${text.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+    const words = Array.from(text.matchAll(WORD), ([word]) => word);
+    if (words.length === 0) {
+      return [];
+    }
+    // Every word must match, so the GIN index intersects one small set per word instead of
+    // returning every name that shares a single word. Short words have no usable LIKE trigrams.
+    const matches = words.map((word) =>
+      word.length < 3
+        ? sql`${word} <% p.normalized_name`
+        : sql`(${word} <% p.normalized_name OR p.normalized_name LIKE ${`%${word}%`})`,
+    );
     const distance =
       query.near === undefined
         ? sql`NULL::double precision`
@@ -74,7 +87,7 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
         similarity(p.normalized_name, ${text}) AS score,
         ${distance} AS distance_m
       FROM places p
-      WHERE (p.normalized_name % ${text} OR p.normalized_name LIKE ${pattern})
+      WHERE ${sql.join(matches, sql` AND `)}
         AND (${query.kind ?? null}::text IS NULL OR p.kind = ${query.kind ?? null})
       ORDER BY score DESC, distance_m ASC NULLS LAST, p.name ASC
       LIMIT ${query.limit}
