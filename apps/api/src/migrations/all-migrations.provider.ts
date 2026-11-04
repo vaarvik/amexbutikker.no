@@ -4,6 +4,7 @@ import { M0002ChainsAndPlacesMigration } from './m0002-chains-and-places.migrati
 import { M0003EvidenceMigration } from './m0003-evidence.migration.js';
 import { M0004StatusImportsDevicesMigration } from './m0004-status-imports-devices.migration.js';
 import { M0005ApplicationRoleMigration } from './m0005-application-role.migration.js';
+import { M0006PlacesNormalizedNameMigration } from './m0006-places-normalized-name.migration.js';
 
 /**
  * Every migration, keyed so that string order is execution order. Add new ones at the end.
@@ -18,6 +19,7 @@ export class AllMigrationsProvider implements MigrationProvider {
       '0003_evidence': new M0003EvidenceMigration(),
       '0004_status_imports_devices': new M0004StatusImportsDevicesMigration(),
       '0005_application_role': new M0005ApplicationRoleMigration(),
+      '0006_places_normalized_name': new M0006PlacesNormalizedNameMigration(),
     };
     return Promise.resolve(
       Object.fromEntries(

@@ -1,8 +1,17 @@
 import { defineConfig } from 'vitest/config';
 
 const sourceCondition = '@amexbutikker/source';
-// `pnpm test:unit` sets TEST_SCOPE=unit to skip the Docker-backed integration tests.
-const integrationExclude = process.env.TEST_SCOPE === 'unit' ? ['**/*.integration.test.ts'] : [];
+// TEST_SCOPE=unit (`pnpm test:unit`) skips the Docker-backed integration tests.
+// TEST_SCOPE=perf (`pnpm test:perf`) runs only the performance checks, which are otherwise skipped.
+const scope = process.env.TEST_SCOPE;
+const include =
+  scope === 'perf' ? ['test/**/*.perf.test.ts'] : ['{src,test,test-kit}/**/*.test.ts'];
+const scopeExclude =
+  scope === 'perf'
+    ? []
+    : scope === 'unit'
+      ? ['**/*.integration.test.ts', '**/*.perf.test.ts']
+      : ['**/*.perf.test.ts'];
 
 export default defineConfig({
   resolve: { conditions: [sourceCondition, 'module', 'node', 'development|production'] },
@@ -50,8 +59,8 @@ export default defineConfig({
       test: {
         name: root.split('/').at(-1) ?? root,
         root,
-        include: ['{src,test,test-kit}/**/*.test.ts'],
-        exclude: ['**/node_modules/**', '**/dist/**', 'test/fixtures/**', ...integrationExclude],
+        include,
+        exclude: ['**/node_modules/**', '**/dist/**', 'test/fixtures/**', ...scopeExclude],
       },
     })),
   },

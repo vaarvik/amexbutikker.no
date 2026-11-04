@@ -1,4 +1,4 @@
-import type { ColumnType } from 'kysely';
+import type { ColumnType, Generated } from 'kysely';
 
 // Table shapes as Postgres returns them. Queries are written in SQL; every row is validated with
 // zod before it becomes a domain object, so these types only document the schema for Kysely.
@@ -26,6 +26,8 @@ export interface PlacesTable {
   website: string | null;
   osm_ref: string | null;
   brreg_orgnr: string | null;
+  /** Generated: f_normalize_name(name). Never written. */
+  normalized_name: Generated<string>;
   created_at: Timestamp;
 }
 

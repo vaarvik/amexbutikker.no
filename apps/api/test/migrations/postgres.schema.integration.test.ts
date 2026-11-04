@@ -63,12 +63,18 @@ describe('Postgres schema', () => {
     expect(rows.map((row) => row.privilege_type)).toEqual(['INSERT', 'SELECT']);
   });
 
-  it('indexes name search through the immutable normalisation function', async () => {
+  it('stores the normalised name and indexes it for trigram search', async () => {
     const { rows } = await sql<{ indexdef: string }>`
-      SELECT indexdef FROM pg_indexes WHERE indexname = 'places_name_trgm_idx'
+      SELECT indexdef FROM pg_indexes WHERE indexname = 'places_normalized_name_trgm_idx'
     `.execute(database.db);
+    expect(rows[0]?.indexdef).toContain('normalized_name gin_trgm_ops');
 
-    expect(rows[0]?.indexdef).toContain('f_normalize_name(name) gin_trgm_ops');
+    const place = new TestData().physicalPlace({ name: 'Kafé Åsen  Bakeri' });
+    await new PgPlaceRepository(database.db, new TrigramNameSimilarity(), errors).create(place);
+    const stored = await sql<{ normalized_name: string }>`
+      SELECT normalized_name FROM places WHERE id = ${place.id}
+    `.execute(database.db);
+    expect(stored.rows[0]?.normalized_name).toBe(new TrigramNameSimilarity().normalize(place.name));
   });
 
   it('normalises names the same way as the domain', async () => {

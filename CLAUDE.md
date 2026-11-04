@@ -172,6 +172,8 @@ Use these words, with these meanings, in code, docs and conversation. UI copy us
   - `*.test.ts`: unit, no I/O.
   - `*.integration.test.ts`: needs Docker (Testcontainers).
   - `*.api.test.ts`: HTTP through Fastify `inject`.
+  - `*.perf.test.ts`: latency budget (p95 < 100 ms) and query plans on seeded data. Only `pnpm test:perf` runs them; CI runs them in a separate `perf` job.
+- **Perf on Apple silicon:** the PostGIS image is amd64 only and runs emulated, about 30× slower. Locally the perf tests check query plans and skip the latency budget; CI enforces it on native Postgres.
 - **Contract suites:** each port's suite lives in `packages/contracts/test-kit/<feature>/<feature>.contract.ts`. It runs against every implementation: in-memory in `packages/in-memory/test/<feature>/`, Postgres in `apps/api/test/shared/postgres.contracts.integration.test.ts`, which uses one container for all Pg suites.
 - **When to write tests:**
   - Test-first (TDD) for domain services and use cases.
@@ -256,6 +258,7 @@ pnpm format                  # Prettier write; `pnpm format:check` in CI
 pnpm test                    # Vitest, all projects; needs Docker (Testcontainers). `pnpm test --project domain` for one
 pnpm test:unit               # everything except *.integration.test.ts; no Docker needed
 pnpm test:coverage           # all tests plus coverage floors (what CI runs)
+pnpm test:perf               # *.perf.test.ts: 50k seeded places, p95 budget and query plans; needs Docker
 pnpm contract-check          # architecture rules (a)-(f) from tools/contract-check
 pnpm db:up                   # Postgres 16 + PostGIS/pg_trgm/unaccent via Docker Compose
 pnpm db:down                 # stop it (data persists in the db-data volume)

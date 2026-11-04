@@ -21,3 +21,16 @@ jobs:
       - run: pnpm format:check
       - run: pnpm test:coverage
       - run: pnpm contract-check
+
+  perf:
+    # Native amd64 Postgres, so the p95 budget in *.perf.test.ts is enforced here.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:perf

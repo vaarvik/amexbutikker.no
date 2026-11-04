@@ -71,10 +71,10 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
         : sql`CASE WHEN p.geom IS NULL THEN NULL ELSE ST_Distance(p.geom, ${this.point(query.near)}) END`;
     const { rows } = await sql`
       SELECT ${PLACE_COLUMNS},
-        similarity(f_normalize_name(p.name), ${text}) AS score,
+        similarity(p.normalized_name, ${text}) AS score,
         ${distance} AS distance_m
       FROM places p
-      WHERE (f_normalize_name(p.name) % ${text} OR f_normalize_name(p.name) LIKE ${pattern})
+      WHERE (p.normalized_name % ${text} OR p.normalized_name LIKE ${pattern})
         AND (${query.kind ?? null}::text IS NULL OR p.kind = ${query.kind ?? null})
       ORDER BY score DESC, distance_m ASC NULLS LAST, p.name ASC
       LIMIT ${query.limit}

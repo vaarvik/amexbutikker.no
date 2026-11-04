@@ -21,6 +21,13 @@ export class PostgresTestDatabase {
     return this.kysely;
   }
 
+  public get connectionUri(): string {
+    if (this.container === undefined) {
+      throw new Error('PostgresTestDatabase used before start().');
+    }
+    return this.container.getConnectionUri();
+  }
+
   public migrator(): Migrator {
     return new Migrator({ db: this.db, provider: new AllMigrationsProvider() });
   }
