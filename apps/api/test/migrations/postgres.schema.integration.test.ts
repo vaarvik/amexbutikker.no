@@ -77,6 +77,20 @@ describe('Postgres schema', () => {
     expect(stored.rows[0]?.normalized_name).toBe(new TrigramNameSimilarity().normalize(place.name));
   });
 
+  it('costs the trigram match operators so the planner prefers the index', async () => {
+    const { rows } = await sql<{ proname: string; procost: number }>`
+      SELECT proname, procost FROM pg_proc
+      WHERE proname IN ('similarity_op', 'word_similarity_op', 'word_similarity_commutator_op')
+      ORDER BY proname
+    `.execute(database.db);
+
+    expect(rows.map((row) => [row.proname, row.procost])).toEqual([
+      ['similarity_op', 500],
+      ['word_similarity_commutator_op', 500],
+      ['word_similarity_op', 500],
+    ]);
+  });
+
   it('normalises names the same way as the domain', async () => {
     const names = new TrigramNameSimilarity();
     const inputs = [

@@ -71,13 +71,9 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
     if (words.length === 0) {
       return [];
     }
-    // Every word must match, so the GIN index intersects one small set per word instead of
-    // returning every name that shares a single word. Short words have no usable LIKE trigrams.
-    const matches = words.map((word) =>
-      word.length < 3
-        ? sql`${word} <% p.normalized_name`
-        : sql`(${word} <% p.normalized_name OR p.normalized_name LIKE ${`%${word}%`})`,
-    );
+    // Every word must match a word of the name, so the GIN index intersects one small set per
+    // word instead of returning every name that shares a single word.
+    const matches = words.map((word) => sql`${word} <% p.normalized_name`);
     const distance =
       query.near === undefined
         ? sql`NULL::double precision`

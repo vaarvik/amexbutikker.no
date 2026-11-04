@@ -27,7 +27,6 @@ const BRANDS = [
   '7-Eleven',
   'Deli de Luca',
   'Peppes Pizza',
-  'Burger King',
   'Vinmonopolet',
   'Apotek 1',
   'Clas Ohlson',
@@ -37,13 +36,41 @@ const BRANDS = [
   'Espresso House',
   'Kaffebrenneriet',
   'Baker Hansen',
-  'Kafé',
-  'Restaurant',
-  'Bar',
-  'Sushi',
-  'Thai',
-  'Kebab',
-  'Blomster',
+  'Burger King',
+];
+// Independent places get an invented name, a fifth of them behind a generic word.
+const GENERIC = ['Kafé', 'Restaurant', 'Bar', 'Sushi', 'Thai', 'Kebab', 'Blomster', 'Bakeri'];
+const SYLLABLES = [
+  'bo',
+  'ra',
+  'ki',
+  'len',
+  'sta',
+  'mar',
+  'vik',
+  'dal',
+  'ny',
+  'tor',
+  'ber',
+  'hus',
+  'lund',
+  'sol',
+  'fjell',
+  'ha',
+  'ga',
+  'li',
+  'an',
+  'sen',
+  'mo',
+  'ru',
+  'el',
+  'in',
+  'ost',
+  'kro',
+  'fis',
+  'lin',
+  've',
+  'ta',
 ];
 const AREAS = [
   'Grønland',
@@ -76,6 +103,8 @@ const QUERIES = [
   'sushi',
   'grunerlokka',
   'kiwi 12',
+  'kiwi',
+  'vinmonpolet',
 ];
 
 const database = new PostgresTestDatabase();
@@ -91,14 +120,32 @@ beforeAll(async () => {
       INSERT INTO places (id, kind, name, category, street, postcode, city, geom, osm_ref, created_at)
       SELECT
         gen_random_uuid(), 'physical',
-        (${BRANDS}::text[])[1 + floor(random() * ${BRANDS.length})::int] || ' ' ||
-          (${AREAS}::text[])[1 + floor(random() * ${AREAS.length})::int] ||
-          CASE WHEN random() < 0.5 THEN ' ' || (1 + floor(random() * 40))::int ELSE '' END,
+        CASE WHEN pick.chain THEN
+          (${BRANDS}::text[])[1 + floor(random() * ${BRANDS.length})::int] || ' ' ||
+            (${AREAS}::text[])[1 + floor(random() * ${AREAS.length})::int] ||
+            CASE WHEN random() < 0.5 THEN ' ' || (1 + floor(random() * 40))::int ELSE '' END
+        ELSE
+          CASE WHEN random() < 0.2
+            THEN (${GENERIC}::text[])[1 + floor(random() * ${GENERIC.length})::int] || ' '
+            ELSE '' END ||
+            initcap(
+              (${SYLLABLES}::text[])[1 + floor(random() * ${SYLLABLES.length})::int] ||
+              (${SYLLABLES}::text[])[1 + floor(random() * ${SYLLABLES.length})::int] ||
+              CASE WHEN random() < 0.5
+                THEN (${SYLLABLES}::text[])[1 + floor(random() * ${SYLLABLES.length})::int]
+                ELSE '' END
+            ) ||
+            CASE WHEN random() < 0.3
+              THEN ' ' || (${AREAS}::text[])[1 + floor(random() * ${AREAS.length})::int]
+              ELSE '' END
+        END,
         (ARRAY['restaurant','cafe','bar','pub','fast_food','shop','hotel'])[1 + floor(random() * 7)::int],
         'Testgata ' || n, lpad((150 + floor(random() * 1200))::int::text, 4, '0'), 'Oslo',
         ST_SetSRID(ST_MakePoint(10.60 + random() * 0.35, 59.85 + random() * 0.15), 4326)::geography,
         'node/' || (90000000000 + n), now()
-      FROM generate_series(1, ${PLACE_COUNT}) AS n
+      FROM generate_series(1, ${PLACE_COUNT}) AS n,
+        -- About 30 % chain stores, roughly 600 per brand: about Rema 1000's count for all Norway.
+        LATERAL (SELECT random() < 0.3 + 0 * n AS chain) AS pick
     `.execute(connection);
     // One distinctive name, so the plan check below has a selective query to look at.
     await sql`
@@ -219,17 +266,15 @@ describe(`places read paths with ${String(PLACE_COUNT)} places`, () => {
     }, 120_000);
   }
 
-  // Broad queries ("kafe") match a few percent of these repetitive names, where a sequential
-  // scan is the planner's fair choice. A selective name must go through the trigram index.
-  it('searches a selective name through the trigram index, not a sequential scan', async () => {
-    const plan = await planOf((places) =>
-      places.search({ text: 'fjellstua holmenkollen', near: point(1), limit: 20 }),
-    );
-    console.log(`EXPLAIN ANALYZE search:\n${plan}`);
+  for (const text of [...QUERIES, 'fjellstua holmenkollen']) {
+    it(`searches "${text}" through the trigram index, not a sequential scan`, async () => {
+      const plan = await planOf((places) => places.search({ text, near: point(1), limit: 20 }));
+      console.log(`EXPLAIN ANALYZE search "${text}":\n${plan}`);
 
-    expect(plan).toMatch(/Bitmap Index Scan on places_normalized_name_trgm_idx/);
-    expect(plan).not.toMatch(/Seq Scan on places/);
-  });
+      expect(plan).toMatch(/Bitmap Index Scan on places_normalized_name_trgm_idx/);
+      expect(plan).not.toMatch(/Seq Scan on places/);
+    });
+  }
 
   it('finds nearby places through the spatial index, not a sequential scan', async () => {
     const plan = await planOf((places) =>
