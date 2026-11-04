@@ -32,6 +32,9 @@ if (command !== 'import' || !parsedSource.success || unknownFlags.length > 0) {
     if (report.status === 'failed') {
       process.exitCode = 1;
     }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
   } finally {
     await root.close();
   }

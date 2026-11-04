@@ -1,4 +1,5 @@
-import type { ImportRunReport, ImportSource } from './imports.model.js';
+import type { ImportRunReport, ImportSource, UnmatchedDescriptor } from './imports.model.js';
+import type { UpsertOutcome } from '../places/places.ports.js';
 import type { ImportRunId } from '../shared/shared.model.js';
 
 /** Records import runs in `import_runs`. */
@@ -44,4 +45,21 @@ export interface SourceImporter {
    * @throws only for programming errors and aborts (the signal's reason).
    */
   run(context: ImportContext): Promise<ImportRunReport>;
+}
+
+/** The review queue of statement descriptors that matched no place. */
+export interface UnmatchedDescriptorWriter {
+  /**
+   * Records that a descriptor was seen on a day. The descriptor is normalised as documented on
+   * UnmatchedDescriptor; the day is the UTC date of `seenOn`.
+   *
+   * @returns `created` for a new descriptor, `updated` when the day widens its seen range,
+   *   `unchanged` otherwise, so importing the same statement twice changes nothing.
+   */
+  record(descriptor: string, seenOn: Date): Promise<UpsertOutcome>;
+}
+
+export interface UnmatchedDescriptorReader {
+  /** All descriptors awaiting review, most recently seen first, then by descriptor. */
+  list(): Promise<UnmatchedDescriptor[]>;
 }

@@ -50,7 +50,8 @@ export class PostgresTestDatabase {
   /** Empties every table. TRUNCATE skips the row-level append-only trigger on evidence. */
   public async reset(): Promise<void> {
     await sql`
-      TRUNCATE chains, places, evidence, place_status, chain_hints, import_runs, devices RESTART IDENTITY CASCADE
+      TRUNCATE chains, places, evidence, place_status, chain_hints, import_runs, devices,
+        unmatched_descriptors RESTART IDENTITY CASCADE
     `.execute(this.db);
   }
 

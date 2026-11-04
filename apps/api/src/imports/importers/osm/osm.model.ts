@@ -1,3 +1,4 @@
+import type { Address, GeoPoint } from '@amexbutikker/contracts';
 import { z } from 'zod';
 
 /** One element of an Overpass `out center tags` response. Ways and relations carry `center`. */
@@ -35,3 +36,16 @@ export const OSLO_AREA_ID = 3_600_406_091;
 
 /** `amenity` values imported as their own category. */
 export const OSM_AMENITY_CATEGORIES = ['restaurant', 'cafe', 'bar', 'pub', 'fast_food'] as const;
+
+/** An OSM address point (usually from the Kartverket import): where an address is. */
+export interface OsmAddressPoint {
+  readonly location: GeoPoint;
+  readonly address: Address;
+}
+
+/** Address points bucketed by grid cell, for nearest-point lookups. Plain data. */
+export interface OsmAddressIndex {
+  /** Cell edge in degrees latitude; longitude cells are twice as wide, about square in Oslo. */
+  readonly cellDegrees: number;
+  readonly cells: ReadonlyMap<string, readonly OsmAddressPoint[]>;
+}

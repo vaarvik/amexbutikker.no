@@ -8,3 +8,4 @@ export * from './shared/in-memory.ports.js';
 export * from './shared/in-memory.rate-limiter.js';
 export * from './shared/in-memory.unit-of-work.js';
 export * from './status/in-memory-place-status.repository.js';
+export * from './imports/in-memory-unmatched-descriptor.repository.js';

@@ -9,6 +9,7 @@ import {
   describePlaceStatusContract,
   describePlaceWriterContract,
   describeUnitOfWorkContract,
+  describeUnmatchedDescriptorContract,
 } from '@amexbutikker/contracts/test-kit';
 import { TrigramNameSimilarity } from '@amexbutikker/domain';
 import type { Kysely } from 'kysely';
@@ -17,6 +18,7 @@ import { PgChainRepository } from '../../src/chains/pg-chain.repository.js';
 import { PgDeviceRepository } from '../../src/devices/pg-device.repository.js';
 import { PgEvidenceRepository } from '../../src/evidence/pg-evidence.repository.js';
 import { PgImportRunRepository } from '../../src/imports/pg-import-run.repository.js';
+import { PgUnmatchedDescriptorRepository } from '../../src/imports/pg-unmatched-descriptor.repository.js';
 import { PgPlaceRepository } from '../../src/places/pg-place.repository.js';
 import type { Database } from '../../src/shared/database.model.js';
 import { PgDatabaseErrorTranslator } from '../../src/shared/pg-database-error.translator.js';
@@ -78,6 +80,12 @@ describePlaceStatusContract('PgPlaceStatusRepository', async () => {
 describeImportRunWriterContract('PgImportRunRepository', async () => {
   await database.reset();
   return { writer: new PgImportRunRepository(database.db, errors) };
+});
+
+describeUnmatchedDescriptorContract('PgUnmatchedDescriptorRepository', async () => {
+  await database.reset();
+  const repository = new PgUnmatchedDescriptorRepository(database.db);
+  return { writer: repository, reader: repository };
 });
 
 describeUnitOfWorkContract('PgUnitOfWork', async () => {

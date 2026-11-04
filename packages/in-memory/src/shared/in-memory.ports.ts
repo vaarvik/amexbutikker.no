@@ -12,6 +12,7 @@ import type {
   PlaceId,
   PlaceStatusSnapshot,
   TransactionalPorts,
+  UnmatchedDescriptor,
   UserId,
 } from '@amexbutikker/contracts';
 
@@ -35,6 +36,8 @@ export interface InMemoryTables {
   readonly statuses: Map<PlaceId, PlaceStatusSnapshot>;
   readonly importRuns: Map<ImportRunId, InMemoryImportRun>;
   readonly devices: Map<UserId, Device>;
+  /** Keyed by the normalised descriptor. */
+  readonly unmatchedDescriptors: Map<string, UnmatchedDescriptor>;
 }
 
 /** Creates empty tables. */

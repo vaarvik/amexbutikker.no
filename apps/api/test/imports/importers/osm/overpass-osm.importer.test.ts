@@ -21,6 +21,7 @@ import type {
   OverpassResponse,
 } from '../../../../src/imports/importers/osm/osm.ports.js';
 import { TransactionalImportUnitOfWork } from '../../../../src/imports/transactional-import.unit-of-work.js';
+import { GridOsmAddressLocator } from '../../../../src/imports/importers/osm/grid-osm-address.locator.js';
 import { OverpassOsmImporter } from '../../../../src/imports/importers/osm/overpass-osm.importer.js';
 import { UuidV7IdGenerator } from '../../../../src/shared/uuid-v7-id.generator.js';
 
@@ -31,11 +32,15 @@ const names = new TrigramNameSimilarity();
 class StubOverpassClient implements OverpassClient {
   public queries: string[] = [];
 
-  public constructor(public body: unknown) {}
+  public constructor(
+    public body: unknown,
+    public addressBody: unknown = { elements: [] },
+  ) {}
 
   public fetch(query: string): Promise<OverpassResponse> {
     this.queries.push(query);
-    return Promise.resolve({ body: this.body, fetchedAt });
+    const body = query.includes('addr:housenumber') ? this.addressBody : this.body;
+    return Promise.resolve({ body, fetchedAt });
   }
 }
 
@@ -110,21 +115,23 @@ describe('OverpassOsmImporter', () => {
     importer = new OverpassOsmImporter(
       client,
       new DefaultOsmElementTranslator(),
+      new GridOsmAddressLocator(0.0005),
       new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
       new UuidV7IdGenerator(clock),
       clock,
-      { areaId: 3_600_406_091, timeoutSeconds: 180, maxMessages: 10 },
+      { areaId: 3_600_406_091, timeoutSeconds: 180, maxMessages: 10, addressMaxDistanceM: 25 },
     );
   });
 
   it('queries the configured area for the imported categories', async () => {
     await importer.run(context());
 
-    expect(client.queries).toHaveLength(1);
+    expect(client.queries).toHaveLength(2);
     expect(client.queries[0]).toContain('area(id:3600406091)');
     expect(client.queries[0]).toContain('[timeout:180]');
     expect(client.queries[0]).toContain('nwr["shop"]["name"](area.a);');
     expect(client.queries[0]).toContain('out center tags;');
+    expect(client.queries[1]).toContain('nwr["addr:street"]["addr:housenumber"](area.a);');
   });
 
   it('creates places and one chain per brand, and reports what it did', async () => {
@@ -163,6 +170,56 @@ describe('OverpassOsmImporter', () => {
     expect(
       places.filter((place) => place.kind === 'physical' && place.chainId === chain?.id),
     ).toHaveLength(2);
+  });
+
+  it('gives a place without an address the nearest address point, and keeps its own address otherwise', async () => {
+    client.addressBody = {
+      elements: [
+        {
+          type: 'node',
+          id: 100,
+          lat: 59.93005,
+          lon: 10.77,
+          tags: { 'addr:street': 'Torggata', 'addr:housenumber': '5', 'addr:postcode': '0181' },
+        },
+        {
+          type: 'way',
+          id: 101,
+          center: { lat: 59.9101, lon: 10.75 },
+          tags: { 'addr:street': 'Grønlandsleiret', 'addr:housenumber': '9' },
+        },
+        { type: 'node', id: 102 },
+      ],
+    };
+
+    const report = await importer.run(context());
+
+    expect(report.metrics).toMatchObject({ addressPoints: 2, addressesFromNearbyPoint: 2 });
+    const byRef = new Map(
+      [...tables.places.values()].flatMap((place) =>
+        place.kind === 'physical' ? [[place.osmRef, place]] : [],
+      ),
+    );
+    expect(byRef.get('node/3')?.address).toEqual({
+      street: 'Torggata 5',
+      postcode: '0181',
+      city: null,
+    });
+    expect(byRef.get('node/1')?.address).toEqual({
+      street: 'Grønlandsleiret 9',
+      postcode: null,
+      city: null,
+    });
+    expect(byRef.get('way/2')?.address.street).toBeNull();
+  });
+
+  it('fails when the address query fails', async () => {
+    client.addressBody = { remark: 'runtime error: out of memory' };
+
+    await expect(importer.run(context())).resolves.toMatchObject({
+      status: 'failed',
+      messages: [expect.stringMatching(/^The Overpass response is not valid/)],
+    });
   });
 
   it('is idempotent: a second run over the same data changes nothing', async () => {
@@ -219,10 +276,11 @@ describe('OverpassOsmImporter', () => {
     const failing = new OverpassOsmImporter(
       new FailingOverpassClient(),
       new DefaultOsmElementTranslator(),
+      new GridOsmAddressLocator(0.0005),
       new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
       new UuidV7IdGenerator(clock),
       clock,
-      { areaId: 1, timeoutSeconds: 1, maxMessages: 10 },
+      { areaId: 1, timeoutSeconds: 1, maxMessages: 10, addressMaxDistanceM: 25 },
     );
 
     await expect(failing.run(context())).resolves.toMatchObject({
@@ -238,7 +296,7 @@ describe('OverpassOsmImporter', () => {
 
     await expect(importer.run(context())).resolves.toMatchObject({
       status: 'failed',
-      fetchedAt,
+      fetchedAt: null,
       messages: [expect.stringMatching(/^The Overpass response is not valid/)],
     });
   });

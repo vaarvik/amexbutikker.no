@@ -93,6 +93,15 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
     return Promise.resolve(hits.slice(0, query.limit));
   }
 
+  public listByPostcode(postcode: string): Promise<PhysicalPlace[]> {
+    return Promise.resolve(
+      [...this.tables.places.values()].filter(
+        (place): place is PhysicalPlace =>
+          place.kind === 'physical' && place.address.postcode === postcode,
+      ),
+    );
+  }
+
   public listByChain(chainId: ChainId): Promise<PhysicalPlace[]> {
     return Promise.resolve(
       [...this.tables.places.values()].filter(

@@ -81,6 +81,12 @@ export interface DevicesTable {
   created_at: Timestamp;
 }
 
+export interface UnmatchedDescriptorsTable {
+  descriptor: string;
+  first_seen_on: string;
+  last_seen_on: string;
+}
+
 export interface Database {
   chains: ChainsTable;
   places: PlacesTable;
@@ -89,4 +95,5 @@ export interface Database {
   chain_hints: ChainHintsTable;
   import_runs: ImportRunsTable;
   devices: DevicesTable;
+  unmatched_descriptors: UnmatchedDescriptorsTable;
 }

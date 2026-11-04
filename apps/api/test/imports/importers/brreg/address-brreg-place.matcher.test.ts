@@ -1,0 +1,77 @@
+import { TestData } from '@amexbutikker/contracts/test-kit';
+import type { PhysicalPlace } from '@amexbutikker/contracts';
+import { TrigramNameSimilarity } from '@amexbutikker/domain';
+import { describe, expect, it } from 'vitest';
+import { AddressBrregPlaceMatcher } from '../../../../src/imports/importers/brreg/address-brreg-place.matcher.js';
+import type { BrregUnderenhet } from '../../../../src/imports/importers/brreg/brreg.model.js';
+
+const matcher = new AddressBrregPlaceMatcher(new TrigramNameSimilarity(), {
+  minimumScore: 0.3,
+  minimumLead: 0.05,
+});
+const data = new TestData();
+
+function unit(overrides: Partial<BrregUnderenhet> = {}): BrregUnderenhet {
+  return {
+    orgnr: '912345678',
+    name: 'REMA 1000 GRØNLAND AS',
+    naceCode: '47.111',
+    street: 'Grønlandsleiret 9',
+    postcode: '0190',
+    kommunenummer: '0301',
+    closedOn: null,
+    ...overrides,
+  };
+}
+
+function place(name: string, street: string | null = 'Grønlandsleiret 9'): PhysicalPlace {
+  return data.physicalPlace({ name, address: { street, postcode: '0190', city: 'Oslo' } });
+}
+
+describe('AddressBrregPlaceMatcher', () => {
+  it('matches the place at the same address with a similar name, ignoring legal suffixes', () => {
+    const rema = place('Rema 1000 Grønland');
+
+    expect(matcher.match(unit(), [place('Kiwi', 'Tøyengata 2'), rema])).toMatchObject({
+      kind: 'matched',
+      place: rema,
+    });
+  });
+
+  it('compares addresses ignoring case, accents and the space before a house letter', () => {
+    const kafe = place('Kafé Åsen', 'Grønlandsleiret 9 B');
+
+    expect(
+      matcher.match(unit({ name: 'KAFE ASEN AS', street: 'GRØNLANDSLEIRET 9B' }), [kafe]),
+    ).toMatchObject({ kind: 'matched', place: kafe });
+  });
+
+  it('picks the closest name when several places share the address', () => {
+    const rema = place('Rema 1000 Grønland');
+
+    expect(
+      matcher.match(unit(), [place('Grønland Apotek'), rema, place('Narvesen')]),
+    ).toMatchObject({
+      kind: 'matched',
+      place: rema,
+    });
+  });
+
+  it.each([
+    [unit({ street: null }), [place('Rema 1000 Grønland')], 'has no street address'],
+    [unit(), [place('Rema 1000 Grønland', 'Tøyengata 2')], 'no place at Grønlandsleiret 9, 0190'],
+    [unit(), [place('Rema 1000 Grønland', null)], 'no place at Grønlandsleiret 9, 0190'],
+    [
+      unit({ name: 'NORDIC HOLDING AS' }),
+      [place('Rema 1000 Grønland')],
+      'no place at Grønlandsleiret 9, 0190 is named like "NORDIC HOLDING AS"',
+    ],
+    [
+      unit({ name: 'REMA 1000 AS' }),
+      [place('Rema 1000'), place('Rema 1000')],
+      '2 places at Grønlandsleiret 9, 0190 are named like "REMA 1000 AS"',
+    ],
+  ])('does not match %#', (input, candidates, reason) => {
+    expect(matcher.match(input, candidates)).toEqual({ kind: 'unmatched', reason });
+  });
+});

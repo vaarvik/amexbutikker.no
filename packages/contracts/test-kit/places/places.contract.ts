@@ -197,6 +197,29 @@ export function describePlaceReaderContract(
       });
     });
 
+    describe('listByPostcode', () => {
+      it('returns the physical places with that postcode', async () => {
+        const data = new TestData();
+        const address = { street: 'Torggata 1', postcode: '0181', city: 'Oslo' };
+        const first = data.physicalPlace({ address });
+        const second = data.physicalPlace({ address: { ...address, street: 'Torggata 2' } });
+        await fixture.current.writer.create(first);
+        await fixture.current.writer.create(second);
+        await fixture.current.writer.create(
+          data.physicalPlace({ address: { ...address, postcode: '0182' } }),
+        );
+        await fixture.current.writer.create(data.onlinePlace());
+
+        const places = await fixture.current.reader.listByPostcode('0181');
+
+        expect(places.map((place) => place.id).sort()).toEqual([first.id, second.id].sort());
+      });
+
+      it('returns an empty list when no place has the postcode', async () => {
+        await expect(fixture.current.reader.listByPostcode('9999')).resolves.toEqual([]);
+      });
+    });
+
     describe('nearby', () => {
       it('returns physical places within the radius, nearest first', async () => {
         const data = new TestData();

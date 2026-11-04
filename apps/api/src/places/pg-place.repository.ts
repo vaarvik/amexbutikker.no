@@ -112,6 +112,13 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
     }));
   }
 
+  public async listByPostcode(postcode: string): Promise<PhysicalPlace[]> {
+    const { rows } = await sql`
+      SELECT ${PLACE_COLUMNS} FROM places p WHERE p.postcode = ${postcode} AND p.kind = 'physical'
+    `.execute(this.db);
+    return rows.map((row) => this.toPhysical(row));
+  }
+
   public async listByChain(chainId: ChainId): Promise<PhysicalPlace[]> {
     const { rows } = await sql`
       SELECT ${PLACE_COLUMNS} FROM places p WHERE p.chain_id = ${chainId} AND p.kind = 'physical'

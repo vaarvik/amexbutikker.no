@@ -10,13 +10,14 @@ import type {
   TransactionalPorts,
   UpsertOutcome,
 } from '@amexbutikker/contracts';
+import type { OsmAddressIndex, OsmAddressPoint } from './osm.model.js';
 import {
   OverpassElementSchema,
   OverpassEnvelopeSchema,
   OSM_AMENITY_CATEGORIES,
 } from './osm.model.js';
 import type { ImportUnitOfWork } from '../../imports.ports.js';
-import type { OsmElementTranslator, OverpassClient } from './osm.ports.js';
+import type { OsmAddressLocator, OsmElementTranslator, OverpassClient } from './osm.ports.js';
 
 export interface OverpassOsmImporterConfig {
   /** Overpass area id: an OSM relation id plus 3 600 000 000. */
@@ -25,6 +26,8 @@ export interface OverpassOsmImporterConfig {
   readonly timeoutSeconds: number;
   /** Messages kept in the report; the rest are counted. */
   readonly maxMessages: number;
+  /** A place without its own address takes the nearest address point within this distance. */
+  readonly addressMaxDistanceM: number;
 }
 
 type Tally = { -readonly [K in keyof ImportCounts]: ImportCounts[K] };
@@ -33,6 +36,9 @@ type ChainTally = Record<UpsertOutcome, number>;
 /**
  * Imports named places in one OSM area from Overpass: the amenities in OSM_AMENITY_CATEGORIES,
  * every shop and tourism=hotel. A brand (brand:wikidata, else brand) becomes a chain.
+ * Most places in Norway carry no address of their own (addresses are separate points from the
+ * Kartverket import), so a second query loads the address points, and a place without an
+ * address takes the nearest one within `addressMaxDistanceM`.
  * The whole run is one unit of work: it lands completely or not at all.
  */
 export class OverpassOsmImporter implements SourceImporter {
@@ -41,6 +47,7 @@ export class OverpassOsmImporter implements SourceImporter {
   public constructor(
     private readonly client: OverpassClient,
     private readonly translator: OsmElementTranslator,
+    private readonly addresses: OsmAddressLocator,
     private readonly unitOfWork: ImportUnitOfWork,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
@@ -61,6 +68,7 @@ export class OverpassOsmImporter implements SourceImporter {
       evidenceAppended: 0,
     };
     const chains: ChainTally = { created: 0, updated: 0, unchanged: 0 };
+    const enriched = { addressPoints: 0, addressesFromNearbyPoint: 0 };
     const report = (status: ImportRunReport['status']): ImportRunReport => ({
       runId: context.runId,
       source: this.source,
@@ -74,26 +82,35 @@ export class OverpassOsmImporter implements SourceImporter {
         chainsCreated: chains.created,
         chainsUpdated: chains.updated,
         chainsUnchanged: chains.unchanged,
+        ...enriched,
       },
       messages: this.capped(messages),
     });
 
     try {
-      const response = await this.client.fetch(this.query(), context.signal);
-      fetchedAt = response.fetchedAt;
-      const envelope = OverpassEnvelopeSchema.safeParse(response.body);
-      if (!envelope.success) {
-        messages.push(`The Overpass response is not valid: ${envelope.error.message}`);
+      const places = await this.fetch(this.placeQuery(), context, messages);
+      if (places === null) {
         return report('failed');
       }
-      if (envelope.data.remark !== undefined) {
-        // Overpass reports timeouts and memory exhaustion here, with a truncated result.
-        messages.push(`Overpass: ${envelope.data.remark}`);
+      fetchedAt = places.fetchedAt;
+      const addressElements = await this.fetch(this.addressQuery(), context, messages);
+      if (addressElements === null) {
         return report('failed');
       }
-      await this.unitOfWork.run(context.dryRun, (ports) =>
-        this.importElements(envelope.data.elements, ports, context, counts, chains, messages),
-      );
+      const points = this.addressPoints(addressElements.elements);
+      enriched.addressPoints = points.length;
+      const index = this.addresses.index(points);
+      await this.unitOfWork.run(context.dryRun, async (ports) => {
+        enriched.addressesFromNearbyPoint = await this.importElements(
+          places.elements,
+          index,
+          ports,
+          context,
+          counts,
+          chains,
+          messages,
+        );
+      });
       return report('succeeded');
     } catch (error) {
       if (context.signal?.aborted === true) {
@@ -104,14 +121,49 @@ export class OverpassOsmImporter implements SourceImporter {
     }
   }
 
+  /** The elements of one query, or null with a message when the response is unusable. */
+  private async fetch(
+    query: string,
+    context: ImportContext,
+    messages: string[],
+  ): Promise<{ readonly elements: readonly unknown[]; readonly fetchedAt: Date } | null> {
+    const response = await this.client.fetch(query, context.signal);
+    const envelope = OverpassEnvelopeSchema.safeParse(response.body);
+    if (!envelope.success) {
+      messages.push(`The Overpass response is not valid: ${envelope.error.message}`);
+      return null;
+    }
+    if (envelope.data.remark !== undefined) {
+      // Overpass reports timeouts and memory exhaustion here, with a truncated result.
+      messages.push(`Overpass: ${envelope.data.remark}`);
+      return null;
+    }
+    return { elements: envelope.data.elements, fetchedAt: response.fetchedAt };
+  }
+
+  private addressPoints(elements: readonly unknown[]): OsmAddressPoint[] {
+    const points: OsmAddressPoint[] = [];
+    for (const raw of elements) {
+      const element = OverpassElementSchema.safeParse(raw);
+      const point = element.success ? this.translator.addressPoint(element.data) : null;
+      if (point !== null) {
+        points.push(point);
+      }
+    }
+    return points;
+  }
+
+  /** @returns how many places took their address from a nearby point. */
   private async importElements(
     elements: readonly unknown[],
+    addressIndex: OsmAddressIndex,
     ports: TransactionalPorts,
     context: ImportContext,
     counts: Tally,
     chains: ChainTally,
     messages: string[],
-  ): Promise<void> {
+  ): Promise<number> {
+    let fromNearbyPoint = 0;
     const chainIds = new Map<string, ChainId>();
     for (const [index, raw] of elements.entries()) {
       context.signal?.throwIfAborted();
@@ -135,12 +187,25 @@ export class OverpassOsmImporter implements SourceImporter {
         translation.chain === null
           ? null
           : await this.chainId(translation.chain, ports, chainIds, chains);
+      let { address } = translation.place;
+      if (address.street === null) {
+        const nearby = this.addresses.nearest(
+          addressIndex,
+          translation.place.location,
+          this.config.addressMaxDistanceM,
+        );
+        if (nearby !== null) {
+          address = nearby;
+          fromNearbyPoint += 1;
+        }
+      }
       const { outcome } = await ports.places.upsertFromSource(
-        { ...translation.place, chainId },
+        { ...translation.place, address, chainId },
         this.ids.placeId(),
       );
       counts[outcome] += 1;
     }
+    return fromNearbyPoint;
   }
 
   /** Upserts each chain once per run. */
@@ -161,11 +226,10 @@ export class OverpassOsmImporter implements SourceImporter {
     return chainId;
   }
 
-  private query(): string {
+  private placeQuery(): string {
     const amenities = OSM_AMENITY_CATEGORIES.join('|');
     return [
-      `[out:json][timeout:${String(this.config.timeoutSeconds)}];`,
-      `area(id:${String(this.config.areaId)})->.a;`,
+      ...this.header(),
       '(',
       `  nwr["amenity"~"^(${amenities})$"]["name"](area.a);`,
       '  nwr["shop"]["name"](area.a);',
@@ -173,6 +237,21 @@ export class OverpassOsmImporter implements SourceImporter {
       ');',
       'out center tags;',
     ].join('\n');
+  }
+
+  private addressQuery(): string {
+    return [
+      ...this.header(),
+      'nwr["addr:street"]["addr:housenumber"](area.a);',
+      'out center tags;',
+    ].join('\n');
+  }
+
+  private header(): string[] {
+    return [
+      `[out:json][timeout:${String(this.config.timeoutSeconds)}];`,
+      `area(id:${String(this.config.areaId)})->.a;`,
+    ];
   }
 
   private capped(messages: readonly string[]): string[] {

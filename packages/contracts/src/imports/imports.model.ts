@@ -64,3 +64,21 @@ export const ImportRunReportSchema: z.ZodType<ImportRunReport> = z.object({
   metrics: z.record(z.string(), z.number()),
   messages: z.array(z.string()),
 });
+
+/**
+ * A merchant descriptor from a card statement that matched no place, waiting for a person to
+ * review it. Deliberately minimal: no amounts and no individual statement lines are kept.
+ */
+export interface UnmatchedDescriptor {
+  /** Trimmed, whitespace collapsed, upper case: `REMA 1000 GRONLAND OSLO`. */
+  readonly descriptor: string;
+  /** UTC dates; the time of day is always midnight. */
+  readonly firstSeenOn: Date;
+  readonly lastSeenOn: Date;
+}
+
+export const UnmatchedDescriptorSchema: z.ZodType<UnmatchedDescriptor> = z.object({
+  descriptor: z.string().min(1).max(200),
+  firstSeenOn: z.date(),
+  lastSeenOn: z.date(),
+});

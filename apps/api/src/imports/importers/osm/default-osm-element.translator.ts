@@ -2,7 +2,7 @@ import { AddressSchema, GeoPointSchema } from '@amexbutikker/contracts';
 import type { ChainSourceRecord, GeoPoint, PlaceCategory } from '@amexbutikker/contracts';
 import { z } from 'zod';
 import { OSM_AMENITY_CATEGORIES } from './osm.model.js';
-import type { OverpassElement } from './osm.model.js';
+import type { OsmAddressPoint, OverpassElement } from './osm.model.js';
 import type { OsmElementTranslator, OsmTranslation } from './osm.ports.js';
 
 const MAX_NAME_LENGTH = 200;
@@ -62,6 +62,26 @@ export class DefaultOsmElementTranslator implements OsmElementTranslator {
       place: { osmRef, name, category, address, location, website },
       chain: this.chain(tags, name, warnings),
       warnings,
+    };
+  }
+
+  public addressPoint(element: OverpassElement): OsmAddressPoint | null {
+    const tags = element.tags ?? {};
+    const location = this.location(element);
+    if (location === null || this.nonEmpty(tags['addr:housenumber']) === null) {
+      return null;
+    }
+    const street = this.street(tags);
+    if (street === null) {
+      return null;
+    }
+    return {
+      location,
+      address: AddressSchema.parse({
+        street,
+        postcode: this.valid(tags['addr:postcode'], PostcodeSchema, 'addr:postcode', '', []),
+        city: this.nonEmpty(tags['addr:city']),
+      }),
     };
   }
 

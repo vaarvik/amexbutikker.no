@@ -144,4 +144,42 @@ describe('DefaultOsmElementTranslator', () => {
   ])('skips %o', (element, reason) => {
     expect(translator.translate(element)).toEqual({ kind: 'skipped', reason });
   });
+
+  describe('addressPoint', () => {
+    it('returns the location and address of an element with street and house number', () => {
+      expect(
+        translator.addressPoint(
+          node({
+            'addr:street': 'Disenveien',
+            'addr:housenumber': '16F',
+            'addr:postcode': '0587',
+            'addr:city': 'Oslo',
+          }),
+        ),
+      ).toEqual({
+        location: { lat: 59.91, lng: 10.75 },
+        address: { street: 'Disenveien 16F', postcode: '0587', city: 'Oslo' },
+      });
+    });
+
+    it.each([
+      node({ 'addr:street': 'Disenveien' }),
+      node({ 'addr:housenumber': '16' }),
+      {
+        type: 'way',
+        id: 1,
+        tags: { 'addr:street': 'Disenveien', 'addr:housenumber': '16' },
+      } as const,
+    ])('returns null for %o', (element) => {
+      expect(translator.addressPoint(element)).toBeNull();
+    });
+
+    it('drops a malformed postcode', () => {
+      expect(
+        translator.addressPoint(
+          node({ 'addr:street': 'Disenveien', 'addr:housenumber': '16', 'addr:postcode': '587' }),
+        ),
+      ).toMatchObject({ address: { postcode: null } });
+    });
+  });
 });

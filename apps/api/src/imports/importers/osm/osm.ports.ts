@@ -1,5 +1,10 @@
-import type { ChainSourceRecord, PlaceSourceRecord } from '@amexbutikker/contracts';
-import type { OverpassElement } from './osm.model.js';
+import type {
+  Address,
+  ChainSourceRecord,
+  GeoPoint,
+  PlaceSourceRecord,
+} from '@amexbutikker/contracts';
+import type { OsmAddressIndex, OsmAddressPoint, OverpassElement } from './osm.model.js';
 
 /** A raw Overpass API response and when it was fetched. */
 export interface OverpassResponse {
@@ -33,4 +38,15 @@ export type OsmTranslation =
 /** Anti-corruption layer: OSM tags in, place model out. Pure. */
 export interface OsmElementTranslator {
   translate(element: OverpassElement): OsmTranslation;
+
+  /** The element's location and street address, or null without a street and house number. */
+  addressPoint(element: OverpassElement): OsmAddressPoint | null;
+}
+
+/** Finds the address nearest to a point. Pure. */
+export interface OsmAddressLocator {
+  index(points: readonly OsmAddressPoint[]): OsmAddressIndex;
+
+  /** @returns the address of the nearest point within `maxDistanceM`, or null. */
+  nearest(index: OsmAddressIndex, location: GeoPoint, maxDistanceM: number): Address | null;
 }

@@ -21,6 +21,7 @@ import type {
   RunImport,
   TransactionalPorts,
   UnitOfWork,
+  UnmatchedDescriptorWriter,
 } from '@amexbutikker/contracts';
 import {
   DecayingAcceptanceStatusCalculator,
@@ -42,6 +43,7 @@ import {
   InMemoryDeviceRepository,
   InMemoryEvidenceRepository,
   InMemoryImportRunRepository,
+  InMemoryUnmatchedDescriptorRepository,
   InMemoryPlaceRepository,
   InMemoryPlaceStatusRepository,
   InMemoryRateLimiter,
@@ -52,14 +54,23 @@ import { DevicesController } from './devices/devices.controller.js';
 import { HmacDeviceTokenService } from './devices/hmac-device-token.service.js';
 import { PgDeviceRepository } from './devices/pg-device.repository.js';
 import { PgEvidenceRepository } from './evidence/pg-evidence.repository.js';
+import { AddressBrregPlaceMatcher } from './imports/importers/brreg/address-brreg-place.matcher.js';
+import { BrregUnderenhetImporter } from './imports/importers/brreg/brreg-underenhet.importer.js';
+import { OSLO_KOMMUNENUMMER } from './imports/importers/brreg/brreg.model.js';
+import { CachedBrregUnderenhetReader } from './imports/importers/brreg/cached-brreg-underenhet.reader.js';
 import { FsTextFileLoader } from './imports/fs-text-file.loader.js';
 import { CuratedListImporter } from './imports/importers/curated/curated-list.importer.js';
 import { DefaultOsmElementTranslator } from './imports/importers/osm/default-osm-element.translator.js';
 import { DiskCachingOverpassClient } from './imports/importers/osm/disk-caching-overpass.client.js';
+import { GridOsmAddressLocator } from './imports/importers/osm/grid-osm-address.locator.js';
 import { HttpOverpassClient } from './imports/importers/osm/http-overpass.client.js';
 import { OSLO_AREA_ID } from './imports/importers/osm/osm.model.js';
 import { OverpassOsmImporter } from './imports/importers/osm/overpass-osm.importer.js';
 import { PgImportRunRepository } from './imports/pg-import-run.repository.js';
+import { PgUnmatchedDescriptorRepository } from './imports/pg-unmatched-descriptor.repository.js';
+import { NullMerchantDescriptorMatcher } from './imports/importers/statement/null-merchant-descriptor.matcher.js';
+import { StatementImporter } from './imports/importers/statement/statement.importer.js';
+import { UnconfiguredStatementParser } from './imports/importers/statement/unconfigured-statement.parser.js';
 import { TransactionalImportUnitOfWork } from './imports/transactional-import.unit-of-work.js';
 import { AllMigrationsProvider } from './migrations/all-migrations.provider.js';
 import { PlacesController } from './places/places.controller.js';
@@ -105,7 +116,11 @@ export interface ImportsConfig {
   readonly cacheDir: string;
   readonly cacheMaxAgeHours: number;
   readonly curatedClaimsPath: string;
+  /** The statement export to import; outside git (data/statements/ is ignored). */
+  readonly statementPath: string;
 }
+
+const IMPORT_USER_AGENT = 'amexbutikker-importer/0.1 (+https://github.com/vaarvik/amexbutikker.no)';
 
 export const DEFAULT_IMPORTS: ImportsConfig = {
   overpassUrl: 'https://overpass-api.de/api/interpreter',
@@ -113,6 +128,7 @@ export const DEFAULT_IMPORTS: ImportsConfig = {
   cacheDir: 'data/cache',
   cacheMaxAgeHours: 7 * 24,
   curatedClaimsPath: 'data/curated-claims.yaml',
+  statementPath: 'data/statements/statement.txt',
 };
 
 export const DEFAULT_RATE_LIMITS: ApiConfig['rateLimits'] = {
@@ -140,6 +156,7 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
         cacheDir: z.string().min(1).default(DEFAULT_IMPORTS.cacheDir),
         cacheMaxAgeHours: z.coerce.number().nonnegative().default(DEFAULT_IMPORTS.cacheMaxAgeHours),
         curatedClaimsPath: z.string().min(1).default(DEFAULT_IMPORTS.curatedClaimsPath),
+        statementPath: z.string().min(1).default(DEFAULT_IMPORTS.statementPath),
       })
       .default(DEFAULT_IMPORTS),
   })
@@ -155,6 +172,7 @@ interface Storage {
   readonly statuses: PlaceStatusReader;
   readonly devices: DeviceWriter;
   readonly importRuns: ImportRunWriter;
+  readonly unmatchedDescriptors: UnmatchedDescriptorWriter;
   readonly unitOfWork: UnitOfWork;
   close(): Promise<void>;
 }
@@ -198,7 +216,16 @@ export class CompositionRoot {
         : null;
     this.storage =
       this.db === null ? this.inMemoryStorage(names, clock) : this.postgresStorage(this.db, names);
-    const { places, chains, evidence, statuses, devices, importRuns, unitOfWork } = this.storage;
+    const {
+      places,
+      chains,
+      evidence,
+      statuses,
+      devices,
+      importRuns,
+      unmatchedDescriptors,
+      unitOfWork,
+    } = this.storage;
 
     const auth = new BearerTokenAuthenticator(tokens);
     const dtos = new DefaultHttpDtoMapper();
@@ -248,8 +275,7 @@ export class CompositionRoot {
             new HttpOverpassClient(
               {
                 endpoint: config.imports.overpassUrl,
-                userAgent:
-                  'amexbutikker-importer/0.1 (+https://github.com/vaarvik/amexbutikker.no)',
+                userAgent: IMPORT_USER_AGENT,
                 timeoutMs: 300_000,
               },
               globalThis.fetch,
@@ -259,10 +285,16 @@ export class CompositionRoot {
             clock,
           ),
           new DefaultOsmElementTranslator(),
+          new GridOsmAddressLocator(0.0005),
           importUnitOfWork,
           ids,
           clock,
-          { areaId: config.imports.overpassAreaId, timeoutSeconds: 240, maxMessages: 50 },
+          {
+            areaId: config.imports.overpassAreaId,
+            timeoutSeconds: 240,
+            maxMessages: 50,
+            addressMaxDistanceM: 25,
+          },
         ),
         new CuratedListImporter(
           new FsTextFileLoader(),
@@ -272,6 +304,30 @@ export class CompositionRoot {
           ids,
           clock,
           { path: config.imports.curatedClaimsPath, maxMessages: 50 },
+        ),
+        new BrregUnderenhetImporter(
+          new CachedBrregUnderenhetReader(
+            {
+              url: 'https://data.brreg.no/enhetsregisteret/api/underenheter/lastned/csv',
+              cacheFile: join(config.imports.cacheDir, 'brreg', 'underenheter.csv.gz'),
+              maxAgeMs: cache.maxAgeMs,
+              userAgent: IMPORT_USER_AGENT,
+            },
+            globalThis.fetch,
+            clock,
+          ),
+          new AddressBrregPlaceMatcher(names, { minimumScore: 0.3, minimumLead: 0.05 }),
+          importUnitOfWork,
+          clock,
+          { kommunenummer: OSLO_KOMMUNENUMMER, maxMessages: 50 },
+        ),
+        new StatementImporter(
+          new FsTextFileLoader(),
+          new UnconfiguredStatementParser(),
+          new NullMerchantDescriptorMatcher(),
+          unmatchedDescriptors,
+          clock,
+          { path: config.imports.statementPath },
         ),
       ],
       importRuns,
@@ -297,6 +353,7 @@ export class CompositionRoot {
           cacheDir: env.IMPORT_CACHE_DIR,
           cacheMaxAgeHours: env.IMPORT_CACHE_MAX_AGE_HOURS,
           curatedClaimsPath: env.CURATED_CLAIMS_PATH,
+          statementPath: env.STATEMENT_PATH,
         },
       }),
     );
@@ -331,6 +388,7 @@ export class CompositionRoot {
       ...portsFor(db),
       devices: new PgDeviceRepository(db, errors),
       importRuns: new PgImportRunRepository(db, errors),
+      unmatchedDescriptors: new PgUnmatchedDescriptorRepository(db),
       unitOfWork: new PgUnitOfWork(db, portsFor, errors),
       close: () => db.destroy(),
     };
@@ -348,6 +406,7 @@ export class CompositionRoot {
       ...portsFor(tables),
       devices: new InMemoryDeviceRepository(tables),
       importRuns: new InMemoryImportRunRepository(tables),
+      unmatchedDescriptors: new InMemoryUnmatchedDescriptorRepository(tables),
       unitOfWork: new InMemoryUnitOfWork(tables, portsFor),
       close: () => Promise.resolve(),
     };

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ConflictError, NotFoundError } from '../../src/index.js';
-import type { ImportRunId, ImportRunReport, ImportRunWriter } from '../../src/index.js';
+import type {
+  ImportRunId,
+  ImportRunReport,
+  ImportRunWriter,
+  UnmatchedDescriptorReader,
+  UnmatchedDescriptorWriter,
+} from '../../src/index.js';
 import { FixtureHolder } from '../fixture.js';
 import type { FixtureFactory } from '../fixture.js';
 import { TestData, daysAfter, T0 } from '../test-data.js';
@@ -71,6 +77,62 @@ export function describeImportRunWriterContract(
       await expect(fixture.current.writer.finish(report(runId))).rejects.toBeInstanceOf(
         ConflictError,
       );
+    });
+  });
+}
+
+export interface UnmatchedDescriptorFixture {
+  readonly writer: UnmatchedDescriptorWriter;
+  readonly reader: UnmatchedDescriptorReader;
+}
+
+/** Behaviour every UnmatchedDescriptorWriter and Reader pair must have. */
+export function describeUnmatchedDescriptorContract(
+  name: string,
+  factory: FixtureFactory<UnmatchedDescriptorFixture>,
+): void {
+  describe(`${name} satisfies UnmatchedDescriptorWriter and Reader`, () => {
+    const fixture = new FixtureHolder(factory);
+    const day = (iso: string): Date => new Date(`${iso}T00:00:00.000Z`);
+
+    it('records a new descriptor, normalised, with its UTC day', async () => {
+      await expect(
+        fixture.current.writer.record(
+          '  Rema 1000   grønland\tOSLO ',
+          new Date('2026-10-01T22:30:00Z'),
+        ),
+      ).resolves.toBe('created');
+
+      await expect(fixture.current.reader.list()).resolves.toEqual([
+        {
+          descriptor: 'REMA 1000 GRØNLAND OSLO',
+          firstSeenOn: day('2026-10-01'),
+          lastSeenOn: day('2026-10-01'),
+        },
+      ]);
+    });
+
+    it('widens the seen range and is idempotent within it', async () => {
+      const { writer, reader } = fixture.current;
+      await writer.record('KIWI 123', day('2026-10-05'));
+
+      await expect(writer.record('kiwi 123', day('2026-10-01'))).resolves.toBe('updated');
+      await expect(writer.record('KIWI 123', day('2026-10-09'))).resolves.toBe('updated');
+      await expect(writer.record('KIWI 123', day('2026-10-05'))).resolves.toBe('unchanged');
+      await expect(reader.list()).resolves.toEqual([
+        { descriptor: 'KIWI 123', firstSeenOn: day('2026-10-01'), lastSeenOn: day('2026-10-09') },
+      ]);
+    });
+
+    it('lists the most recently seen first, then by descriptor', async () => {
+      const { writer, reader } = fixture.current;
+      await writer.record('B', day('2026-10-01'));
+      await writer.record('C', day('2026-10-03'));
+      await writer.record('A', day('2026-10-01'));
+
+      const listed = await reader.list();
+
+      expect(listed.map((item) => item.descriptor)).toEqual(['C', 'A', 'B']);
     });
   });
 }

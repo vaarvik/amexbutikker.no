@@ -41,6 +41,14 @@ export interface PlaceReader {
    * @returns empty for a chain without places, including an unknown chain id.
    */
   listByChain(chainId: ChainId): Promise<PhysicalPlace[]>;
+
+  /**
+   * The physical places with this four-digit postcode, in no particular order. Used to match
+   * registry entries to places by address.
+   *
+   * @returns empty when none has it.
+   */
+  listByPostcode(postcode: string): Promise<PhysicalPlace[]>;
 }
 
 /** A physical place as an importer sees it, before it has an id. */

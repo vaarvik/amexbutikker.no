@@ -10,6 +10,7 @@ export class EmptyInMemoryTablesFactory implements InMemoryTablesFactory {
       statuses: new Map(),
       importRuns: new Map(),
       devices: new Map(),
+      unmatchedDescriptors: new Map(),
     };
   }
 }
