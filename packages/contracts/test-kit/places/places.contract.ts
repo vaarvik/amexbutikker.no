@@ -171,6 +171,32 @@ export function describePlaceReaderContract(
       });
     });
 
+    describe('listByChain', () => {
+      it('returns the physical places of the chain and nothing else', async () => {
+        const data = new TestData();
+        const chain = data.chain();
+        const other = data.chain();
+        await fixture.current.chains.create(chain);
+        await fixture.current.chains.create(other);
+        const first = data.physicalPlace({ chainId: chain.id });
+        const second = data.physicalPlace({ chainId: chain.id });
+        await fixture.current.writer.create(first);
+        await fixture.current.writer.create(second);
+        await fixture.current.writer.create(data.physicalPlace({ chainId: other.id }));
+        await fixture.current.writer.create(data.physicalPlace());
+
+        const places = await fixture.current.reader.listByChain(chain.id);
+
+        expect(places.map((place) => place.id).sort()).toEqual([first.id, second.id].sort());
+      });
+
+      it('returns an empty list for a chain without places, including an unknown one', async () => {
+        await expect(fixture.current.reader.listByChain(new TestData().chainId())).resolves.toEqual(
+          [],
+        );
+      });
+    });
+
     describe('nearby', () => {
       it('returns physical places within the radius, nearest first', async () => {
         const data = new TestData();

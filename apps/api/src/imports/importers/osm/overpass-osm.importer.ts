@@ -8,7 +8,6 @@ import type {
   ImportRunReport,
   SourceImporter,
   TransactionalPorts,
-  UnitOfWork,
   UpsertOutcome,
 } from '@amexbutikker/contracts';
 import {
@@ -16,6 +15,7 @@ import {
   OverpassEnvelopeSchema,
   OSM_AMENITY_CATEGORIES,
 } from './osm.model.js';
+import type { ImportUnitOfWork } from '../../imports.ports.js';
 import type { OsmElementTranslator, OverpassClient } from './osm.ports.js';
 
 export interface OverpassOsmImporterConfig {
@@ -30,9 +30,6 @@ export interface OverpassOsmImporterConfig {
 type Tally = { -readonly [K in keyof ImportCounts]: ImportCounts[K] };
 type ChainTally = Record<UpsertOutcome, number>;
 
-/** Thrown inside the unit of work to roll a dry run back. Never leaves this file. */
-class DryRunRollback extends Error {}
-
 /**
  * Imports named places in one OSM area from Overpass: the amenities in OSM_AMENITY_CATEGORIES,
  * every shop and tourism=hotel. A brand (brand:wikidata, else brand) becomes a chain.
@@ -44,7 +41,7 @@ export class OverpassOsmImporter implements SourceImporter {
   public constructor(
     private readonly client: OverpassClient,
     private readonly translator: OsmElementTranslator,
-    private readonly unitOfWork: UnitOfWork,
+    private readonly unitOfWork: ImportUnitOfWork,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
     private readonly config: OverpassOsmImporterConfig,
@@ -94,7 +91,7 @@ export class OverpassOsmImporter implements SourceImporter {
         messages.push(`Overpass: ${envelope.data.remark}`);
         return report('failed');
       }
-      await this.inTransaction(context.dryRun, (ports) =>
+      await this.unitOfWork.run(context.dryRun, (ports) =>
         this.importElements(envelope.data.elements, ports, context, counts, chains, messages),
       );
       return report('succeeded');
@@ -162,24 +159,6 @@ export class OverpassOsmImporter implements SourceImporter {
     chains[outcome] += 1;
     known.set(key, chainId);
     return chainId;
-  }
-
-  private async inTransaction(
-    dryRun: boolean,
-    work: (ports: TransactionalPorts) => Promise<void>,
-  ): Promise<void> {
-    try {
-      await this.unitOfWork.run(async (ports) => {
-        await work(ports);
-        if (dryRun) {
-          throw new DryRunRollback('Dry run: roll back.');
-        }
-      });
-    } catch (error) {
-      if (!(error instanceof DryRunRollback)) {
-        throw error;
-      }
-    }
   }
 
   private query(): string {

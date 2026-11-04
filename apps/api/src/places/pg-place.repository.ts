@@ -1,5 +1,6 @@
 import { ConflictError, NotFoundError, PlaceSchema } from '@amexbutikker/contracts';
 import type {
+  ChainId,
   GeoPoint,
   NameSimilarity,
   NearbyPlaceHit,
@@ -109,6 +110,13 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
       place: this.toPhysical(row),
       distanceM: distance.parse(row).distance_m,
     }));
+  }
+
+  public async listByChain(chainId: ChainId): Promise<PhysicalPlace[]> {
+    const { rows } = await sql`
+      SELECT ${PLACE_COLUMNS} FROM places p WHERE p.chain_id = ${chainId} AND p.kind = 'physical'
+    `.execute(this.db);
+    return rows.map((row) => this.toPhysical(row));
   }
 
   public async create(place: Place): Promise<void> {

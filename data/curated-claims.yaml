@@ -1,0 +1,21 @@
+# Hand-curated acceptance claims. Import with: pnpm run import curated_list
+#
+# Each claim is checked by hand against its source. Never scrape a list in bulk.
+# Fields:
+#   target     chain | place
+#   name       exact name, compared ignoring case and accents. A place name must be unique.
+#   result     accepted | rejected
+#   source     short id of the source, e.g. kredittkort360
+#   sourceUrl  the page that says so
+#   fetchedAt  when you read it (YYYY-MM-DD). A later date imports as newer evidence.
+#   note       optional, at most 500 characters
+#
+# Example:
+#   - target: chain
+#     name: Rema 1000
+#     result: accepted
+#     source: example
+#     sourceUrl: https://example.no/amex
+#     fetchedAt: 2026-11-04
+
+claims: []

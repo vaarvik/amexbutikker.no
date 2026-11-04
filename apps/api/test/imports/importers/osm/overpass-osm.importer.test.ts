@@ -20,6 +20,7 @@ import type {
   OverpassClient,
   OverpassResponse,
 } from '../../../../src/imports/importers/osm/osm.ports.js';
+import { TransactionalImportUnitOfWork } from '../../../../src/imports/transactional-import.unit-of-work.js';
 import { OverpassOsmImporter } from '../../../../src/imports/importers/osm/overpass-osm.importer.js';
 import { UuidV7IdGenerator } from '../../../../src/shared/uuid-v7-id.generator.js';
 
@@ -109,7 +110,7 @@ describe('OverpassOsmImporter', () => {
     importer = new OverpassOsmImporter(
       client,
       new DefaultOsmElementTranslator(),
-      new InMemoryUnitOfWork(tables, portsFor),
+      new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
       new UuidV7IdGenerator(clock),
       clock,
       { areaId: 3_600_406_091, timeoutSeconds: 180, maxMessages: 10 },
@@ -218,7 +219,7 @@ describe('OverpassOsmImporter', () => {
     const failing = new OverpassOsmImporter(
       new FailingOverpassClient(),
       new DefaultOsmElementTranslator(),
-      new InMemoryUnitOfWork(tables, portsFor),
+      new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
       new UuidV7IdGenerator(clock),
       clock,
       { areaId: 1, timeoutSeconds: 1, maxMessages: 10 },

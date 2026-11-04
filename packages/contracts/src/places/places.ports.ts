@@ -2,6 +2,7 @@ import type {
   Address,
   NearbyPlaceHit,
   NearbyQuery,
+  PhysicalPlace,
   Place,
   PlaceCategory,
   PlaceSearchHit,
@@ -33,6 +34,13 @@ export interface PlaceReader {
    * @returns at most `query.limit` hits, nearest first. Online places are never returned.
    */
   nearby(query: NearbyQuery): Promise<NearbyPlaceHit[]>;
+
+  /**
+   * The physical places that belong to a chain, in no particular order.
+   *
+   * @returns empty for a chain without places, including an unknown chain id.
+   */
+  listByChain(chainId: ChainId): Promise<PhysicalPlace[]>;
 }
 
 /** A physical place as an importer sees it, before it has an id. */

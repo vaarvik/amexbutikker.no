@@ -1,5 +1,6 @@
 import { ConflictError, NotFoundError } from '@amexbutikker/contracts';
 import type {
+  ChainId,
   Clock,
   GeoPoint,
   NameSimilarity,
@@ -90,6 +91,14 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
     }
     hits.sort((a, b) => a.distanceM - b.distanceM);
     return Promise.resolve(hits.slice(0, query.limit));
+  }
+
+  public listByChain(chainId: ChainId): Promise<PhysicalPlace[]> {
+    return Promise.resolve(
+      [...this.tables.places.values()].filter(
+        (place): place is PhysicalPlace => place.kind === 'physical' && place.chainId === chainId,
+      ),
+    );
   }
 
   public create(place: Place): Promise<void> {

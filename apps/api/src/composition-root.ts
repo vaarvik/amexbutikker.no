@@ -52,12 +52,15 @@ import { DevicesController } from './devices/devices.controller.js';
 import { HmacDeviceTokenService } from './devices/hmac-device-token.service.js';
 import { PgDeviceRepository } from './devices/pg-device.repository.js';
 import { PgEvidenceRepository } from './evidence/pg-evidence.repository.js';
+import { FsTextFileLoader } from './imports/fs-text-file.loader.js';
+import { CuratedListImporter } from './imports/importers/curated/curated-list.importer.js';
 import { DefaultOsmElementTranslator } from './imports/importers/osm/default-osm-element.translator.js';
 import { DiskCachingOverpassClient } from './imports/importers/osm/disk-caching-overpass.client.js';
 import { HttpOverpassClient } from './imports/importers/osm/http-overpass.client.js';
 import { OSLO_AREA_ID } from './imports/importers/osm/osm.model.js';
 import { OverpassOsmImporter } from './imports/importers/osm/overpass-osm.importer.js';
 import { PgImportRunRepository } from './imports/pg-import-run.repository.js';
+import { TransactionalImportUnitOfWork } from './imports/transactional-import.unit-of-work.js';
 import { AllMigrationsProvider } from './migrations/all-migrations.provider.js';
 import { PlacesController } from './places/places.controller.js';
 import { PgPlaceRepository } from './places/pg-place.repository.js';
@@ -101,6 +104,7 @@ export interface ImportsConfig {
   /** Where fetched source data is cached between runs. */
   readonly cacheDir: string;
   readonly cacheMaxAgeHours: number;
+  readonly curatedClaimsPath: string;
 }
 
 export const DEFAULT_IMPORTS: ImportsConfig = {
@@ -108,6 +112,7 @@ export const DEFAULT_IMPORTS: ImportsConfig = {
   overpassAreaId: OSLO_AREA_ID,
   cacheDir: 'data/cache',
   cacheMaxAgeHours: 7 * 24,
+  curatedClaimsPath: 'data/curated-claims.yaml',
 };
 
 export const DEFAULT_RATE_LIMITS: ApiConfig['rateLimits'] = {
@@ -134,6 +139,7 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
         overpassAreaId: z.coerce.number().int().positive().default(DEFAULT_IMPORTS.overpassAreaId),
         cacheDir: z.string().min(1).default(DEFAULT_IMPORTS.cacheDir),
         cacheMaxAgeHours: z.coerce.number().nonnegative().default(DEFAULT_IMPORTS.cacheMaxAgeHours),
+        curatedClaimsPath: z.string().min(1).default(DEFAULT_IMPORTS.curatedClaimsPath),
       })
       .default(DEFAULT_IMPORTS),
   })
@@ -233,6 +239,7 @@ export class CompositionRoot {
       { bodyLimit: 16 * 1024, trustProxy: config.trustProxy },
     );
 
+    const importUnitOfWork = new TransactionalImportUnitOfWork(unitOfWork);
     const cache = { maxAgeMs: config.imports.cacheMaxAgeHours * 3_600_000 };
     this.runImport = new RunImportUseCase(
       [
@@ -252,10 +259,19 @@ export class CompositionRoot {
             clock,
           ),
           new DefaultOsmElementTranslator(),
-          unitOfWork,
+          importUnitOfWork,
           ids,
           clock,
           { areaId: config.imports.overpassAreaId, timeoutSeconds: 240, maxMessages: 50 },
+        ),
+        new CuratedListImporter(
+          new FsTextFileLoader(),
+          importUnitOfWork,
+          refresher,
+          names,
+          ids,
+          clock,
+          { path: config.imports.curatedClaimsPath, maxMessages: 50 },
         ),
       ],
       importRuns,
@@ -280,6 +296,7 @@ export class CompositionRoot {
           overpassAreaId: env.OVERPASS_AREA_ID,
           cacheDir: env.IMPORT_CACHE_DIR,
           cacheMaxAgeHours: env.IMPORT_CACHE_MAX_AGE_HOURS,
+          curatedClaimsPath: env.CURATED_CLAIMS_PATH,
         },
       }),
     );
