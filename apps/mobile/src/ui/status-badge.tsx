@@ -1,4 +1,6 @@
 import type { AcceptanceStatus } from '@amexbutikker/contracts';
+import { SymbolView } from 'expo-symbols';
+import type { SymbolViewProps } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 import { useServices } from './services';
 import { STATUS_COLORS, usePalette } from './theme';
@@ -32,6 +34,13 @@ export function StatusBadge(props: { readonly status: AcceptanceStatus }) {
   );
 }
 
+const ICONS: Readonly<Record<AcceptanceStatus, SymbolViewProps['name']>> = {
+  accepted: { ios: 'checkmark', android: 'check', web: 'check' },
+  rejected: { ios: 'xmark', android: 'close', web: 'close' },
+  mixed: { ios: 'plusminus', android: 'exposure', web: 'exposure' },
+  unknown: { ios: 'questionmark', android: 'question_mark', web: 'question_mark' },
+};
+
 /** The big answer on the place screen. */
 export function StatusAnswer(props: { readonly status: AcceptanceStatus }) {
   const view = useServices().presenter.status(props.status);
@@ -59,7 +68,12 @@ export function StatusAnswer(props: { readonly status: AcceptanceStatus }) {
           { backgroundColor: unknown ? palette.surface : 'rgba(255,255,255,0.18)' },
         ]}
       >
-        <Text style={[styles.symbolText, { color: foreground }]}>{view.symbol}</Text>
+        <SymbolView
+          name={ICONS[props.status]}
+          size={26}
+          weight="bold"
+          tintColor={unknown ? palette.muted : '#FFFFFF'}
+        />
       </View>
       <Text style={[styles.answerText, { color: foreground }]}>{view.answer}</Text>
       <Text style={[styles.answerLabel, { color: unknown ? palette.muted : '#FFFFFF' }]}>
@@ -90,7 +104,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
   },
-  symbolText: { fontSize: 28, fontWeight: '700' },
   answerText: { fontSize: 34, fontWeight: '700' },
   answerLabel: { fontSize: 16, textAlign: 'center' },
 });
