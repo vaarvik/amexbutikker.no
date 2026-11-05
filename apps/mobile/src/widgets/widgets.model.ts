@@ -3,9 +3,12 @@
  * runs outside the app's JavaScript, so it cannot call the presenter or look anything up.
  */
 export interface NearbyWidgetProps {
-  /** The place the phone is probably at, or null when none is close enough. */
-  readonly here: NearbyWidgetHere | null;
-  /** The nearest places that take Amex, nearest first, at most three. */
+  /**
+   * The place the phone is probably at; left out when none is close enough. Never null: the
+   * props are stored in UserDefaults, which cannot hold null.
+   */
+  readonly here?: NearbyWidgetHere;
+  /** The nearest places that take Amex, nearest first; "here" included. */
   readonly accepted: readonly NearbyWidgetPlace[];
   /** "Oppdatert 20:15". */
   readonly updated: string;
@@ -30,8 +33,4 @@ export interface NearbyWidgetPlace {
   readonly url: string;
 }
 
-export const EMPTY_NEARBY_WIDGET: NearbyWidgetProps = {
-  here: null,
-  accepted: [],
-  updated: '',
-};
+export const EMPTY_NEARBY_WIDGET: NearbyWidgetProps = { accepted: [], updated: '' };

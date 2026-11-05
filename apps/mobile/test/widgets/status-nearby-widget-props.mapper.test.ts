@@ -47,11 +47,14 @@ describe('StatusNearbyWidgetPropsMapper', () => {
     });
   });
 
-  it('has no "here" when nothing is close enough', () => {
-    expect(mapper.map([at(1, 'accepted', 61), at(2, 'accepted', null)], null, now).here).toBeNull();
+  it('leaves "here" out when nothing is close enough, never null (UserDefaults cannot store it)', () => {
+    const props = mapper.map([at(1, 'accepted', 61), at(2, 'accepted', null)], null, now);
+
+    expect('here' in props).toBe(false);
+    expect(JSON.stringify(props)).not.toContain('null');
   });
 
-  it('lists the nearest accepted places, leaving out "here", up to the maximum', () => {
+  it('lists the nearest accepted places, "here" included, up to the maximum', () => {
     const props = mapper.map(
       [
         at(1, 'accepted', 10),
@@ -66,8 +69,8 @@ describe('StatusNearbyWidgetPropsMapper', () => {
 
     expect(props.here?.name).toBe('Sted 1');
     expect(props.accepted).toEqual([
+      { name: 'Sted 1', distance: '10 m', url: `amexbutikker://place/${id(1)}` },
       { name: 'Sted 4', distance: '90 m', url: `amexbutikker://place/${id(4)}` },
-      { name: 'Sted 5', distance: '200 m', url: `amexbutikker://place/${id(5)}` },
     ]);
   });
 

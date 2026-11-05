@@ -67,11 +67,12 @@
             {
               "name": "NearbyWidget",
               "displayName": "Tar de Amex?",
-              "description": "Om stedet du er på tar Amex, og steder i nærheten som gjør det.",
+              "description": "Steder i nærheten som tar Amex, og svaret der du er.",
               "ios": {
                 "supportedFamilies": [
                   "systemSmall",
                   "systemMedium",
+                  "systemLarge",
                   "accessoryRectangular",
                   "accessoryInline"
                 ],

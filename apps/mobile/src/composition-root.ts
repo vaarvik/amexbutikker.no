@@ -103,7 +103,7 @@ export class CompositionRoot implements AppServices {
     this.widgets = new SnapshotNearbyWidgetService(
       new StatusNearbyWidgetPropsMapper(this.presenter, {
         hereWithinM: 60,
-        maxAccepted: 3,
+        maxAccepted: 4,
         placeUrl: 'amexbutikker://place/',
         colors: STATUS_COLORS,
       }),

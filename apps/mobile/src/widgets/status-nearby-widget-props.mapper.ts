@@ -39,18 +39,19 @@ export class StatusNearbyWidgetPropsMapper implements NearbyWidgetPropsMapper {
       byDistance.find((r) => r.distanceM !== null && r.distanceM <= this.config.hereWithinM);
     const status = here?.status.status;
     return {
-      here:
-        here === undefined || status === undefined
-          ? null
-          : {
+      ...(here === undefined || status === undefined
+        ? {}
+        : {
+            here: {
               name: here.place.name,
               answer: this.presenter.status(status).answer,
               symbol: SYMBOLS[status],
               color: this.config.colors[status],
               url: this.url(here.place.id),
             },
+          }),
       accepted: byDistance
-        .filter((r) => r.status.status === 'accepted' && r.place.id !== here?.place.id)
+        .filter((r) => r.status.status === 'accepted')
         .slice(0, this.config.maxAccepted)
         .map((r) => ({
           name: r.place.name,

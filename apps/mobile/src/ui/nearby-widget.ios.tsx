@@ -13,7 +13,7 @@ import type { NearbyWidgetProps } from '../widgets/widgets.model';
 import type { ExpoWidget } from '../widgets/widgets.ports';
 
 /**
- * The "Tar de Amex?" widget: home screen (small, medium) and lock screen. It runs in the widget
+ * The "Tar de Amex?" widget: home screen (small, medium, large) and lock screen. It runs in the widget
  * extension, not in the app: everything it uses is inside the function, and it only reads the
  * props that `SnapshotNearbyWidgetService` writes.
  */
@@ -23,58 +23,39 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
   const here = props.here;
   const secondary = foregroundStyle({ type: 'hierarchical', style: 'secondary' });
   const background = containerBackground({ type: 'hierarchical', style: 'quinary' }, 'widget');
-  const link = here === null ? [] : [widgetURL(here.url)];
-
-  if (family === 'accessoryInline') {
-    return (
-      <Text modifiers={link}>
-        {here === null ? 'Tar de Amex?' : `${here.name}: ${here.answer}`}
-      </Text>
-    );
-  }
-
-  if (family === 'accessoryRectangular') {
-    return (
-      <VStack alignment="leading" spacing={2} modifiers={[...link, background]}>
-        <Text modifiers={[font({ weight: 'semibold', size: 15 }), lineLimit(1)]}>
-          {here === null ? 'Tar de Amex?' : here.name}
-        </Text>
-        <HStack spacing={4}>
-          {here === null ? null : <Image systemName={here.symbol as 'questionmark.circle'} />}
-          <Text>{here === null ? 'Ingen steder rett her' : here.answer}</Text>
-        </HStack>
-      </VStack>
-    );
-  }
-
+  const fill = frame({ maxWidth: 10_000, maxHeight: 10_000, alignment: 'topLeading' });
   const title = (text: string) => (
     <Text modifiers={[font({ weight: 'semibold', size: 12 }), secondary]}>{text}</Text>
   );
   const updated = <Text modifiers={[font({ size: 11 }), secondary]}>{props.updated}</Text>;
 
-  // Before the app has written anything (or nothing is known nearby): one plain line.
-  if (here === null && props.accepted.length === 0) {
+  // Lock screen: the place the phone is at, if any.
+  if (family === 'accessoryInline') {
+    return (
+      <Text modifiers={here === undefined ? [] : [widgetURL(here.url)]}>
+        {here === undefined ? 'Tar de Amex?' : `${here.name}: ${here.answer}`}
+      </Text>
+    );
+  }
+  if (family === 'accessoryRectangular') {
     return (
       <VStack
         alignment="leading"
-        spacing={4}
-        modifiers={[frame({ maxWidth: 10_000, alignment: 'leading' }), background]}
+        spacing={2}
+        modifiers={[...(here === undefined ? [] : [widgetURL(here.url)]), background]}
       >
-        {title('TAR DE AMEX?')}
-        <Text modifiers={[font({ weight: 'semibold', size: 15 }), lineLimit(3)]}>
-          {props.updated === ''
-            ? 'Åpne appen for å se steder i nærheten'
-            : 'Ingen kjente steder i nærheten ennå'}
+        <Text modifiers={[font({ weight: 'semibold', size: 15 }), lineLimit(1)]}>
+          {here === undefined ? 'Tar de Amex?' : here.name}
         </Text>
-        <Spacer />
-        {updated}
+        <Text>{here === undefined ? 'Ingen steder rett her' : here.answer}</Text>
       </VStack>
     );
   }
 
-  const herePanel =
-    here === null ? null : (
-      <VStack alignment="leading" spacing={6}>
+  // Small: the place the phone is at, with its answer.
+  if (family === 'systemSmall' && here !== undefined) {
+    return (
+      <VStack alignment="leading" spacing={6} modifiers={[widgetURL(here.url), fill, background]}>
         {title('DU ER HER')}
         <Text modifiers={[font({ weight: 'bold', size: 17 }), lineLimit(2)]}>{here.name}</Text>
         <HStack spacing={6}>
@@ -85,40 +66,36 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
         {updated}
       </VStack>
     );
-
-  const acceptedList = (limit: number) => (
-    <VStack alignment="leading" spacing={6}>
-      {title('I NÆRHETEN MED AMEX')}
-      {props.accepted.slice(0, limit).map((place) => (
-        <Link key={place.url} destination={place.url}>
-          <HStack spacing={6}>
-            <Image systemName="checkmark.circle.fill" size={14} color="#1E6B34" />
-            <Text modifiers={[font({ size: 14 }), lineLimit(1)]}>{place.name}</Text>
-            <Spacer />
-            <Text modifiers={[font({ size: 12 }), secondary]}>{place.distance}</Text>
-          </HStack>
-        </Link>
-      ))}
-      <Spacer />
-      {herePanel === null ? updated : null}
-    </VStack>
-  );
-
-  const fill = frame({ maxWidth: 10_000, alignment: 'leading' });
-
-  if (family === 'systemSmall') {
-    return (
-      <VStack alignment="leading" modifiers={[...link, fill, background]}>
-        {herePanel ?? acceptedList(2)}
-      </VStack>
-    );
   }
 
+  // Medium and large (and small without a place): the nearest places that take Amex.
+  const rows = family === 'systemLarge' ? 8 : family === 'systemMedium' ? 4 : 2;
   return (
-    <HStack alignment="top" spacing={16} modifiers={[...link, fill, background]}>
-      {herePanel}
-      {props.accepted.length === 0 ? null : acceptedList(3)}
-    </HStack>
+    <VStack alignment="leading" spacing={7} modifiers={[fill, background]}>
+      {title('TAR AMEX I NÆRHETEN')}
+      {props.accepted.length === 0 ? (
+        <Text modifiers={[font({ weight: 'semibold', size: 15 }), lineLimit(3)]}>
+          {props.updated === ''
+            ? 'Åpne appen for å se steder i nærheten'
+            : 'Ingen kjente steder i nærheten ennå'}
+        </Text>
+      ) : (
+        props.accepted.slice(0, rows).map((place) => (
+          <Link key={place.url} destination={place.url}>
+            <HStack spacing={8}>
+              <Image systemName="checkmark.circle.fill" size={15} color="#1E6B34" />
+              <Text modifiers={[font({ weight: 'medium', size: 15 }), lineLimit(1)]}>
+                {place.name}
+              </Text>
+              <Spacer />
+              <Text modifiers={[font({ size: 13 }), secondary]}>{place.distance}</Text>
+            </HStack>
+          </Link>
+        ))
+      )}
+      <Spacer />
+      {updated}
+    </VStack>
   );
 }
 
@@ -129,11 +106,13 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
 function create(): ExpoWidget<NearbyWidgetProps> | null {
   try {
     return createWidget<NearbyWidgetProps>('NearbyWidget', NearbyWidget, {
-      here: null,
       accepted: [],
       updated: '',
     });
-  } catch {
+  } catch (error) {
+    if (__DEV__) {
+      console.warn('Widget unavailable:', String(error));
+    }
     return null;
   }
 }
