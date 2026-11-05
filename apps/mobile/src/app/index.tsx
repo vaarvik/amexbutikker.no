@@ -1,6 +1,6 @@
 import type { PlaceSummaryDto } from '@amexbutikker/contracts';
-import { Stack, router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { Stack, router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -30,13 +30,21 @@ export default function Home() {
   const [query, setQuery] = useState('');
   const [nearbyState, setNearbyState] = useState<NearbyState>({ kind: 'loading' });
   const [search, setSearch] = useState<SearchResult | null>(null);
-  const [reloads, setReloads] = useState(0);
   const latestSearch = useRef(0);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
+  // Runs on first show and every time the user comes back (e.g. after answering on a place
+  // screen), so the list and search results show the new answer.
+  const reload = useCallback(() => {
     void nearby.load(setNearbyState);
-  }, [nearby, reloads]);
+  }, [nearby]);
+  useFocusEffect(reload);
+  const [focusCount, setFocusCount] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      setFocusCount((n) => n + 1);
+    }, []),
+  );
 
   const center = 'snapshot' in nearbyState ? nearbyState.snapshot?.center : undefined;
   const lat = center?.lat;
@@ -62,7 +70,7 @@ export default function Home() {
     return () => {
       clearTimeout(timer);
     };
-  }, [text, lat, lng, places, presenter]);
+  }, [text, lat, lng, places, presenter, focusCount]);
 
   const muted = { color: palette.muted };
   const searching = text !== '';
@@ -149,23 +157,11 @@ export default function Home() {
               ) : null}
             </View>
           }
-          ListEmptyComponent={
-            <NearbyMessage
-              state={nearbyState}
-              onRetry={() => {
-                setReloads((n) => n + 1);
-              }}
-            />
-          }
+          ListEmptyComponent={<NearbyMessage state={nearbyState} onRetry={reload} />}
           ListFooterComponent={
             nearbyState.kind === 'failed' || nearbyState.kind === 'no-location' ? (
               nearbyState.snapshot === null ? undefined : (
-                <NearbyMessage
-                  state={nearbyState}
-                  onRetry={() => {
-                    setReloads((n) => n + 1);
-                  }}
-                />
+                <NearbyMessage state={nearbyState} onRetry={reload} />
               )
             ) : (
               <AddPlaceLink />
