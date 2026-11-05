@@ -1,10 +1,10 @@
 import { EVIDENCE_KINDS, ValidationError } from '@amexbutikker/contracts';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_EVIDENCE_WEIGHTS, DefaultEvidenceWeightPolicy } from '../../src/index.js';
+import { DEFAULT_EVIDENCE_WEIGHTS, FixedEvidenceWeightPolicy } from '../../src/index.js';
 
 describe('DefaultEvidenceWeightPolicy', () => {
   it('uses the documented defaults', () => {
-    const policy = new DefaultEvidenceWeightPolicy();
+    const policy = new FixedEvidenceWeightPolicy();
     const table = EVIDENCE_KINDS.map((kind) => [
       kind,
       policy.weightFor(kind),
@@ -28,7 +28,7 @@ describe('DefaultEvidenceWeightPolicy', () => {
   });
 
   it('takes its numbers from the constructor config', () => {
-    const policy = new DefaultEvidenceWeightPolicy({
+    const policy = new FixedEvidenceWeightPolicy({
       ...DEFAULT_EVIDENCE_WEIGHTS,
       user_report: { weight: 0.7, halfLifeDays: 30 },
     });
@@ -46,13 +46,13 @@ describe('DefaultEvidenceWeightPolicy', () => {
     ['NaN weight', { weight: Number.NaN, halfLifeDays: 10 }],
   ])('rejects a config with %s', (_label, entry) => {
     expect(
-      () => new DefaultEvidenceWeightPolicy({ ...DEFAULT_EVIDENCE_WEIGHTS, checkout_logo: entry }),
+      () => new FixedEvidenceWeightPolicy({ ...DEFAULT_EVIDENCE_WEIGHTS, checkout_logo: entry }),
     ).toThrow(ValidationError);
   });
 
   it('does not change when the config object is mutated afterwards', () => {
     const config = { ...DEFAULT_EVIDENCE_WEIGHTS, user_report: { weight: 0.6, halfLifeDays: 180 } };
-    const policy = new DefaultEvidenceWeightPolicy(config);
+    const policy = new FixedEvidenceWeightPolicy(config);
     config.user_report = { weight: 0.1, halfLifeDays: 1 };
 
     expect(policy.weightFor('user_report')).toBe(0.6);

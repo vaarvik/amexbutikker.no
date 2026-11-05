@@ -1,8 +1,6 @@
 import type { SourceFile } from 'ts-morph';
-import type { ClassHeritage } from '../type-checker-class.heritage.js';
-import type { Rule } from '../contract-check.ports.js';
+import type { ClassHeritage, Rule, WorkspacePaths } from '../contract-check.ports.js';
 import type { RuleId, Violation } from '../contract-check.model.js';
-import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (a): every exported class in domain, application, in-memory and apps/api/src implements

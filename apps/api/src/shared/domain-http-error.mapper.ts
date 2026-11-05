@@ -7,19 +7,8 @@ import {
   ValidationError,
 } from '@amexbutikker/contracts';
 import type { ErrorResponseDto } from '@amexbutikker/contracts';
-
-export interface HttpErrorResponse {
-  readonly statusCode: number;
-  readonly headers: Readonly<Record<string, string>>;
-  readonly body: ErrorResponseDto;
-  /** True when the error is a bug or outage rather than a client mistake; it should be logged. */
-  readonly unexpected: boolean;
-}
-
-/** Maps any thrown value to an HTTP response. */
-export interface HttpErrorMapper {
-  toResponse(error: unknown): HttpErrorResponse;
-}
+import type { HttpErrorResponse } from './shared.model.js';
+import type { HttpErrorMapper } from './shared.ports.js';
 
 /** Typed domain errors to status codes. Everything else is a 500 that hides its details. */
 export class DomainHttpErrorMapper implements HttpErrorMapper {

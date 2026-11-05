@@ -3,7 +3,7 @@ import type { Device, DeviceWriter } from '@amexbutikker/contracts';
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import type { Database } from '../shared/shared.model.js';
-import type { DatabaseErrorTranslator } from '../shared/pg-database-error.translator.js';
+import type { DatabaseErrorTranslator } from '../shared/shared.ports.js';
 
 export class PgDeviceRepository implements DeviceWriter {
   public constructor(

@@ -1,12 +1,5 @@
 import type { ClassDeclaration, ClassExpression, Type } from 'ts-morph';
-
-/** Answers questions about a class's inheritance chain. */
-export interface ClassHeritage {
-  /** True when the class, or any base class in the project, has an `implements` clause. */
-  implementsAnInterface(node: ClassDeclaration | ClassExpression): boolean;
-  /** True when the class extends the built-in `Error`, directly or through base classes. */
-  extendsError(node: ClassDeclaration | ClassExpression): boolean;
-}
+import type { ClassHeritage } from './contract-check.ports.js';
 
 export class TypeCheckerClassHeritage implements ClassHeritage {
   public implementsAnInterface(node: ClassDeclaration | ClassExpression): boolean {

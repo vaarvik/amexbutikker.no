@@ -1,13 +1,6 @@
 import { RateLimitedError } from '@amexbutikker/contracts';
 import type { Clock, RateLimiter, RateLimitKey } from '@amexbutikker/contracts';
-
-export interface RateLimitRule {
-  /** Actions allowed per window. */
-  readonly limit: number;
-  readonly windowSeconds: number;
-}
-
-export type RateLimitRules = Readonly<Record<string, RateLimitRule>>;
+import type { RateLimitRules } from './shared.model.js';
 
 interface Window {
   readonly startedAt: number;

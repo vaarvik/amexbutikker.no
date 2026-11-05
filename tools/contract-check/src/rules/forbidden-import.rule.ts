@@ -1,9 +1,8 @@
 import path from 'node:path';
 import { Node, SyntaxKind } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
-import type { Rule } from '../contract-check.ports.js';
+import type { Rule, WorkspacePaths } from '../contract-check.ports.js';
 import type { RuleId, Violation } from '../contract-check.model.js';
-import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (b): packages/domain and packages/application never import from apps/*,

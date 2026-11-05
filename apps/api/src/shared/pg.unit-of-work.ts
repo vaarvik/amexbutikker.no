@@ -1,12 +1,9 @@
 import type { TransactionalPorts, UnitOfWork } from '@amexbutikker/contracts';
 import type { Kysely } from 'kysely';
 import type { Database } from './shared.model.js';
-import type { DatabaseErrorTranslator } from './pg-database-error.translator.js';
+import type { DatabaseErrorTranslator, PgPortsFactory } from './shared.ports.js';
 
-/** Builds the transactional ports over a transaction. Supplied by the composition root. */
-export type PgPortsFactory = (executor: Kysely<Database>) => TransactionalPorts;
-
-export interface PgUnitOfWorkOptions {
+export interface PgUnitOfWorkConfig {
   /** Attempts before a serialisation failure is given up on. Default 10. */
   readonly maxAttempts?: number;
   /** Upper bound of the random backoff before a retry, in ms. Default 20. */
@@ -26,7 +23,7 @@ export class PgUnitOfWork implements UnitOfWork {
     private readonly db: Kysely<Database>,
     private readonly portsFor: PgPortsFactory,
     private readonly errors: DatabaseErrorTranslator,
-    options: PgUnitOfWorkOptions = {},
+    options: PgUnitOfWorkConfig = {},
   ) {
     this.maxAttempts = options.maxAttempts ?? 10;
     this.maxBackoffMs = options.maxBackoffMs ?? 20;

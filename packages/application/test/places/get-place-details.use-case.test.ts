@@ -2,7 +2,7 @@ import { GetPlaceDetailsUseCase } from '@amexbutikker/application';
 import { TestData } from '@amexbutikker/contracts/test-kit';
 import {
   DecayingAcceptanceStatusCalculator,
-  DefaultEvidenceWeightPolicy,
+  FixedEvidenceWeightPolicy,
   LatestEvidenceSummarizer,
   TrigramNameSimilarity,
 } from '@amexbutikker/domain';
@@ -28,7 +28,7 @@ describe('GetPlaceDetailsUseCase', () => {
       places,
       chains,
       evidence,
-      new DecayingAcceptanceStatusCalculator(new DefaultEvidenceWeightPolicy()),
+      new DecayingAcceptanceStatusCalculator(new FixedEvidenceWeightPolicy()),
       new LatestEvidenceSummarizer(),
       clock,
     );

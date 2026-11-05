@@ -1,9 +1,8 @@
 import path from 'node:path';
 import { Node } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
-import type { Rule } from '../contract-check.ports.js';
+import type { Rule, WorkspacePaths } from '../contract-check.ports.js';
 import type { RuleId, Violation } from '../contract-check.model.js';
-import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (g): each folder in apps/api/src/imports/importers is named after the source it imports,

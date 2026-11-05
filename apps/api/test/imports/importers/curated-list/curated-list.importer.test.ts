@@ -3,7 +3,7 @@ import type { ImportContext, ImportRunId, TransactionalPorts } from '@amexbutikk
 import { TestData } from '@amexbutikker/contracts/test-kit';
 import {
   DecayingAcceptanceStatusCalculator,
-  DefaultEvidenceWeightPolicy,
+  FixedEvidenceWeightPolicy,
   ProportionChainHintCalculator,
   SupersedingEvidenceSelector,
   TrigramNameSimilarity,
@@ -112,7 +112,7 @@ describe('CuratedListImporter', () => {
       loader,
       new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
       new CalculatingPlaceStatusRefresher(
-        new DecayingAcceptanceStatusCalculator(new DefaultEvidenceWeightPolicy(), {}, selector),
+        new DecayingAcceptanceStatusCalculator(new FixedEvidenceWeightPolicy(), {}, selector),
         new ProportionChainHintCalculator(),
         clock,
       ),

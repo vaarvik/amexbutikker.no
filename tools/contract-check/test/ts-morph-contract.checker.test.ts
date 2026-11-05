@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { DefaultContractCheckerFactory } from '../src/default-contract-checker.factory.js';
+import { TsMorphContractCheckerFactory } from '../src/ts-morph-contract-checker.factory.js';
 import type { RuleId, Violation } from '../src/contract-check.model.js';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
@@ -11,7 +11,7 @@ function checkFixture(
   name: string,
   only?: RuleId,
 ): readonly Pick<Violation, 'ruleId' | 'file' | 'line'>[] {
-  return new DefaultContractCheckerFactory()
+  return new TsMorphContractCheckerFactory()
     .create(path.join(fixturesDir, name))
     .check()
     .filter(({ ruleId }) => only === undefined || ruleId === only)
@@ -96,14 +96,20 @@ describe('contract-check', () => {
     ]);
   });
 
-  it('(f) flags class files not named after their class and role, and ports/model files not named after their folder', () => {
+  it('(f) flags class files not named after their class and role, ports/model files not named after their folder, extra exports and vague mechanisms', () => {
     const rule = 'class-file-naming';
-    expect(checkFixture('fail-f')).toEqual([
+    expect(checkFixture('fail-f', rule)).toEqual([
       { ruleId: rule, file: 'apps/api/src/places/helpers.ts', line: 1 },
+      { ruleId: rule, file: 'apps/api/src/places/pg-place.repository.ts', line: 1 },
       { ruleId: rule, file: 'apps/api/src/places/place-row.model.ts', line: 1 },
+      { ruleId: rule, file: 'apps/api/src/places/places.widget.ts', line: 1 },
       { ruleId: rule, file: 'apps/api/src/places/places.widget.ts', line: 5 },
       { ruleId: rule, file: 'packages/application/src/places.use-case.ts', line: 11 },
+      { ruleId: rule, file: 'packages/domain/src/calculator.ts', line: 1 },
       { ruleId: rule, file: 'packages/domain/src/calculator.ts', line: 5 },
+      { ruleId: rule, file: 'packages/domain/src/default-weight.policy.ts', line: 1 },
+      { ruleId: rule, file: 'packages/domain/src/default-weight.policy.ts', line: 5 },
+      { ruleId: rule, file: 'tools/demo/src/printer.ts', line: 1 },
       { ruleId: rule, file: 'tools/demo/src/printer.ts', line: 5 },
       { ruleId: rule, file: 'tools/demo/src/size.model.ts', line: 1 },
     ]);

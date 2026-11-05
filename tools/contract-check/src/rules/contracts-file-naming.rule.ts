@@ -1,8 +1,7 @@
 import path from 'node:path';
 import type { SourceFile } from 'ts-morph';
-import type { Rule } from '../contract-check.ports.js';
+import type { Rule, WorkspacePaths } from '../contract-check.ports.js';
 import type { RuleId, Violation } from '../contract-check.model.js';
-import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (e): every feature folder in packages/contracts/src has the same shape. A file in

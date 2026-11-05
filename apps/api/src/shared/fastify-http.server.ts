@@ -1,21 +1,12 @@
 import Fastify from 'fastify';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
-import type { HttpController } from './shared.ports.js';
-import type { HttpErrorMapper } from './domain-http-error.mapper.js';
+import type { HttpController, HttpErrorMapper, HttpServer } from './shared.ports.js';
 
-export interface HttpServerOptions {
+export interface FastifyHttpServerConfig {
   /** Max request body size in bytes. */
   readonly bodyLimit: number;
   /** Trust X-Forwarded-* from a proxy or tunnel in front of the API. */
   readonly trustProxy: boolean;
-}
-
-/** Builds and runs the HTTP API. */
-export interface HttpServer {
-  /** The configured app, ready for `inject` in tests. Built once. */
-  app(): FastifyInstance;
-  listen(host: string, port: number): Promise<string>;
-  close(): Promise<void>;
 }
 
 export class FastifyHttpServer implements HttpServer {
@@ -25,7 +16,7 @@ export class FastifyHttpServer implements HttpServer {
     private readonly controllers: readonly HttpController[],
     private readonly errors: HttpErrorMapper,
     private readonly logger: FastifyBaseLogger,
-    private readonly options: HttpServerOptions,
+    private readonly options: FastifyHttpServerConfig,
   ) {}
 
   public app(): FastifyInstance {

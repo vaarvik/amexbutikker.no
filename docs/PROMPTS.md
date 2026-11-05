@@ -80,7 +80,7 @@ When done, stop and list every interface with a one-line responsibility so I can
 ```
 Implement in packages/domain against the approved contracts. Write the Vitest tests before the implementation.
 
-- DefaultEvidenceWeightPolicy: weights and half-lives come from a config object passed to the constructor. Defaults (weight / half-life in days):
+- FixedEvidenceWeightPolicy: weights and half-lives come from a config object passed to the constructor. Defaults (weight / half-life in days):
   transaction 1.0/365, visit_report 0.8/180, user_report 0.6/180, chain_confirmation 0.5/365,
   external_list 0.25/180 (decay counted from fetchedAt), checkout_logo 0.1/90.
 - DecayingAcceptanceStatusCalculator:

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { OverpassElement } from '../../../../src/imports/importers/osm-overpass/osm-overpass.model.js';
-import { DefaultOsmElementTranslator } from '../../../../src/imports/importers/osm-overpass/default-osm-element.translator.js';
+import { TagOsmElementTranslator } from '../../../../src/imports/importers/osm-overpass/tag-osm-element.translator.js';
 
-const translator = new DefaultOsmElementTranslator();
+const translator = new TagOsmElementTranslator();
 
 function node(tags: Record<string, string>, extra: Partial<OverpassElement> = {}): OverpassElement {
   return { type: 'node', id: 42, lat: 59.91, lon: 10.75, tags, ...extra };

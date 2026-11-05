@@ -1,9 +1,8 @@
 import path from 'node:path';
-import type { SourceFile } from 'ts-morph';
-import type { ClassHeritage } from '../type-checker-class.heritage.js';
-import type { Rule } from '../contract-check.ports.js';
+import { Node } from 'ts-morph';
+import type { ClassDeclaration, SourceFile } from 'ts-morph';
+import type { ClassHeritage, Rule, WorkspacePaths } from '../contract-check.ports.js';
 import type { RuleId, Violation } from '../contract-check.model.js';
-import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (f): outside contracts, a file holds at most one exported class (Error subclasses aside)
@@ -63,6 +62,14 @@ export class ClassFileNamingRule implements Rule {
       'locator',
     ],
     private readonly classlessKinds: readonly string[] = ['ports', 'model'],
+    private readonly vagueMechanisms: readonly string[] = [
+      'default',
+      'basic',
+      'simple',
+      'generic',
+      'standard',
+      'impl',
+    ],
     private readonly exemptFiles: ReadonlySet<string> = new Set([
       'index.ts',
       'cli.ts',
@@ -113,8 +120,42 @@ export class ClassFileNamingRule implements Rule {
       ];
     }
 
-    const problem = this.nameProblem(only.getName() ?? '', fileName);
-    return problem === null ? [] : [violation(only.getStartLineNumber(), problem)];
+    const className = only.getName() ?? '';
+    const problem = this.nameProblem(className, fileName);
+    return [
+      ...(problem === null ? [] : [violation(only.getStartLineNumber(), problem)]),
+      ...this.otherExports(sourceFile, className, classes).map((node) =>
+        violation(
+          node.getStartLineNumber(),
+          `A class file exports only ${className} and its ${className}Config; move ${this.exportName(node)} to a *.ports.ts or *.model.ts file.`,
+        ),
+      ),
+    ];
+  }
+
+  /** Exports other than the class, its Error subclasses and its `<Class>Config` type. */
+  private otherExports(
+    sourceFile: SourceFile,
+    className: string,
+    classes: readonly ClassDeclaration[],
+  ): Node[] {
+    const allowed = new Set<Node>(classes);
+    return [...sourceFile.getExportedDeclarations()].flatMap(([name, declarations]) =>
+      declarations.filter(
+        (node) =>
+          node.getSourceFile() === sourceFile &&
+          !allowed.has(node) &&
+          !(Node.isClassDeclaration(node) && this.heritage.extendsError(node)) &&
+          !(
+            name === `${className}Config` &&
+            (Node.isInterfaceDeclaration(node) || Node.isTypeAliasDeclaration(node))
+          ),
+      ),
+    );
+  }
+
+  private exportName(node: Node): string {
+    return Node.hasName(node) ? node.getName() : node.getKindName();
   }
 
   /** The folder name, or the package folder's name for a file directly in `src/`. */
@@ -136,6 +177,10 @@ export class ClassFileNamingRule implements Rule {
       return `Class ${className} must end in a known role (${this.roles.join(', ')}).`;
     }
     const prefix = kebab.slice(0, kebab.length - role.length - 1);
+    const [leading] = prefix.split('-');
+    if (leading !== undefined && this.vagueMechanisms.includes(leading)) {
+      return `Class ${className} must name its mechanism; "${leading}" says nothing about how it works.`;
+    }
     const expected = prefix.length === 0 ? `${role}.ts` : `${prefix}.${role}.ts`;
     return fileName === expected ? null : `Class ${className} must live in "${expected}".`;
   }

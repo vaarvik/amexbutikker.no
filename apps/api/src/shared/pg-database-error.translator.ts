@@ -1,19 +1,6 @@
 import type { DomainError } from '@amexbutikker/contracts';
-
-/** Maps a constraint name to the typed error it means for the caller. */
-export type ConstraintErrors = Readonly<Record<string, () => DomainError>>;
-
-/** Turns driver errors into typed domain errors. */
-export interface DatabaseErrorTranslator {
-  /**
-   * @returns the mapped DomainError when `error` violates one of the given constraints,
-   *   otherwise `error` itself (wrapped in an Error if it is not one).
-   */
-  translate(error: unknown, constraints: ConstraintErrors): Error;
-
-  /** True for errors after which the whole transaction may be retried (serialisation, deadlock). */
-  isRetryable(error: unknown): boolean;
-}
+import type { ConstraintErrors } from './shared.model.js';
+import type { DatabaseErrorTranslator } from './shared.ports.js';
 
 interface PgDriverError {
   readonly code?: unknown;

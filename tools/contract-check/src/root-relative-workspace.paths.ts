@@ -1,15 +1,5 @@
 import path from 'node:path';
-
-/** Classifies files by where they sit in the monorepo. */
-export interface WorkspacePaths {
-  /** Path relative to the workspace root, always with forward slashes. */
-  relative(filePath: string): string;
-  /** True when the file sits inside `dir` (relative to the workspace root). */
-  isWithin(filePath: string, dir: string): boolean;
-  isTest(filePath: string): boolean;
-  isCompositionRoot(filePath: string): boolean;
-  isTestKit(filePath: string): boolean;
-}
+import type { WorkspacePaths } from './contract-check.ports.js';
 
 export class RootRelativeWorkspacePaths implements WorkspacePaths {
   private static readonly testFilePattern = /\.(test|spec)\.tsx?$/;

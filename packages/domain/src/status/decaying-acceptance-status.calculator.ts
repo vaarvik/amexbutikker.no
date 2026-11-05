@@ -16,7 +16,7 @@ import type {
   ValidationIssue,
 } from '@amexbutikker/contracts';
 
-export interface AcceptanceStatusOptions {
+export interface DecayingAcceptanceStatusCalculatorConfig {
   /** Share of decayed weight one side needs for accepted / rejected. In (0.5, 1]. Default 0.8. */
   readonly decisiveShare?: number;
   /** Below this total decayed weight the status is unknown. >= 0. Default 0.05. */
@@ -60,7 +60,7 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
   /** @throws ValidationError when an option is out of range. */
   public constructor(
     private readonly policy: EvidenceWeightPolicy,
-    options: AcceptanceStatusOptions = {},
+    options: DecayingAcceptanceStatusCalculatorConfig = {},
     private readonly selector: CurrentEvidenceSelector = new SupersedingEvidenceSelector(),
   ) {
     this.decisiveShare = options.decisiveShare ?? 0.8;

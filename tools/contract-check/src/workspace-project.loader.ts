@@ -1,10 +1,6 @@
 import path from 'node:path';
 import { ModuleKind, ModuleResolutionKind, Project, ScriptTarget } from 'ts-morph';
-
-/** Builds a ts-morph project covering the source files the rules apply to. */
-export interface ProjectLoader {
-  load(rootDir: string): Project;
-}
+import type { ProjectLoader } from './contract-check.ports.js';
 
 export class WorkspaceProjectLoader implements ProjectLoader {
   public constructor(

@@ -14,7 +14,7 @@ const WikidataIdSchema = z.string().regex(/^Q\d+$/);
  * Translates OSM tags into the place model. `amenity` wins over `shop`, which wins over
  * `tourism=hotel`. A tag that cannot be used is dropped with a warning; the place is kept.
  */
-export class DefaultOsmElementTranslator implements OsmElementTranslator {
+export class TagOsmElementTranslator implements OsmElementTranslator {
   public translate(element: OverpassElement): OsmTranslation {
     const osmRef = `${element.type}/${String(element.id)}`;
     const tags = element.tags ?? {};

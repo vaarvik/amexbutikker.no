@@ -4,7 +4,7 @@ import { NotFoundError } from '@amexbutikker/contracts';
 import { TestData } from '@amexbutikker/contracts/test-kit';
 import {
   DecayingAcceptanceStatusCalculator,
-  DefaultEvidenceWeightPolicy,
+  FixedEvidenceWeightPolicy,
   ProportionChainHintCalculator,
   TrigramNameSimilarity,
 } from '@amexbutikker/domain';
@@ -22,7 +22,7 @@ const clock: Clock = { now: () => NOW };
 
 describe('CalculatingPlaceStatusRefresher', () => {
   const refresher = new CalculatingPlaceStatusRefresher(
-    new DecayingAcceptanceStatusCalculator(new DefaultEvidenceWeightPolicy()),
+    new DecayingAcceptanceStatusCalculator(new FixedEvidenceWeightPolicy()),
     new ProportionChainHintCalculator(),
     clock,
   );

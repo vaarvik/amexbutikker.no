@@ -10,7 +10,7 @@ import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
 import { z } from 'zod';
 import type { Database } from '../shared/shared.model.js';
-import type { DatabaseErrorTranslator } from '../shared/pg-database-error.translator.js';
+import type { DatabaseErrorTranslator } from '../shared/shared.ports.js';
 
 const StatusRowSchema = z.object({
   place_id: z.string(),

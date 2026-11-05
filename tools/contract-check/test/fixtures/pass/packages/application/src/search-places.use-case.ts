@@ -9,4 +9,5 @@ export class SearchPlacesUseCase implements SearchPlaces {
 }
 
 class NotExportedHelper {}
-export const helper = NotExportedHelper;
+const helper = NotExportedHelper;
+void helper;

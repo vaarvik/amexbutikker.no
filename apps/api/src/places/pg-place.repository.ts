@@ -19,7 +19,7 @@ import { sql } from 'kysely';
 import type { Kysely, RawBuilder } from 'kysely';
 import { z } from 'zod';
 import type { Database } from '../shared/shared.model.js';
-import type { DatabaseErrorTranslator } from '../shared/pg-database-error.translator.js';
+import type { DatabaseErrorTranslator } from '../shared/shared.ports.js';
 
 /** The words pg_trgm extracts trigrams from; words contain no LIKE wildcards. */
 const WORD = /[\p{L}\p{N}]+/gu;

@@ -1,9 +1,5 @@
 import type { Violation } from './contract-check.model.js';
-
-/** Presents violations to whoever ran the check. */
-export interface ViolationReporter {
-  report(violations: readonly Violation[]): void;
-}
+import type { ViolationReporter } from './contract-check.ports.js';
 
 export class ConsoleViolationReporter implements ViolationReporter {
   public report(violations: readonly Violation[]): void {

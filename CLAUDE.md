@@ -54,7 +54,7 @@ Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `
 
 ### File naming
 
-Every folder of the same kind looks alike. Names are kebab-case and start with the domain noun.
+Every folder of the same kind looks alike. Names are kebab-case. Contracts files, types and ports start with the domain noun; class files start with the class name, which puts the mechanism first (`pg-place.repository.ts`).
 
 Contracts: a feature folder contains only these files, each prefixed with the folder name, and only the ones it needs:
 
@@ -68,7 +68,7 @@ Contracts: a feature folder contains only these files, each prefixed with the fo
 
 Test kit: `<feature>.contract.ts` exports `describe<Port>Contract` functions.
 
-Everywhere else (rule (f)): one exported class per file, Error subclasses aside. The file is named after the class in kebab-case with a dot before the role:
+Everywhere else (rule (f)): one exported class per file, Error subclasses aside. The file exports nothing else except the class's constructor config, named `<Class>Config` (`OverpassOsmImporterConfig`); ports go to `<folder>.ports.ts`, other data types and constants to `<folder>.model.ts`. The file is named after the class in kebab-case with a dot before the role:
 
 - `CreatePlaceUseCase` → `create-place.use-case.ts`
 - `PgPlaceRepository` → `pg-place.repository.ts`
@@ -93,6 +93,7 @@ Exempt from rule (f):
 Code names:
 
 - Types, interfaces and ports start with the domain noun: `PlaceReader`, `PlaceStatus`, `ChainHint`.
+- Implementations are `<Mechanism><Noun><Role>`. The mechanism says how it works: `Pg`, `InMemory`, `Http`, `DiskCaching`, `Grid`, `Allowlist`, `Fixed`, `Null` (does nothing on purpose). `Default`, `Basic`, `Simple`, `Generic`, `Standard` and `Impl` say nothing and are rejected by rule (f).
 - Use cases are verb + noun, because they are commands: `SubmitReport`, implemented by `SubmitReportUseCase`.
 - One class may implement a feature's reader and writer ports together: `<Mechanism><Noun>Repository` (`InMemoryPlaceRepository`, `PgPlaceRepository`). Consumers still depend on the single port they use.
 - Methods do not repeat the noun: `placeReader.getById()`, not `getPlaceById()`.

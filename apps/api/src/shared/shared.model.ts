@@ -1,4 +1,5 @@
 import type { ColumnType, Generated } from 'kysely';
+import type { DomainError, ErrorResponseDto } from '@amexbutikker/contracts';
 
 // Table shapes as Postgres returns them. Queries are written in SQL; every row is validated with
 // zod before it becomes a domain object, so these types only document the schema for Kysely.
@@ -97,3 +98,14 @@ export interface Database {
   devices: DevicesTable;
   unmatched_descriptors: UnmatchedDescriptorsTable;
 }
+
+export interface HttpErrorResponse {
+  readonly statusCode: number;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly body: ErrorResponseDto;
+  /** True when the error is a bug or outage rather than a client mistake; it should be logged. */
+  readonly unexpected: boolean;
+}
+
+/** Maps a constraint name to the typed error it means for the caller. */
+export type ConstraintErrors = Readonly<Record<string, () => DomainError>>;

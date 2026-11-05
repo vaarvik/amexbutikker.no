@@ -15,7 +15,7 @@ import {
 } from '@amexbutikker/in-memory';
 import type { InMemoryTables } from '@amexbutikker/in-memory';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DefaultOsmElementTranslator } from '../../../../src/imports/importers/osm-overpass/default-osm-element.translator.js';
+import { TagOsmElementTranslator } from '../../../../src/imports/importers/osm-overpass/tag-osm-element.translator.js';
 import type {
   OverpassClient,
   OverpassResponse,
@@ -114,7 +114,7 @@ describe('OverpassOsmImporter', () => {
     client = new StubOverpassClient({ elements });
     importer = new OverpassOsmImporter(
       client,
-      new DefaultOsmElementTranslator(),
+      new TagOsmElementTranslator(),
       new GridOsmAddressLocator(0.0005),
       new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
       new UuidV7IdGenerator(clock),
@@ -275,7 +275,7 @@ describe('OverpassOsmImporter', () => {
   it('reports a failed fetch instead of throwing', async () => {
     const failing = new OverpassOsmImporter(
       new FailingOverpassClient(),
-      new DefaultOsmElementTranslator(),
+      new TagOsmElementTranslator(),
       new GridOsmAddressLocator(0.0005),
       new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
       new UuidV7IdGenerator(clock),

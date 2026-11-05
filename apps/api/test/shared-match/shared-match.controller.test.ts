@@ -4,7 +4,7 @@ import { TestData } from '@amexbutikker/contracts/test-kit';
 import Fastify from 'fastify';
 import { describe, expect, it } from 'vitest';
 import { SharedMatchController } from '../../src/shared-match/shared-match.controller.js';
-import { DefaultHttpDtoMapper } from '../../src/shared/default-http-dto.mapper.js';
+import { AllowlistHttpDtoMapper } from '../../src/shared/allowlist-http-dto.mapper.js';
 
 class FixedMatch implements MatchSharedPlace {
   public readonly texts: string[] = [];
@@ -36,9 +36,11 @@ describe('SharedMatchController', () => {
       decision: { type: 'open', placeId: place.id },
     });
     const app = Fastify();
-    new SharedMatchController(match, new ZodInputValidator(), new DefaultHttpDtoMapper()).register(
-      app,
-    );
+    new SharedMatchController(
+      match,
+      new ZodInputValidator(),
+      new AllowlistHttpDtoMapper(),
+    ).register(app);
 
     const response = await app.inject({
       method: 'POST',

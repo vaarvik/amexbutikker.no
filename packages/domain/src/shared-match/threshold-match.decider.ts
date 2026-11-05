@@ -6,7 +6,7 @@ import type {
   ValidationIssue,
 } from '@amexbutikker/contracts';
 
-export interface MatchDeciderOptions {
+export interface ThresholdMatchDeciderConfig {
   /** Score the top candidate needs to be opened directly. In (0, 1]. Default 0.6. */
   readonly openThreshold?: number;
   /** How far the top candidate must be ahead of the second. In [0, 1]. Default 0.15. */
@@ -18,7 +18,7 @@ export class ThresholdMatchDecider implements MatchDecider {
   private readonly minimumLead: number;
 
   /** @throws ValidationError when an option is out of range. */
-  public constructor(options: MatchDeciderOptions = {}) {
+  public constructor(options: ThresholdMatchDeciderConfig = {}) {
     this.openThreshold = options.openThreshold ?? 0.6;
     this.minimumLead = options.minimumLead ?? 0.15;
     const issues: ValidationIssue[] = [];

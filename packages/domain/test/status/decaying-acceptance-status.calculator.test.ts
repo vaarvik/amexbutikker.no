@@ -2,16 +2,13 @@ import type { ChainId, Evidence, PlaceId } from '@amexbutikker/contracts';
 import { UNKNOWN_PLACE_STATUS, ValidationError } from '@amexbutikker/contracts';
 import { TestData, daysAfter } from '@amexbutikker/contracts/test-kit';
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  DecayingAcceptanceStatusCalculator,
-  DefaultEvidenceWeightPolicy,
-} from '../../src/index.js';
+import { DecayingAcceptanceStatusCalculator, FixedEvidenceWeightPolicy } from '../../src/index.js';
 
 const NOW = new Date('2026-11-03T12:00:00.000Z');
 const daysAgo = (days: number): Date => daysAfter(NOW, -days);
 
 describe('DecayingAcceptanceStatusCalculator', () => {
-  const policy = new DefaultEvidenceWeightPolicy();
+  const policy = new FixedEvidenceWeightPolicy();
   const calculator = new DecayingAcceptanceStatusCalculator(policy);
 
   let data: TestData;

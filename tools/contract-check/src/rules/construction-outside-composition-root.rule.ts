@@ -1,9 +1,7 @@
 import { Node, SyntaxKind } from 'ts-morph';
 import type { NewExpression, SourceFile } from 'ts-morph';
-import type { Rule } from '../contract-check.ports.js';
-import type { ClassHeritage } from '../type-checker-class.heritage.js';
+import type { ClassHeritage, Rule, WorkspacePaths } from '../contract-check.ports.js';
 import type { RuleId, Violation } from '../contract-check.model.js';
-import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (c): application, in-memory and api classes are only constructed with `new` in a

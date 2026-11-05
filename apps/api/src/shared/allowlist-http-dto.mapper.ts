@@ -15,19 +15,13 @@ import type {
   StatusChangeOutput,
   StatusChangeResponseDto,
 } from '@amexbutikker/contracts';
+import type { HttpDtoMapper } from './shared.ports.js';
 
-/** Turns use case output into wire DTOs. */
-export interface HttpDtoMapper {
-  place(place: Place): PlaceDto;
-  status(status: PlaceStatus): PlaceStatusDto;
-  chainHint(hint: ChainHint): ChainHintDto;
-  placeList(output: PlaceListOutput): PlaceListResponseDto;
-  placeDetails(details: PlaceDetails): PlaceDetailsResponseDto;
-  statusChange(output: StatusChangeOutput): StatusChangeResponseDto;
-  sharedMatch(output: MatchSharedPlaceOutput): MatchSharedResponseDto;
-}
-
-export class DefaultHttpDtoMapper implements HttpDtoMapper {
+/**
+ * Copies an explicit list of fields into each DTO, so a field added to the model never reaches
+ * the wire by accident. Dates become ISO strings.
+ */
+export class AllowlistHttpDtoMapper implements HttpDtoMapper {
   public place(place: Place): PlaceDto {
     const base = { id: place.id, name: place.name, category: place.category };
     return place.kind === 'online'

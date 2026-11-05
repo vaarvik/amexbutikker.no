@@ -1,6 +1,5 @@
 import { TypeCheckerClassHeritage } from './type-checker-class.heritage.js';
 import { TsMorphContractChecker } from './ts-morph-contract.checker.js';
-import type { ContractChecker } from './ts-morph-contract.checker.js';
 import { ClassFileNamingRule } from './rules/class-file-naming.rule.js';
 import { ClassImplementsInterfaceRule } from './rules/class-implements-interface.rule.js';
 import { ConstructionOutsideCompositionRootRule } from './rules/construction-outside-composition-root.rule.js';
@@ -10,13 +9,9 @@ import { ForbiddenImportRule } from './rules/forbidden-import.rule.js';
 import { ImporterFolderNamingRule } from './rules/importer-folder-naming.rule.js';
 import { WorkspaceProjectLoader } from './workspace-project.loader.js';
 import { RootRelativeWorkspacePaths } from './root-relative-workspace.paths.js';
+import type { ContractChecker, ContractCheckerFactory } from './contract-check.ports.js';
 
-/** Creates a checker for a workspace root. Shared by the CLI and the tests. */
-export interface ContractCheckerFactory {
-  create(rootDir: string): ContractChecker;
-}
-
-export class DefaultContractCheckerFactory implements ContractCheckerFactory {
+export class TsMorphContractCheckerFactory implements ContractCheckerFactory {
   public create(rootDir: string): ContractChecker {
     const heritage = new TypeCheckerClassHeritage();
     return new TsMorphContractChecker(

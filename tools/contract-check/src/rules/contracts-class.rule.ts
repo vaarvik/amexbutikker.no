@@ -1,9 +1,7 @@
 import { SyntaxKind } from 'ts-morph';
 import type { ClassDeclaration, ClassExpression, SourceFile } from 'ts-morph';
-import type { ClassHeritage } from '../type-checker-class.heritage.js';
-import type { Rule } from '../contract-check.ports.js';
+import type { ClassHeritage, Rule, WorkspacePaths } from '../contract-check.ports.js';
 import type { RuleId, Violation } from '../contract-check.model.js';
-import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (d): packages/contracts/src holds interfaces only. The one kind of class allowed there

@@ -25,7 +25,7 @@ import type {
 } from '@amexbutikker/contracts';
 import {
   DecayingAcceptanceStatusCalculator,
-  DefaultEvidenceWeightPolicy,
+  FixedEvidenceWeightPolicy,
   LatestEvidenceSummarizer,
   ProportionChainHintCalculator,
   SupersedingEvidenceSelector,
@@ -60,7 +60,7 @@ import { OSLO_KOMMUNENUMMER } from './imports/importers/brreg-underenheter/brreg
 import { CachedBrregUnderenhetReader } from './imports/importers/brreg-underenheter/cached-brreg-underenhet.reader.js';
 import { FsTextFileLoader } from './imports/fs-text-file.loader.js';
 import { CuratedListImporter } from './imports/importers/curated-list/curated-list.importer.js';
-import { DefaultOsmElementTranslator } from './imports/importers/osm-overpass/default-osm-element.translator.js';
+import { TagOsmElementTranslator } from './imports/importers/osm-overpass/tag-osm-element.translator.js';
 import { DiskCachingOverpassClient } from './imports/importers/osm-overpass/disk-caching-overpass.client.js';
 import { GridOsmAddressLocator } from './imports/importers/osm-overpass/grid-osm-address.locator.js';
 import { HttpOverpassClient } from './imports/importers/osm-overpass/http-overpass.client.js';
@@ -77,9 +77,8 @@ import { PlacesController } from './places/places.controller.js';
 import { PgPlaceRepository } from './places/pg-place.repository.js';
 import { ReportsController } from './reports/reports.controller.js';
 import { FastifyHttpServer } from './shared/fastify-http.server.js';
-import type { HttpServer } from './shared/fastify-http.server.js';
 import { DomainHttpErrorMapper } from './shared/domain-http-error.mapper.js';
-import { DefaultHttpDtoMapper } from './shared/default-http-dto.mapper.js';
+import { AllowlistHttpDtoMapper } from './shared/allowlist-http-dto.mapper.js';
 import { BearerTokenAuthenticator } from './shared/bearer-token.authenticator.js';
 import type { InMemoryTables } from '@amexbutikker/in-memory';
 import { SystemClock } from './shared/system.clock.js';
@@ -88,6 +87,7 @@ import type { Database } from './shared/shared.model.js';
 import { PgDatabaseErrorTranslator } from './shared/pg-database-error.translator.js';
 import { PgUnitOfWork } from './shared/pg.unit-of-work.js';
 import { PgPlaceStatusRepository } from './status/pg-place-status.repository.js';
+import type { HttpServer } from './shared/shared.ports.js';
 
 const RateLimitRuleSchema = z.object({
   limit: z.int().positive(),
@@ -194,7 +194,7 @@ export class CompositionRoot {
     const validator = new ZodInputValidator();
     const selector = new SupersedingEvidenceSelector();
     const calculator = new DecayingAcceptanceStatusCalculator(
-      new DefaultEvidenceWeightPolicy(),
+      new FixedEvidenceWeightPolicy(),
       {},
       selector,
     );
@@ -228,7 +228,7 @@ export class CompositionRoot {
     } = this.storage;
 
     const auth = new BearerTokenAuthenticator(tokens);
-    const dtos = new DefaultHttpDtoMapper();
+    const dtos = new AllowlistHttpDtoMapper();
     this.httpServer = new FastifyHttpServer(
       [
         new PlacesController(
@@ -284,7 +284,7 @@ export class CompositionRoot {
             { ...cache, directory: join(config.imports.cacheDir, 'overpass') },
             clock,
           ),
-          new DefaultOsmElementTranslator(),
+          new TagOsmElementTranslator(),
           new GridOsmAddressLocator(0.0005),
           importUnitOfWork,
           ids,
