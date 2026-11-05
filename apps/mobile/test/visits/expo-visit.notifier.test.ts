@@ -81,7 +81,7 @@ describe('ExpoVisitNotifier', () => {
       {
         content: {
           title: 'Betalte du med Amex hos Kafé Åsen?',
-          body: 'Trykk og hold for å svare. Svaret hjelper neste person.',
+          body: 'Svaret ditt hjelper neste person.',
           data: { kind: 'ask', placeId: ASK_ID },
           categoryIdentifier: 'visit-ask',
         },

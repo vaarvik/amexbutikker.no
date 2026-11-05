@@ -56,7 +56,7 @@ export class ExpoVisitNotifier implements VisitNotifier {
       case 'ask':
         return {
           title: `Betalte du med Amex hos ${prompt.candidate.name}?`,
-          body: 'Trykk og hold for å svare. Svaret hjelper neste person.',
+          body: 'Svaret ditt hjelper neste person.',
           data: { kind: 'ask', placeId: prompt.candidate.placeId },
           categoryIdentifier: this.config.askCategory,
         };
