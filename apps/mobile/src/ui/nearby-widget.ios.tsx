@@ -59,8 +59,10 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
         {title('DU ER HER')}
         <Text modifiers={[font({ weight: 'bold', size: 17 }), lineLimit(2)]}>{here.name}</Text>
         <HStack spacing={6}>
-          <Image systemName={here.symbol as 'questionmark.circle'} size={22} color={here.color} />
-          <Text modifiers={[font({ weight: 'bold', size: 20 }), lineLimit(1)]}>{here.answer}</Text>
+          <Image systemName={here.symbol as 'questionmark.circle'} size={18} color={here.color} />
+          <Text modifiers={[font({ weight: 'semibold', size: 16 }), lineLimit(2)]}>
+            {here.answer}
+          </Text>
         </HStack>
         <Spacer />
         {updated}
