@@ -343,7 +343,7 @@ A Kart tab showing places as pins coloured by status (with the status symbol, ne
 
 ---
 
-## Phase 12: More evidence sources
+## Phase 12: More evidence sources (OSM done; guide claims and statements wait for input)
 
 ```
 - OsmOverpassImporter: read payment:american_express=yes|no (and payment:credit_cards=no) as external_list evidence,
