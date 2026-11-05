@@ -6,7 +6,7 @@ import type {
   PlaceStatusSnapshot,
   PlaceStatusWriter,
 } from '@amexbutikker/contracts';
-import type { InMemoryTables } from '../shared/in-memory.ports.js';
+import type { InMemoryTables } from '../shared/shared.ports.js';
 
 export class InMemoryPlaceStatusRepository implements PlaceStatusReader, PlaceStatusWriter {
   public constructor(private readonly tables: InMemoryTables) {}

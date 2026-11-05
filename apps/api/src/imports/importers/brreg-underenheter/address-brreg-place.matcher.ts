@@ -1,6 +1,6 @@
 import type { NameSimilarity, PhysicalPlace } from '@amexbutikker/contracts';
-import type { BrregUnderenhet } from './brreg.model.js';
-import type { BrregPlaceMatch, BrregPlaceMatcher } from './brreg.ports.js';
+import type { BrregUnderenhet } from './brreg-underenheter.model.js';
+import type { BrregPlaceMatch, BrregPlaceMatcher } from './brreg-underenheter.ports.js';
 
 export interface AddressBrregPlaceMatcherConfig {
   /** Lowest name similarity that counts as the same business. */

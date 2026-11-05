@@ -1,5 +1,5 @@
 import type { TransactionalPorts, UnitOfWork } from '@amexbutikker/contracts';
-import type { InMemoryPortsFactory, InMemoryTables } from './in-memory.ports.js';
+import type { InMemoryPortsFactory, InMemoryTables } from './shared.ports.js';
 
 /**
  * Runs work against a copy of the tables and swaps the copy in on success. Runs are queued one

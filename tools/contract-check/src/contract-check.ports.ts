@@ -1,6 +1,6 @@
 import type { SourceFile } from 'ts-morph';
 import type { WorkspacePaths } from './root-relative-workspace.paths.js';
-import type { RuleId, Violation } from './violation.model.js';
+import type { RuleId, Violation } from './contract-check.model.js';
 
 /** One architecture rule, checked one source file at a time. */
 export interface Rule {

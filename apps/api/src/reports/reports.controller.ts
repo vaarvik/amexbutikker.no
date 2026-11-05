@@ -5,7 +5,7 @@ import {
 } from '@amexbutikker/contracts';
 import type { InputValidator, RemoveMyReport, SubmitReport } from '@amexbutikker/contracts';
 import type { FastifyInstance } from 'fastify';
-import type { HttpController } from '../shared/http.ports.js';
+import type { HttpController } from '../shared/shared.ports.js';
 import type { HttpDtoMapper } from '../shared/default-http-dto.mapper.js';
 import type { RequestAuthenticator } from '../shared/bearer-token.authenticator.js';
 

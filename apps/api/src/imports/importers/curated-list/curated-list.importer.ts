@@ -15,8 +15,8 @@ import type {
 import { parse } from 'yaml';
 import { z } from 'zod';
 import type { ImportUnitOfWork, TextFileLoader } from '../../imports.ports.js';
-import { CuratedClaimFileSchema, CuratedClaimSchema } from './curated.model.js';
-import type { CuratedClaim } from './curated.model.js';
+import { CuratedClaimFileSchema, CuratedClaimSchema } from './curated-list.model.js';
+import type { CuratedClaim } from './curated-list.model.js';
 
 export interface CuratedListImporterConfig {
   /** The claim file, normally data/curated-claims.yaml. */

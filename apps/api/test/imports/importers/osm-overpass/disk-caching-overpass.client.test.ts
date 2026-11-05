@@ -6,7 +6,7 @@ import { DiskCachingOverpassClient } from '../../../../src/imports/importers/osm
 import type {
   OverpassClient,
   OverpassResponse,
-} from '../../../../src/imports/importers/osm-overpass/osm.ports.js';
+} from '../../../../src/imports/importers/osm-overpass/osm-overpass.ports.js';
 
 const HOUR = 3_600_000;
 

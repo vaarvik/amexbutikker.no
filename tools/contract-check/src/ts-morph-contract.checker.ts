@@ -1,6 +1,6 @@
 import type { Project } from 'ts-morph';
-import type { Rule } from './rule.ports.js';
-import type { Violation } from './violation.model.js';
+import type { Rule } from './contract-check.ports.js';
+import type { Violation } from './contract-check.model.js';
 import type { WorkspacePaths } from './root-relative-workspace.paths.js';
 
 /** Runs every architecture rule over a workspace. */

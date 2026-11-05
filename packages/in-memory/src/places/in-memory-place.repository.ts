@@ -16,7 +16,7 @@ import type {
   PlaceUpsertResult,
   PlaceWriter,
 } from '@amexbutikker/contracts';
-import type { InMemoryTables } from '../shared/in-memory.ports.js';
+import type { InMemoryTables } from '../shared/shared.ports.js';
 
 const EARTH_RADIUS_M = 6_371_008.8;
 const WORD = /[\p{L}\p{N}]+/gu;

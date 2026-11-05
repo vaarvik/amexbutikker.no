@@ -10,7 +10,7 @@ import type {
   Clock,
   NameSimilarity,
 } from '@amexbutikker/contracts';
-import type { InMemoryTables } from '../shared/in-memory.ports.js';
+import type { InMemoryTables } from '../shared/shared.ports.js';
 
 export class InMemoryChainRepository implements ChainReader, ChainWriter {
   public constructor(

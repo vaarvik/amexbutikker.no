@@ -7,7 +7,7 @@ import type {
   EvidenceWriter,
   PlaceId,
 } from '@amexbutikker/contracts';
-import type { InMemoryTables } from '../shared/in-memory.ports.js';
+import type { InMemoryTables } from '../shared/shared.ports.js';
 
 /** Append-only: there is deliberately no code path that changes or removes evidence. */
 export class InMemoryEvidenceRepository implements EvidenceReader, EvidenceWriter {

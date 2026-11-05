@@ -1,15 +1,16 @@
 import path from 'node:path';
 import type { SourceFile } from 'ts-morph';
 import type { ClassHeritage } from '../type-checker-class.heritage.js';
-import type { Rule } from '../rule.ports.js';
-import type { RuleId, Violation } from '../violation.model.js';
+import type { Rule } from '../contract-check.ports.js';
+import type { RuleId, Violation } from '../contract-check.model.js';
 import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**
  * Rule (f): outside contracts, a file holds at most one exported class (Error subclasses aside)
  * and is named after it: kebab-case, with a dot before the role, e.g. `CreatePlaceUseCase` in
  * `create-place.use-case.ts`, `PgUnitOfWork` in `pg.unit-of-work.ts`. A file without a class is
- * `*.ports.ts` (interfaces) or `*.model.ts` (data types and constants).
+ * `<folder>.ports.ts` (interfaces) or `<folder>.model.ts` (data types and constants), named after
+ * its folder; directly in `src/`, after the package folder (`contract-check.ports.ts`).
  */
 export class ClassFileNamingRule implements Rule {
   public readonly id: RuleId = 'class-file-naming';
@@ -97,8 +98,9 @@ export class ClassFileNamingRule implements Rule {
 
     const [only, second] = classes;
     if (only === undefined) {
-      const allowed = this.classlessKinds.map((kind) => `*.${kind}.ts`);
-      return allowed.some((pattern) => fileName.endsWith(pattern.slice(1)))
+      const prefix = this.folderPrefix(relativePath);
+      const allowed = this.classlessKinds.map((kind) => `${prefix}.${kind}.ts`);
+      return allowed.includes(fileName)
         ? []
         : [violation(1, `A file without a class must be named ${allowed.join(' or ')}.`)];
     }
@@ -113,6 +115,13 @@ export class ClassFileNamingRule implements Rule {
 
     const problem = this.nameProblem(only.getName() ?? '', fileName);
     return problem === null ? [] : [violation(only.getStartLineNumber(), problem)];
+  }
+
+  /** The folder name, or the package folder's name for a file directly in `src/`. */
+  private folderPrefix(relativePath: string): string {
+    const folders = relativePath.split('/').slice(0, -1);
+    const parent = folders.at(-1) ?? '';
+    return parent === 'src' ? (folders.at(-2) ?? parent) : parent;
   }
 
   private nameProblem(className: string, fileName: string): string | null {

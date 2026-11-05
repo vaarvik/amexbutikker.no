@@ -1,4 +1,4 @@
-import type { InMemoryTables, InMemoryTablesFactory } from './in-memory.ports.js';
+import type { InMemoryTables, InMemoryTablesFactory } from './shared.ports.js';
 
 export class EmptyInMemoryTablesFactory implements InMemoryTablesFactory {
   public create(): InMemoryTables {

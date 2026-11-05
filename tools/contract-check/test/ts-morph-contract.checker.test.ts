@@ -2,7 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { DefaultContractCheckerFactory } from '../src/default-contract-checker.factory.js';
-import type { RuleId, Violation } from '../src/violation.model.js';
+import type { RuleId, Violation } from '../src/contract-check.model.js';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures');
 
@@ -96,14 +96,16 @@ describe('contract-check', () => {
     ]);
   });
 
-  it('(f) flags class files not named after their class and role', () => {
+  it('(f) flags class files not named after their class and role, and ports/model files not named after their folder', () => {
     const rule = 'class-file-naming';
     expect(checkFixture('fail-f')).toEqual([
       { ruleId: rule, file: 'apps/api/src/places/helpers.ts', line: 1 },
+      { ruleId: rule, file: 'apps/api/src/places/place-row.model.ts', line: 1 },
       { ruleId: rule, file: 'apps/api/src/places/places.widget.ts', line: 5 },
       { ruleId: rule, file: 'packages/application/src/places.use-case.ts', line: 11 },
       { ruleId: rule, file: 'packages/domain/src/calculator.ts', line: 5 },
       { ruleId: rule, file: 'tools/demo/src/printer.ts', line: 5 },
+      { ruleId: rule, file: 'tools/demo/src/size.model.ts', line: 1 },
     ]);
   });
 

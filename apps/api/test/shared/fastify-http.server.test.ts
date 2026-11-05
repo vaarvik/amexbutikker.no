@@ -3,7 +3,7 @@ import { pino } from 'pino';
 import { describe, expect, it } from 'vitest';
 import { DomainHttpErrorMapper } from '../../src/shared/domain-http-error.mapper.js';
 import { FastifyHttpServer } from '../../src/shared/fastify-http.server.js';
-import type { HttpController } from '../../src/shared/http.ports.js';
+import type { HttpController } from '../../src/shared/shared.ports.js';
 
 class FailingController implements HttpController {
   public register(app: FastifyInstance): void {

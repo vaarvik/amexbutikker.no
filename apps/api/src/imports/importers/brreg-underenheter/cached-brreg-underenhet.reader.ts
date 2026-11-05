@@ -7,7 +7,7 @@ import type { ReadableStream as WebReadableStream } from 'node:stream/web';
 import { createGunzip } from 'node:zlib';
 import type { Clock } from '@amexbutikker/contracts';
 import { parse } from 'csv-parse';
-import type { BrregUnderenhetFile, BrregUnderenhetReader } from './brreg.ports.js';
+import type { BrregUnderenhetFile, BrregUnderenhetReader } from './brreg-underenheter.ports.js';
 
 export interface CachedBrregUnderenhetReaderConfig {
   /** The gzipped CSV bulk download. */

@@ -1,5 +1,5 @@
 import type { PhysicalPlace } from '@amexbutikker/contracts';
-import type { BrregUnderenhet } from './brreg.model.js';
+import type { BrregUnderenhet } from './brreg-underenheter.model.js';
 
 /** The bulk file as CSV rows keyed by header name, not yet validated. */
 export interface BrregUnderenhetFile {

@@ -1,6 +1,6 @@
 import type { Address, GeoPoint } from '@amexbutikker/contracts';
-import type { OsmAddressIndex, OsmAddressPoint } from './osm.model.js';
-import type { OsmAddressLocator } from './osm.ports.js';
+import type { OsmAddressIndex, OsmAddressPoint } from './osm-overpass.model.js';
+import type { OsmAddressLocator } from './osm-overpass.ports.js';
 
 const EARTH_RADIUS_M = 6_371_008.8;
 

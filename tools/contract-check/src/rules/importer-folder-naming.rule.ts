@@ -1,8 +1,8 @@
 import path from 'node:path';
 import { Node } from 'ts-morph';
 import type { SourceFile } from 'ts-morph';
-import type { Rule } from '../rule.ports.js';
-import type { RuleId, Violation } from '../violation.model.js';
+import type { Rule } from '../contract-check.ports.js';
+import type { RuleId, Violation } from '../contract-check.model.js';
 import type { WorkspacePaths } from '../root-relative-workspace.paths.js';
 
 /**

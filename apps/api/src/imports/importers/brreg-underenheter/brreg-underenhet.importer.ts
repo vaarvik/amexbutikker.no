@@ -8,9 +8,9 @@ import type {
   TransactionalPorts,
 } from '@amexbutikker/contracts';
 import type { ImportUnitOfWork } from '../../imports.ports.js';
-import { BrregUnderenhetRowSchema, IMPORTED_NACE_PREFIXES } from './brreg.model.js';
-import type { BrregUnderenhet } from './brreg.model.js';
-import type { BrregPlaceMatcher, BrregUnderenhetReader } from './brreg.ports.js';
+import { BrregUnderenhetRowSchema, IMPORTED_NACE_PREFIXES } from './brreg-underenheter.model.js';
+import type { BrregUnderenhet } from './brreg-underenheter.model.js';
+import type { BrregPlaceMatcher, BrregUnderenhetReader } from './brreg-underenheter.ports.js';
 
 export interface BrregUnderenhetImporterConfig {
   readonly kommunenummer: string;

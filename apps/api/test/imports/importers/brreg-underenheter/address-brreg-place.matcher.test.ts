@@ -3,7 +3,7 @@ import type { PhysicalPlace } from '@amexbutikker/contracts';
 import { TrigramNameSimilarity } from '@amexbutikker/domain';
 import { describe, expect, it } from 'vitest';
 import { AddressBrregPlaceMatcher } from '../../../../src/imports/importers/brreg-underenheter/address-brreg-place.matcher.js';
-import type { BrregUnderenhet } from '../../../../src/imports/importers/brreg-underenheter/brreg.model.js';
+import type { BrregUnderenhet } from '../../../../src/imports/importers/brreg-underenheter/brreg-underenheter.model.js';
 
 const matcher = new AddressBrregPlaceMatcher(new TrigramNameSimilarity(), {
   minimumScore: 0.3,

@@ -1,7 +1,7 @@
 import { MatchSharedRequestDtoSchema, MatchSharedResponseDtoSchema } from '@amexbutikker/contracts';
 import type { InputValidator, MatchSharedPlace } from '@amexbutikker/contracts';
 import type { FastifyInstance } from 'fastify';
-import type { HttpController } from '../shared/http.ports.js';
+import type { HttpController } from '../shared/shared.ports.js';
 import type { HttpDtoMapper } from '../shared/default-http-dto.mapper.js';
 
 export class SharedMatchController implements HttpController {

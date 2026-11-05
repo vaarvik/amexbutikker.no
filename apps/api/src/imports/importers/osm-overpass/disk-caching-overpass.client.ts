@@ -3,7 +3,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Clock } from '@amexbutikker/contracts';
 import { z } from 'zod';
-import type { OverpassClient, OverpassResponse } from './osm.ports.js';
+import type { OverpassClient, OverpassResponse } from './osm-overpass.ports.js';
 
 const CacheEntrySchema = z.object({ fetchedAt: z.iso.datetime(), body: z.unknown() });
 

@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
-import type { HttpController } from './http.ports.js';
+import type { HttpController } from './shared.ports.js';
 import type { HttpErrorMapper } from './domain-http-error.mapper.js';
 
 export interface HttpServerOptions {

@@ -21,7 +21,7 @@ import { BrregUnderenhetImporter } from '../../../../src/imports/importers/brreg
 import type {
   BrregUnderenhetFile,
   BrregUnderenhetReader,
-} from '../../../../src/imports/importers/brreg-underenheter/brreg.ports.js';
+} from '../../../../src/imports/importers/brreg-underenheter/brreg-underenheter.ports.js';
 import { TransactionalImportUnitOfWork } from '../../../../src/imports/transactional-import.unit-of-work.js';
 
 const now = new Date('2026-11-04T08:00:00Z');

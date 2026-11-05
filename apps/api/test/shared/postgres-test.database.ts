@@ -4,7 +4,7 @@ import { Kysely, PostgresDialect, sql } from 'kysely';
 import { Migrator } from 'kysely/migration';
 import pg from 'pg';
 import { AllMigrationsProvider } from '../../src/migrations/all-migrations.provider.js';
-import type { Database } from '../../src/shared/database.model.js';
+import type { Database } from '../../src/shared/shared.model.js';
 
 /** Must match docker-compose.yml. */
 export const POSTGIS_IMAGE = 'postgis/postgis:16-3.5';

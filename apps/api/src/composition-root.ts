@@ -56,7 +56,7 @@ import { PgDeviceRepository } from './devices/pg-device.repository.js';
 import { PgEvidenceRepository } from './evidence/pg-evidence.repository.js';
 import { AddressBrregPlaceMatcher } from './imports/importers/brreg-underenheter/address-brreg-place.matcher.js';
 import { BrregUnderenhetImporter } from './imports/importers/brreg-underenheter/brreg-underenhet.importer.js';
-import { OSLO_KOMMUNENUMMER } from './imports/importers/brreg-underenheter/brreg.model.js';
+import { OSLO_KOMMUNENUMMER } from './imports/importers/brreg-underenheter/brreg-underenheter.model.js';
 import { CachedBrregUnderenhetReader } from './imports/importers/brreg-underenheter/cached-brreg-underenhet.reader.js';
 import { FsTextFileLoader } from './imports/fs-text-file.loader.js';
 import { CuratedListImporter } from './imports/importers/curated-list/curated-list.importer.js';
@@ -64,7 +64,7 @@ import { DefaultOsmElementTranslator } from './imports/importers/osm-overpass/de
 import { DiskCachingOverpassClient } from './imports/importers/osm-overpass/disk-caching-overpass.client.js';
 import { GridOsmAddressLocator } from './imports/importers/osm-overpass/grid-osm-address.locator.js';
 import { HttpOverpassClient } from './imports/importers/osm-overpass/http-overpass.client.js';
-import { OSLO_AREA_ID } from './imports/importers/osm-overpass/osm.model.js';
+import { OSLO_AREA_ID } from './imports/importers/osm-overpass/osm-overpass.model.js';
 import { OverpassOsmImporter } from './imports/importers/osm-overpass/overpass-osm.importer.js';
 import { PgImportRunRepository } from './imports/pg-import-run.repository.js';
 import { PgUnmatchedDescriptorRepository } from './imports/pg-unmatched-descriptor.repository.js';
@@ -84,7 +84,7 @@ import { BearerTokenAuthenticator } from './shared/bearer-token.authenticator.js
 import type { InMemoryTables } from '@amexbutikker/in-memory';
 import { SystemClock } from './shared/system.clock.js';
 import { UuidV7IdGenerator } from './shared/uuid-v7-id.generator.js';
-import type { Database } from './shared/database.model.js';
+import type { Database } from './shared/shared.model.js';
 import { PgDatabaseErrorTranslator } from './shared/pg-database-error.translator.js';
 import { PgUnitOfWork } from './shared/pg.unit-of-work.js';
 import { PgPlaceStatusRepository } from './status/pg-place-status.repository.js';

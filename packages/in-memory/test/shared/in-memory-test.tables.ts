@@ -4,7 +4,7 @@ import { InMemoryChainRepository } from '../../src/chains/in-memory-chain.reposi
 import { InMemoryEvidenceRepository } from '../../src/evidence/in-memory-evidence.repository.js';
 import { InMemoryPlaceRepository } from '../../src/places/in-memory-place.repository.js';
 import { EmptyInMemoryTablesFactory } from '../../src/shared/empty-in-memory-tables.factory.js';
-import type { InMemoryTables } from '../../src/shared/in-memory.ports.js';
+import type { InMemoryTables } from '../../src/shared/shared.ports.js';
 import { InMemoryPlaceStatusRepository } from '../../src/status/in-memory-place-status.repository.js';
 
 const clock: Clock = { now: () => new Date('2026-11-03T12:00:00.000Z') };

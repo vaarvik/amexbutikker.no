@@ -20,7 +20,7 @@ import { PgEvidenceRepository } from '../../src/evidence/pg-evidence.repository.
 import { PgImportRunRepository } from '../../src/imports/pg-import-run.repository.js';
 import { PgUnmatchedDescriptorRepository } from '../../src/imports/pg-unmatched-descriptor.repository.js';
 import { PgPlaceRepository } from '../../src/places/pg-place.repository.js';
-import type { Database } from '../../src/shared/database.model.js';
+import type { Database } from '../../src/shared/shared.model.js';
 import { PgDatabaseErrorTranslator } from '../../src/shared/pg-database-error.translator.js';
 import { PgUnitOfWork } from '../../src/shared/pg.unit-of-work.js';
 import { PgPlaceStatusRepository } from '../../src/status/pg-place-status.repository.js';

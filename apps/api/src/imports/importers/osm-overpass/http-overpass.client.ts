@@ -1,5 +1,5 @@
 import type { Clock } from '@amexbutikker/contracts';
-import type { OverpassClient, OverpassResponse } from './osm.ports.js';
+import type { OverpassClient, OverpassResponse } from './osm-overpass.ports.js';
 
 export interface HttpOverpassClientConfig {
   /** e.g. https://overpass-api.de/api/interpreter */

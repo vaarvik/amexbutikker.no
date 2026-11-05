@@ -1,9 +1,9 @@
 import { AddressSchema, GeoPointSchema } from '@amexbutikker/contracts';
 import type { ChainSourceRecord, GeoPoint, PlaceCategory } from '@amexbutikker/contracts';
 import { z } from 'zod';
-import { OSM_AMENITY_CATEGORIES } from './osm.model.js';
-import type { OsmAddressPoint, OverpassElement } from './osm.model.js';
-import type { OsmElementTranslator, OsmTranslation } from './osm.ports.js';
+import { OSM_AMENITY_CATEGORIES } from './osm-overpass.model.js';
+import type { OsmAddressPoint, OverpassElement } from './osm-overpass.model.js';
+import type { OsmElementTranslator, OsmTranslation } from './osm-overpass.ports.js';
 
 const MAX_NAME_LENGTH = 200;
 const WebsiteSchema = z.url({ protocol: /^https?$/ });

@@ -8,7 +8,7 @@ import {
   DEFAULT_RATE_LIMITS,
 } from '../../src/composition-root.js';
 import { PgPlaceRepository } from '../../src/places/pg-place.repository.js';
-import type { Database } from '../../src/shared/database.model.js';
+import type { Database } from '../../src/shared/shared.model.js';
 import { PgDatabaseErrorTranslator } from '../../src/shared/pg-database-error.translator.js';
 import { PostgresTestDatabase } from '../shared/postgres-test.database.js';
 

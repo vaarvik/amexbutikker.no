@@ -1,4 +1,4 @@
-import type { Violation } from './violation.model.js';
+import type { Violation } from './contract-check.model.js';
 
 /** Presents violations to whoever ran the check. */
 export interface ViolationReporter {

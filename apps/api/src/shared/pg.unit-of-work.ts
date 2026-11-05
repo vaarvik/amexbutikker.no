@@ -1,6 +1,6 @@
 import type { TransactionalPorts, UnitOfWork } from '@amexbutikker/contracts';
 import type { Kysely } from 'kysely';
-import type { Database } from './database.model.js';
+import type { Database } from './shared.model.js';
 import type { DatabaseErrorTranslator } from './pg-database-error.translator.js';
 
 /** Builds the transactional ports over a transaction. Supplied by the composition root. */

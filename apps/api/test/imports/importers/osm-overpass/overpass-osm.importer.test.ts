@@ -19,7 +19,7 @@ import { DefaultOsmElementTranslator } from '../../../../src/imports/importers/o
 import type {
   OverpassClient,
   OverpassResponse,
-} from '../../../../src/imports/importers/osm-overpass/osm.ports.js';
+} from '../../../../src/imports/importers/osm-overpass/osm-overpass.ports.js';
 import { TransactionalImportUnitOfWork } from '../../../../src/imports/transactional-import.unit-of-work.js';
 import { GridOsmAddressLocator } from '../../../../src/imports/importers/osm-overpass/grid-osm-address.locator.js';
 import { OverpassOsmImporter } from '../../../../src/imports/importers/osm-overpass/overpass-osm.importer.js';

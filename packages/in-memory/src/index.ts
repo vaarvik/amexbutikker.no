@@ -4,7 +4,7 @@ export * from './evidence/in-memory-evidence.repository.js';
 export * from './imports/in-memory-import-run.repository.js';
 export * from './places/in-memory-place.repository.js';
 export * from './shared/empty-in-memory-tables.factory.js';
-export * from './shared/in-memory.ports.js';
+export * from './shared/shared.ports.js';
 export * from './shared/in-memory.rate-limiter.js';
 export * from './shared/in-memory.unit-of-work.js';
 export * from './status/in-memory-place-status.repository.js';

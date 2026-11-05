@@ -10,14 +10,18 @@ import type {
   TransactionalPorts,
   UpsertOutcome,
 } from '@amexbutikker/contracts';
-import type { OsmAddressIndex, OsmAddressPoint } from './osm.model.js';
+import type { OsmAddressIndex, OsmAddressPoint } from './osm-overpass.model.js';
 import {
   OverpassElementSchema,
   OverpassEnvelopeSchema,
   OSM_AMENITY_CATEGORIES,
-} from './osm.model.js';
+} from './osm-overpass.model.js';
 import type { ImportUnitOfWork } from '../../imports.ports.js';
-import type { OsmAddressLocator, OsmElementTranslator, OverpassClient } from './osm.ports.js';
+import type {
+  OsmAddressLocator,
+  OsmElementTranslator,
+  OverpassClient,
+} from './osm-overpass.ports.js';
 
 export interface OverpassOsmImporterConfig {
   /** Overpass area id: an OSM relation id plus 3 600 000 000. */

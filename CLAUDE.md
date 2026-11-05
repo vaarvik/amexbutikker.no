@@ -82,7 +82,7 @@ The class name must end in a known role:
 
 To add a role, add it to `ClassFileNamingRule` and this list in the same change.
 
-A file without a class is `*.ports.ts` (interfaces) or `*.model.ts` (data types and constants).
+A file without a class is `<folder>.ports.ts` (interfaces) or `<folder>.model.ts` (data types and constants), named after its folder like the contracts files: `shared/shared.ports.ts`, `osm-overpass/osm-overpass.model.ts`. Directly in a package's `src/`, it takes the package folder's name: `tools/contract-check/src/contract-check.ports.ts`.
 
 Exempt from rule (f):
 

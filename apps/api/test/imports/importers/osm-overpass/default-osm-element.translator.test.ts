@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OverpassElement } from '../../../../src/imports/importers/osm-overpass/osm.model.js';
+import type { OverpassElement } from '../../../../src/imports/importers/osm-overpass/osm-overpass.model.js';
 import { DefaultOsmElementTranslator } from '../../../../src/imports/importers/osm-overpass/default-osm-element.translator.js';
 
 const translator = new DefaultOsmElementTranslator();

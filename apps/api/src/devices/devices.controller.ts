@@ -5,7 +5,7 @@ import {
 } from '@amexbutikker/contracts';
 import type { InputValidator, RegisterDevice } from '@amexbutikker/contracts';
 import type { FastifyInstance } from 'fastify';
-import type { HttpController } from '../shared/http.ports.js';
+import type { HttpController } from '../shared/shared.ports.js';
 
 export class DevicesController implements HttpController {
   public constructor(

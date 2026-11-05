@@ -4,7 +4,7 @@ import type {
   GeoPoint,
   PlaceSourceRecord,
 } from '@amexbutikker/contracts';
-import type { OsmAddressIndex, OsmAddressPoint, OverpassElement } from './osm.model.js';
+import type { OsmAddressIndex, OsmAddressPoint, OverpassElement } from './osm-overpass.model.js';
 
 /** A raw Overpass API response and when it was fetched. */
 export interface OverpassResponse {
