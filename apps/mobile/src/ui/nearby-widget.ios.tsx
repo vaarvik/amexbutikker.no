@@ -24,8 +24,12 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
   const secondary = foregroundStyle({ type: 'hierarchical', style: 'secondary' });
   const background = containerBackground({ type: 'hierarchical', style: 'quinary' }, 'widget');
   const fill = frame({ maxWidth: 10_000, maxHeight: 10_000, alignment: 'topLeading' });
+  // Every home screen layout opens with a card symbol and a heading about Amex.
   const title = (text: string) => (
-    <Text modifiers={[font({ weight: 'semibold', size: 12 }), secondary]}>{text}</Text>
+    <HStack spacing={5}>
+      <Image systemName="creditcard.fill" size={12} modifiers={[secondary]} />
+      <Text modifiers={[font({ weight: 'semibold', size: 12 }), secondary]}>{text}</Text>
+    </HStack>
   );
   const updated = <Text modifiers={[font({ size: 11 }), secondary]}>{props.updated}</Text>;
 
@@ -56,7 +60,7 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
   if (family === 'systemSmall' && here !== undefined) {
     return (
       <VStack alignment="leading" spacing={6} modifiers={[widgetURL(here.url), fill, background]}>
-        {title('DU ER HER')}
+        {title('TAR DE AMEX?')}
         <Text modifiers={[font({ weight: 'bold', size: 17 }), lineLimit(2)]}>{here.name}</Text>
         <HStack spacing={6}>
           <Image systemName={here.symbol as 'questionmark.circle'} size={18} color={here.color} />
