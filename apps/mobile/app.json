@@ -40,7 +40,10 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Posisjonen brukes til å vise steder i nærheten og om de tar Amex."
+          "locationWhenInUsePermission": "Posisjonen brukes til å vise steder i nærheten og om de tar Amex.",
+          "locationAlwaysAndWhenInUsePermission": "Når du slår på «Spør meg etter besøk», bruker appen posisjonen i bakgrunnen for å merke at du har vært i en butikk. Posisjonen lagres bare på telefonen.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
         }
       ],
       [
@@ -54,7 +57,9 @@
           "androidIntentFilters": ["text/*"],
           "iosShareExtensionName": "amexbutikker"
         }
-      ]
+      ],
+      "expo-task-manager",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
