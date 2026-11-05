@@ -103,7 +103,9 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
         place.location.lat >= south &&
         place.location.lat <= north &&
         place.location.lng >= west &&
-        place.location.lng <= east,
+        place.location.lng <= east &&
+        (!query.answeredOnly ||
+          (this.tables.statuses.get(place.id)?.status.status ?? 'unknown') !== 'unknown'),
     );
     inside.sort((a, b) => this.distance(centre, a.location) - this.distance(centre, b.location));
     return Promise.resolve(inside.slice(0, query.limit));

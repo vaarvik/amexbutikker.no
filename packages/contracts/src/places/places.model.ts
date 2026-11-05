@@ -169,11 +169,14 @@ export interface AreaQuery {
   readonly bounds: GeoBounds;
   /** 1..500. */
   readonly limit: number;
+  /** Only places whose status is not `unknown`, so the cut never hides an answer. */
+  readonly answeredOnly: boolean;
 }
 
 export const AreaQuerySchema: z.ZodType<AreaQuery> = z.object({
   bounds: GeoBoundsSchema,
   limit: z.int().min(1).max(MAX_AREA_LIMIT),
+  answeredOnly: z.boolean(),
 });
 
 /** A place returned by text search. */

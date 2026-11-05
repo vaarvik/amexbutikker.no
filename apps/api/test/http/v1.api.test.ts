@@ -247,8 +247,22 @@ describe('HTTP API (in-memory storage)', () => {
       });
     });
 
+    it('can leave out the places nobody has answered for', async () => {
+      const { authorization } = await registerDevice();
+      await createCafe(authorization);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/places/in-area?south=59.90&west=10.74&north=59.92&east=10.76&answeredOnly=true',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ results: [], truncated: false });
+    });
+
     it.each([
       ['too large', 'south=59&west=10&north=60&east=11'],
+      ['not a yes or no', 'south=59.90&west=10.74&north=59.92&east=10.76&answeredOnly=maybe'],
       ['upside down', 'south=59.92&west=10.74&north=59.90&east=10.76'],
       ['not a number', 'south=x&west=10.74&north=59.92&east=10.76'],
     ])('rejects a map area that is %s', async (_, query) => {

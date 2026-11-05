@@ -48,8 +48,8 @@ async function fresh() {
 }
 
 describePlaceReaderContract('PgPlaceRepository', async () => {
-  const { places, chains } = await fresh();
-  return { reader: places, writer: places, chains };
+  const { places, chains, statuses } = await fresh();
+  return { reader: places, writer: places, chains, statuses };
 });
 
 describePlaceWriterContract('PgPlaceRepository', async () => {

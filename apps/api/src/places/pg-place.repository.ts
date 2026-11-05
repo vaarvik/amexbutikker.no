@@ -117,11 +117,15 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
     const { south, west, north, east } = query.bounds;
     const centre = this.point({ lat: (south + north) / 2, lng: (west + east) / 2 });
     // && on a geography envelope uses the GiST index; <-> orders by distance to the centre.
+    const answered = query.answeredOnly
+      ? sql`AND EXISTS (SELECT 1 FROM place_status s WHERE s.place_id = p.id AND s.status <> 'unknown')`
+      : sql``;
     const { rows } = await sql`
       SELECT ${PLACE_COLUMNS}
       FROM places p
       WHERE p.kind = 'physical'
         AND p.geom && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)::geography
+        ${answered}
       ORDER BY p.geom <-> ${centre}
       LIMIT ${query.limit}
     `.execute(this.db);

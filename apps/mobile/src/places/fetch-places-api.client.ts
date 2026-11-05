@@ -48,8 +48,13 @@ export class FetchPlacesApiClient implements PlacesApiClient {
   }
 
   public listInArea(query: PlacesInAreaQueryDto): Promise<PlaceAreaResponseDto> {
+    const { answeredOnly, ...bounds } = query;
     return this.transport.request(
-      { method: 'GET', path: '/v1/places/in-area', query: { ...query } },
+      {
+        method: 'GET',
+        path: '/v1/places/in-area',
+        query: { ...bounds, answeredOnly: answeredOnly === true ? 'true' : undefined },
+      },
       PlaceAreaResponseDtoSchema,
     );
   }

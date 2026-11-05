@@ -42,9 +42,12 @@ export function PlacesMap() {
   const source = useRef<GeoJSONSourceRef>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(0);
+  const lastBounds = useRef<LngLatBounds | null>(null);
   const [results, setResults] = useState<readonly PlaceSummaryDto[]>([]);
   const [area, setArea] = useState<AreaState>({ kind: 'idle' });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Hides "Ikke sjekket" on the server, so a busy area never cuts away the answers.
+  const [answeredOnly, setAnsweredOnly] = useState(false);
 
   // Start where the phone is; the map opens on Oslo until the position is known.
   useEffect(() => {
@@ -62,7 +65,8 @@ export function PlacesMap() {
     [],
   );
 
-  const load = (bounds: LngLatBounds) => {
+  const load = (bounds: LngLatBounds, onlyAnswered: boolean, delayMs = FETCH_DELAY_MS) => {
+    lastBounds.current = bounds;
     if (timer.current !== null) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       const [west, south, east, north] = bounds;
@@ -72,7 +76,7 @@ export function PlacesMap() {
       }
       const id = ++latest.current;
       places
-        .listInArea({ south, west, north, east })
+        .listInArea({ south, west, north, east, answeredOnly: onlyAnswered })
         .then((response) => {
           if (id !== latest.current) return;
           setResults(response.results);
@@ -81,7 +85,14 @@ export function PlacesMap() {
         .catch((error: unknown) => {
           if (id === latest.current) setArea({ kind: 'failed', message: presenter.error(error) });
         });
-    }, FETCH_DELAY_MS);
+    }, delayMs);
+  };
+
+  const toggleAnswered = () => {
+    const next = !answeredOnly;
+    setAnsweredOnly(next);
+    setSelectedId(null);
+    if (lastBounds.current !== null) load(lastBounds.current, next, 0);
   };
 
   const features = useMemo<GeoJSON.FeatureCollection>(
@@ -133,7 +144,9 @@ export function PlacesMap() {
       : area.kind === 'failed'
         ? area.message
         : area.kind === 'ready' && area.truncated
-          ? 'Viser stedene nærmest midten. Zoom inn for flere.'
+          ? answeredOnly
+            ? 'Viser svarene nærmest midten. Zoom inn for flere.'
+            : 'Viser stedene nærmest midten. Zoom inn for flere.'
           : null;
 
   return (
@@ -145,7 +158,7 @@ export function PlacesMap() {
         attributionPosition={{ bottom: 8, left: 8 }}
         compass={false}
         onRegionDidChange={(event) => {
-          load(event.nativeEvent.bounds);
+          load(event.nativeEvent.bounds, answeredOnly);
         }}
         onPress={() => {
           setSelectedId(null);
@@ -253,14 +266,41 @@ export function PlacesMap() {
         </GeoJSONSource>
       </Map>
 
-      {notice === null ? null : (
-        <View
-          style={[styles.notice, { top: insets.top + 12, backgroundColor: palette.hero }]}
-          pointerEvents="none"
+      <View style={[styles.top, { top: insets.top + 12 }]} pointerEvents="box-none">
+        <Pressable
+          onPress={toggleAnswered}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: answeredOnly }}
+          accessibilityLabel="Bare steder med svar"
+          style={({ pressed }) => [
+            styles.filter,
+            {
+              backgroundColor: answeredOnly ? palette.hero : palette.card,
+              opacity: pressed ? 0.85 : 1,
+            },
+          ]}
         >
-          <Text style={[styles.noticeText, { color: palette.onHero }]}>{notice}</Text>
-        </View>
-      )}
+          <SymbolView
+            name={{
+              ios: answeredOnly ? 'checkmark.circle.fill' : 'circle',
+              android: answeredOnly ? 'check_circle' : 'radio_button_unchecked',
+              web: answeredOnly ? 'check_circle' : 'radio_button_unchecked',
+            }}
+            size={16}
+            tintColor={answeredOnly ? palette.onHero : palette.muted}
+          />
+          <Text
+            style={[styles.filterText, { color: answeredOnly ? palette.onHero : palette.text }]}
+          >
+            Bare steder med svar
+          </Text>
+        </Pressable>
+        {notice === null ? null : (
+          <View style={[styles.notice, { backgroundColor: palette.hero }]} pointerEvents="none">
+            <Text style={[styles.noticeText, { color: palette.onHero }]}>{notice}</Text>
+          </View>
+        )}
+      </View>
 
       {selected === null ? null : (
         <Pressable
@@ -299,9 +339,22 @@ export function PlacesMap() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  top: { position: 'absolute', left: 0, right: 0, alignItems: 'center', gap: 8 },
+  filter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    shadowColor: '#000000',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  filterText: { fontSize: 14, fontWeight: '600' },
   notice: {
-    position: 'absolute',
-    alignSelf: 'center',
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 8,

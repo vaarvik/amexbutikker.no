@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ConflictError, NotFoundError } from '../../src/index.js';
-import type { ChainWriter, PlaceReader, PlaceSourceRecord, PlaceWriter } from '../../src/index.js';
+import type {
+  ChainWriter,
+  PlaceReader,
+  PlaceSourceRecord,
+  PlaceStatusWriter,
+  PlaceWriter,
+} from '../../src/index.js';
 import { FixtureHolder } from '../fixture.js';
 import type { FixtureFactory } from '../fixture.js';
 import { OSLO_S, TestData, offset } from '../test-data.js';
@@ -10,6 +16,8 @@ export interface PlaceReaderFixture {
   /** Used only to arrange data. */
   readonly writer: PlaceWriter;
   readonly chains: ChainWriter;
+  /** Used only to arrange data: listInArea can leave out unanswered places. */
+  readonly statuses: PlaceStatusWriter;
 }
 
 /** Behaviour every PlaceReader must have. */
@@ -290,7 +298,11 @@ export function describePlaceReaderContract(
         }
         await fixture.current.writer.create(data.onlinePlace());
 
-        const places = await fixture.current.reader.listInArea({ bounds, limit: 10 });
+        const places = await fixture.current.reader.listInArea({
+          bounds,
+          limit: 10,
+          answeredOnly: false,
+        });
 
         expect(places.map((place) => place.id)).toEqual([centre.id, middle.id, edge.id]);
       });
@@ -301,7 +313,11 @@ export function describePlaceReaderContract(
         await fixture.current.writer.create(data.physicalPlace({ location: offset(OSLO_S, 300) }));
         await fixture.current.writer.create(near);
 
-        const places = await fixture.current.reader.listInArea({ bounds, limit: 1 });
+        const places = await fixture.current.reader.listInArea({
+          bounds,
+          limit: 1,
+          answeredOnly: false,
+        });
 
         expect(places.map((place) => place.id)).toEqual([near.id]);
       });
@@ -311,7 +327,50 @@ export function describePlaceReaderContract(
           new TestData().physicalPlace({ location: offset(OSLO_S, 5000) }),
         );
 
-        await expect(fixture.current.reader.listInArea({ bounds, limit: 10 })).resolves.toEqual([]);
+        await expect(
+          fixture.current.reader.listInArea({ bounds, limit: 10, answeredOnly: false }),
+        ).resolves.toEqual([]);
+      });
+
+      it('leaves out unanswered places before cutting when asked for answered ones only', async () => {
+        const data = new TestData();
+        const unanswered = data.physicalPlace({ location: offset(OSLO_S, 10) });
+        const unknownSnapshot = data.physicalPlace({ location: offset(OSLO_S, 20) });
+        const likely = data.physicalPlace({ location: offset(OSLO_S, 200) });
+        const rejected = data.physicalPlace({ location: offset(OSLO_S, 300) });
+        for (const place of [unanswered, unknownSnapshot, likely, rejected]) {
+          await fixture.current.writer.create(place);
+        }
+        const status = (value: 'unknown' | 'likely_accepted' | 'rejected') => ({
+          status: value,
+          confidence: 0.5,
+          basis: null,
+          verified: false,
+          lastEvidenceAt: null,
+        });
+        await fixture.current.statuses.save(
+          data.statusSnapshot(unknownSnapshot.id, { status: status('unknown') }),
+        );
+        await fixture.current.statuses.save(
+          data.statusSnapshot(likely.id, { status: status('likely_accepted') }),
+        );
+        await fixture.current.statuses.save(
+          data.statusSnapshot(rejected.id, { status: status('rejected') }),
+        );
+
+        const all = await fixture.current.reader.listInArea({
+          bounds,
+          limit: 10,
+          answeredOnly: true,
+        });
+        const cut = await fixture.current.reader.listInArea({
+          bounds,
+          limit: 1,
+          answeredOnly: true,
+        });
+
+        expect(all.map((place) => place.id)).toEqual([likely.id, rejected.id]);
+        expect(cut.map((place) => place.id)).toEqual([likely.id]);
       });
     });
   });

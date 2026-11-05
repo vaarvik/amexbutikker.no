@@ -35,7 +35,7 @@ describe('ListPlacesInAreaUseCase', () => {
     await places.create(known);
     await statuses.save(data.statusSnapshot(known.id));
 
-    const output = await useCase.execute({ bounds, limit: 10 });
+    const output = await useCase.execute({ bounds, limit: 10, answeredOnly: false });
 
     expect(output.truncated).toBe(false);
     expect(
@@ -53,12 +53,26 @@ describe('ListPlacesInAreaUseCase', () => {
       await places.create(data.physicalPlace({ location: offset(OSLO_S, metres) }));
     }
 
-    const cut = await useCase.execute({ bounds, limit: 2 });
-    const exact = await useCase.execute({ bounds, limit: 3 });
+    const cut = await useCase.execute({ bounds, limit: 2, answeredOnly: false });
+    const exact = await useCase.execute({ bounds, limit: 3, answeredOnly: false });
 
     expect(cut).toMatchObject({ truncated: true });
     expect(cut.results).toHaveLength(2);
     expect(exact).toMatchObject({ truncated: false });
+  });
+
+  it('passes answeredOnly on, so the cut only counts answered places', async () => {
+    const { places, statuses, useCase } = setup();
+    const data = new TestData();
+    const known = data.physicalPlace({ location: offset(OSLO_S, 300) });
+    await places.create(data.physicalPlace({ location: offset(OSLO_S, 10) }));
+    await places.create(known);
+    await statuses.save(data.statusSnapshot(known.id));
+
+    const output = await useCase.execute({ bounds, limit: 1, answeredOnly: true });
+
+    expect(output).toMatchObject({ truncated: false });
+    expect(output.results.map((result) => result.place.id)).toEqual([known.id]);
   });
 
   it.each([
@@ -67,8 +81,8 @@ describe('ListPlacesInAreaUseCase', () => {
   ])('rejects an area that is %s', async (_, area) => {
     const { useCase } = setup();
 
-    await expect(useCase.execute({ bounds: area, limit: 10 })).rejects.toBeInstanceOf(
-      ValidationError,
-    );
+    await expect(
+      useCase.execute({ bounds: area, limit: 10, answeredOnly: false }),
+    ).rejects.toBeInstanceOf(ValidationError);
   });
 });

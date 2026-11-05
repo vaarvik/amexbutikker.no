@@ -119,9 +119,12 @@ export const NearbyPlacesQueryDtoSchema: z.ZodType<NearbyPlacesQueryDto> = z.obj
 });
 
 // ---------------------------------------------------------------------------
-// GET /v1/places/in-area?south&west&north&east  ->  PlaceAreaResponseDto
+// GET /v1/places/in-area?south&west&north&east[&answeredOnly=true]  ->  PlaceAreaResponseDto
 
-export type PlacesInAreaQueryDto = GeoBounds;
+export interface PlacesInAreaQueryDto extends GeoBounds {
+  /** Leave out the places nobody has answered for. Off when absent. */
+  readonly answeredOnly?: boolean;
+}
 
 /** Query strings arrive as text; the numbers are then held to the GeoBounds rules. */
 export const PlacesInAreaQueryDtoSchema: z.ZodType<PlacesInAreaQueryDto> = z
@@ -130,9 +133,10 @@ export const PlacesInAreaQueryDtoSchema: z.ZodType<PlacesInAreaQueryDto> = z
     west: z.coerce.number(),
     north: z.coerce.number(),
     east: z.coerce.number(),
+    answeredOnly: z.stringbool().exactOptional(),
   })
-  .superRefine((bounds, ctx) => {
-    const parsed = GeoBoundsSchema.safeParse(bounds);
+  .superRefine(({ south, west, north, east }, ctx) => {
+    const parsed = GeoBoundsSchema.safeParse({ south, west, north, east });
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         ctx.addIssue({ code: 'custom', message: issue.message, path: issue.path });

@@ -67,7 +67,18 @@ describe('FetchPlacesApiClient', () => {
       truncated: true,
     });
     expect(transport.requests).toEqual([
-      { method: 'GET', path: '/v1/places/in-area', query: bounds },
+      { method: 'GET', path: '/v1/places/in-area', query: { ...bounds, answeredOnly: undefined } },
+    ]);
+  });
+
+  it('asks for answered places only when told to', async () => {
+    transport.answer({ results: [], truncated: false });
+    const bounds = { south: 59.9, west: 10.7, north: 59.92, east: 10.76 };
+
+    await client.listInArea({ ...bounds, answeredOnly: true });
+
+    expect(transport.requests).toEqual([
+      { method: 'GET', path: '/v1/places/in-area', query: { ...bounds, answeredOnly: 'true' } },
     ]);
   });
 

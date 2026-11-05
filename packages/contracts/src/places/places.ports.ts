@@ -37,7 +37,8 @@ export interface PlaceReader {
   listNearby(query: NearbyQuery): Promise<NearbyPlaceHit[]>;
 
   /**
-   * Physical places inside `query.bounds` (edges included).
+   * Physical places inside `query.bounds` (edges included). With `answeredOnly`, places with no
+   * status snapshot or an `unknown` one are left out before the limit applies.
    *
    * @param query validated with AreaQuerySchema by the caller.
    * @returns at most `query.limit` places, nearest to the centre of the bounds first, so a

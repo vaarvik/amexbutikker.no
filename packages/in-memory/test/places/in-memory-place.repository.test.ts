@@ -5,8 +5,8 @@ import {
 import { freshTables } from '../shared/in-memory-test.tables.js';
 
 describePlaceReaderContract('InMemoryPlaceRepository', () => {
-  const { places, chains } = freshTables();
-  return Promise.resolve({ reader: places, writer: places, chains });
+  const { places, chains, statuses } = freshTables();
+  return Promise.resolve({ reader: places, writer: places, chains, statuses });
 });
 
 describePlaceWriterContract('InMemoryPlaceRepository', () => {

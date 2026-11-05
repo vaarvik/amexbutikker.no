@@ -70,10 +70,14 @@ export class PlacesController implements HttpController {
     });
 
     app.get('/v1/places/in-area', async (request) => {
-      const bounds = this.validator.validate(PlacesInAreaQueryDtoSchema, request.query);
+      const { answeredOnly = false, ...bounds } = this.validator.validate(
+        PlacesInAreaQueryDtoSchema,
+        request.query,
+      );
       const output = await this.listPlacesInArea.execute({
         bounds,
         limit: this.options.areaLimit,
+        answeredOnly,
       });
       return PlaceAreaResponseDtoSchema.parse({
         ...this.dtos.placeList(output),
