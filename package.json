@@ -25,7 +25,8 @@
     "mobile": "pnpm --filter @amexbutikker/mobile start",
     "web:export": "pnpm --filter @amexbutikker/mobile web:export",
     "web:serve": "pnpm --filter @amexbutikker/mobile web:serve",
-    "tunnel": "bash infra/tunnel.sh"
+    "tunnel": "bash infra/tunnel.sh",
+    "simulate:visit": "infra/simulate-visit.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
