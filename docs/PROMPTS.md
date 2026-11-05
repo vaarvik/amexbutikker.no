@@ -295,7 +295,7 @@ Write ADRs in docs/adr/ (context, options, decision, consequences, open question
 
 ---
 
-## Phase 9: Visit candidates
+## Phase 9: Visit candidates (done)
 
 ```
 Geofences in a busy street overlap: at Oslo S ten places are within 20 m. Do not guess.
@@ -311,7 +311,7 @@ Geofences in a busy street overlap: at Oslo S ten places are within 20 m. Do not
 
 ---
 
-## Phase 10: iOS widget
+## Phase 10: iOS widget (done; Android widget open)
 
 ```
 A home screen and lock screen widget that answers "can I pay with Amex here?" without opening the app.
@@ -327,7 +327,10 @@ A home screen and lock screen widget that answers "can I pay with Amex here?" wi
 
 ---
 
-## Phase 11: Map tab
+## Phase 11: Map tab (done)
+
+Built with OpenFreeMap (no key) instead of MapTiler/Stadia. Open: a "only places with an answer" filter,
+so a truncated area never hides answered places, and a perf test for /v1/places/in-area.
 
 ```
 A Kart tab showing places as pins coloured by status (with the status symbol, never colour alone).
@@ -352,7 +355,17 @@ A Kart tab showing places as pins coloured by status (with the status symbol, ne
 
 ---
 
+## Phase 11b: Likely answers (done)
+
+Ja / Nei need users' own answers worth `confirmedWeight` (default 1.0); lists, chain claims and a single
+user give Trolig ja / Trolig nei. Sources are stored, never shown.
+
+---
+
 ## Open items
+
+- A job that recalculates every status regularly: decay changes answers over time (Ja can fall back to
+  Trolig ja), but a stored status only changes when new evidence arrives at that place.
 
 - Real share payloads for data/fixtures/shared/ (the current six are synthetic).
 - A stable public API address before any preview build for testers.
