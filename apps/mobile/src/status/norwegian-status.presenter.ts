@@ -17,7 +17,12 @@ const VIEWS: Readonly<Record<AcceptanceStatus, StatusView>> = {
     label: 'Noen har fått betale, andre ikke',
     symbol: '±',
   },
-  unknown: { status: 'unknown', answer: 'Ukjent', label: 'Ingen vet ennå', symbol: '?' },
+  unknown: {
+    status: 'unknown',
+    answer: 'Ikke sjekket',
+    label: 'Ingen har sagt fra ennå',
+    symbol: '?',
+  },
 };
 
 const MONTHS = [

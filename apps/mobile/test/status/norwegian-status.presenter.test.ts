@@ -12,7 +12,7 @@ describe('NorwegianStatusPresenter', () => {
     ['accepted', 'Ja', '✓'],
     ['rejected', 'Nei', '✕'],
     ['mixed', 'Varierer', '±'],
-    ['unknown', 'Ukjent', '?'],
+    ['unknown', 'Ikke sjekket', '?'],
   ] as const)('shows %s as %s with its own symbol', (status, answer, symbol) => {
     expect(presenter.status(status)).toMatchObject({ status, answer, symbol });
   });

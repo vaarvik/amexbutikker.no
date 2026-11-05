@@ -10,34 +10,55 @@ export const STATUS_COLORS: Readonly<Record<AcceptanceStatus, string>> = {
 };
 
 export interface Palette {
+  /** Screen background, behind the cards. */
   readonly background: string;
+  /** Cards and grouped content. */
+  readonly card: string;
+  /** Inputs and icon wells. */
   readonly surface: string;
   readonly text: string;
-  /** Secondary text; 6.3:1 on light, 8.5:1 on dark. */
+  /** Secondary text; at least 4.9:1 on both background and card. */
   readonly muted: string;
   readonly border: string;
   readonly accent: string;
   readonly onAccent: string;
+  /** The header band on the home screen. */
+  readonly hero: string;
+  readonly onHero: string;
+  /** Secondary text on the hero; at least 7:1. */
+  readonly onHeroMuted: string;
+  /** A soft tint of the accent, for calls to action. */
+  readonly accentSoft: string;
 }
 
 const LIGHT: Palette = {
-  background: '#FFFFFF',
-  surface: '#F3F4F6',
-  text: '#1A1C1E',
-  muted: '#5A6169',
-  border: '#D5D9DE',
-  accent: '#0B57D0',
+  background: '#F2F3F6',
+  card: '#FFFFFF',
+  surface: '#ECEEF2',
+  text: '#16181D',
+  muted: '#585F6A',
+  border: '#DADDE3',
+  accent: '#3442A8',
   onAccent: '#FFFFFF',
+  hero: '#161D3A',
+  onHero: '#FFFFFF',
+  onHeroMuted: '#C3C9E6',
+  accentSoft: '#E6E8F7',
 };
 
 const DARK: Palette = {
-  background: '#111315',
-  surface: '#1E2124',
-  text: '#ECEEF0',
-  muted: '#A9B0B7',
-  border: '#33383D',
-  accent: '#8AB4F8',
-  onAccent: '#111315',
+  background: '#0D0F13',
+  card: '#1A1D23',
+  surface: '#252931',
+  text: '#ECEEF2',
+  muted: '#A9B0BB',
+  border: '#2F343D',
+  accent: '#A9B4FF',
+  onAccent: '#121633',
+  hero: '#161D3A',
+  onHero: '#FFFFFF',
+  onHeroMuted: '#C3C9E6',
+  accentSoft: '#232A4D',
 };
 
 export function usePalette(): Palette {

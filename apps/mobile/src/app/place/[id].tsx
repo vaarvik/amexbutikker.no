@@ -4,6 +4,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useServices } from '../../ui/services';
+import { CategoryIcon } from '../../ui/category-icon';
 import { StatusAnswer } from '../../ui/status-badge';
 import { usePalette } from '../../ui/theme';
 
@@ -13,8 +14,8 @@ type DetailsState =
   | { readonly kind: 'failed'; readonly message: string };
 
 const REPORT_LABELS: Readonly<Record<AcceptanceResult, string>> = {
-  accepted: 'Det funket',
-  rejected: 'Ble avvist',
+  accepted: '✓ Det funket',
+  rejected: '✕ Ble avvist',
 };
 
 export default function PlaceScreen() {
@@ -83,32 +84,51 @@ function PlaceDetails(props: { readonly placeId: PlaceId }) {
   const text = { color: palette.text };
   const muted = { color: palette.muted };
 
+  const unknown = details.status.status === 'unknown';
+  const card = [styles.card, { backgroundColor: palette.card }];
+
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: details.place.name }} />
+    <ScrollView
+      style={{ backgroundColor: palette.background }}
+      contentContainerStyle={styles.content}
+    >
+      <Stack.Screen options={{ title: '' }} />
       <View style={styles.heading}>
-        <Text style={[styles.name, text]} accessibilityRole="header">
-          {details.place.name}
-        </Text>
-        <Text style={muted}>
-          {[presenter.category(details.place.category), address]
-            .filter((part) => part !== null)
-            .join(' · ')}
-        </Text>
+        <CategoryIcon category={details.place.category} size={48} />
+        <View style={styles.headingText}>
+          <Text style={[styles.name, text]} accessibilityRole="header">
+            {details.place.name}
+          </Text>
+          <Text style={muted}>
+            {[presenter.category(details.place.category), address]
+              .filter((part) => part !== null)
+              .join(' · ')}
+          </Text>
+        </View>
       </View>
 
       <StatusAnswer status={details.status.status} />
 
-      <View style={styles.block}>
-        {details.status.verified ? (
-          <Text style={[styles.verified, text]}>✓ Bekreftet med kjøp eller besøk</Text>
-        ) : null}
-        <Text style={[styles.body, text]}>{presenter.basis(details)}</Text>
-        {chainHint === null ? null : <Text style={[styles.body, muted]}>{chainHint}</Text>}
-      </View>
+      {unknown && details.basis.kind === null ? null : (
+        <View style={card}>
+          {details.status.verified ? (
+            <Text style={[styles.verified, { color: palette.accent }]}>
+              ✓ Bekreftet med kjøp eller besøk
+            </Text>
+          ) : null}
+          <Text style={[styles.body, text]}>{presenter.basis(details)}</Text>
+          {chainHint === null ? null : <Text style={[styles.body, muted]}>{chainHint}</Text>}
+        </View>
+      )}
 
-      <View style={styles.block}>
-        <Text style={[styles.question, text]}>Har du betalt med Amex her?</Text>
+      <View style={card}>
+        <Text style={[styles.cardTitle, text]}>Har du betalt med Amex her?</Text>
+        {unknown ? (
+          <Text style={[styles.body, text]}>
+            Ingen har fortalt oss om stedet tar Amex ennå. Har du prøvd å betale her? Ett trykk, så
+            vet neste person svaret.
+          </Text>
+        ) : null}
         <View style={styles.buttons}>
           {(['accepted', 'rejected'] as const).map((result) => {
             const chosen = details.myReport === result;
@@ -125,7 +145,7 @@ function PlaceDetails(props: { readonly placeId: PlaceId }) {
                   styles.button,
                   {
                     borderColor: palette.accent,
-                    backgroundColor: chosen ? palette.accent : 'transparent',
+                    backgroundColor: chosen ? palette.accent : palette.card,
                     opacity: pressed || sending ? 0.7 : 1,
                   },
                 ]}
@@ -133,7 +153,6 @@ function PlaceDetails(props: { readonly placeId: PlaceId }) {
                 <Text
                   style={[styles.buttonText, { color: chosen ? palette.onAccent : palette.accent }]}
                 >
-                  {chosen ? '✓ ' : ''}
                   {REPORT_LABELS[result]}
                 </Text>
               </Pressable>
@@ -156,8 +175,8 @@ function PlaceDetails(props: { readonly placeId: PlaceId }) {
       </View>
 
       {details.latestNotes.length === 0 ? null : (
-        <View style={styles.block}>
-          <Text style={[styles.question, text]}>Siste kommentarer</Text>
+        <View style={card}>
+          <Text style={[styles.cardTitle, text]}>Siste kommentarer</Text>
           {details.latestNotes.map((note) => (
             <Text key={`${note.observedAt}-${note.note}`} style={[styles.body, muted]}>
               {presenter.status(note.result).symbol} {note.note}
@@ -170,13 +189,14 @@ function PlaceDetails(props: { readonly placeId: PlaceId }) {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 20, maxWidth: 640, width: '100%', alignSelf: 'center' },
-  heading: { gap: 4 },
-  name: { fontSize: 26, fontWeight: '800' },
-  block: { gap: 8 },
+  content: { padding: 16, gap: 14, maxWidth: 640, width: '100%', alignSelf: 'center' },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 4 },
+  headingText: { flex: 1, gap: 2 },
+  name: { fontSize: 24, fontWeight: '700' },
+  card: { borderRadius: 12, padding: 16, gap: 10 },
+  cardTitle: { fontSize: 17, fontWeight: '600' },
   verified: { fontSize: 15, fontWeight: '700' },
   body: { fontSize: 16, lineHeight: 22 },
-  question: { fontSize: 18, fontWeight: '700' },
   buttons: { flexDirection: 'row', gap: 12 },
   button: {
     flex: 1,

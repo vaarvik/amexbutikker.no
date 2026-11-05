@@ -190,7 +190,7 @@ In apps/mobile (Expo, expo-router, TypeScript):
   NearbyCache. The composition root builds them; a ServicesProvider context exposes them through a typed hook.
 - Screens:
   - Home: search field focused on launch, plus a "nær deg" list sorted by distance.
-  - Place: one big answer (Ja / Nei / Varierer / Ukjent), a sentence explaining the basis
+  - Place: one big answer (Ja / Nei / Varierer / Ikke sjekket), a sentence explaining the basis
     (e.g. "Ifølge kredittkort360, ikke bekreftet av brukere"), the chain hint, and buttons "Det funket" / "Ble avvist".
   - Add place.
 - Norwegian bokmål UI copy. Status colours pass WCAG AA, and status is never shown by colour alone.

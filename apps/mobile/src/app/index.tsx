@@ -1,5 +1,5 @@
 import type { PlaceSummaryDto } from '@amexbutikker/contracts';
-import { Link } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,6 +10,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NearbyState } from '../places/places.model';
 import { PlaceRow } from '../ui/place-row';
 import { useServices } from '../ui/services';
@@ -30,6 +32,7 @@ export default function Home() {
   const [search, setSearch] = useState<SearchResult | null>(null);
   const [reloads, setReloads] = useState(0);
   const latestSearch = useRef(0);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     void nearby.load(setNearbyState);
@@ -65,33 +68,48 @@ export default function Home() {
   const searching = text !== '';
   const pending = searching && search?.query !== text;
   const results = search !== null && 'results' in search ? search.results : [];
+  const nearbyResults = 'snapshot' in nearbyState ? (nearbyState.snapshot?.results ?? []) : [];
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
-      <View style={styles.searchBar}>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          autoFocus
-          autoCorrect={false}
-          returnKeyType="search"
-          clearButtonMode="while-editing"
-          placeholder="Søk etter sted eller butikk"
-          placeholderTextColor={palette.muted}
-          accessibilityLabel="Søk etter sted eller butikk"
-          style={[
-            styles.input,
-            { color: palette.text, backgroundColor: palette.surface, borderColor: palette.border },
-          ]}
-        />
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={[styles.hero, { backgroundColor: palette.hero, paddingTop: insets.top + 12 }]}>
+        <View style={[styles.column, styles.header]}>
+          <Text style={[styles.title, { color: palette.onHero }]} accessibilityRole="header">
+            Tar de Amex?
+          </Text>
+          <View style={[styles.inputWrap, { backgroundColor: palette.card }]}>
+            <SymbolView
+              name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+              size={17}
+              tintColor={palette.muted}
+            />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              autoCorrect={false}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+              placeholder="Søk"
+              placeholderTextColor={palette.muted}
+              accessibilityLabel="Søk etter sted"
+              style={[styles.input, { color: palette.text }]}
+            />
+          </View>
+        </View>
       </View>
 
       {searching ? (
         <FlatList
           data={results}
           keyExtractor={(item) => item.place.id}
-          renderItem={({ item }) => <PlaceRow summary={item} />}
+          renderItem={({ item, index }) => (
+            <PlaceRow summary={item} first={index === 0} last={index === results.length - 1} />
+          )}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          style={styles.column}
+          contentContainerStyle={styles.list}
           ListHeaderComponent={
             pending && results.length === 0 ? (
               <ActivityIndicator style={styles.spacer} />
@@ -101,8 +119,8 @@ export default function Home() {
             pending ? undefined : search !== null && 'message' in search ? (
               <Text style={[styles.message, muted]}>{search.message}</Text>
             ) : (
-              <View style={styles.message}>
-                <Text style={muted}>Ingen treff for «{text}».</Text>
+              <View>
+                <Text style={[styles.message, muted]}>Ingen treff for «{text}».</Text>
                 <AddPlaceLink />
               </View>
             )
@@ -110,15 +128,24 @@ export default function Home() {
         />
       ) : (
         <FlatList
-          data={'snapshot' in nearbyState ? (nearbyState.snapshot?.results ?? []) : []}
+          data={nearbyResults}
           keyExtractor={(item) => item.place.id}
-          renderItem={({ item }) => <PlaceRow summary={item} />}
+          renderItem={({ item, index }) => (
+            <PlaceRow
+              summary={item}
+              first={index === 0}
+              last={index === nearbyResults.length - 1}
+            />
+          )}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          style={styles.column}
+          contentContainerStyle={styles.list}
           ListHeaderComponent={
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: palette.text }]}>Nær deg</Text>
+              <Text style={[styles.sectionTitle, muted]}>NÆR DEG</Text>
               {nearbyState.kind === 'ready' && nearbyState.refreshing ? (
-                <Text style={muted}>Oppdaterer …</Text>
+                <ActivityIndicator />
               ) : null}
             </View>
           }
@@ -141,9 +168,7 @@ export default function Home() {
                 />
               )
             ) : (
-              <View style={styles.message}>
-                <AddPlaceLink />
-              </View>
+              <AddPlaceLink />
             )
           }
         />
@@ -187,33 +212,45 @@ function NearbyMessage(props: { readonly state: NearbyState; readonly onRetry: (
 function AddPlaceLink() {
   const palette = usePalette();
   return (
-    <Link href="/add" style={[styles.link, { color: palette.accent }]} accessibilityRole="button">
-      Finner du ikke stedet? Legg det til
-    </Link>
+    <Pressable
+      onPress={() => {
+        router.push('/add');
+      }}
+      accessibilityRole="button"
+      hitSlop={8}
+      style={({ pressed }) => [styles.addLink, { opacity: pressed ? 0.5 : 1 }]}
+    >
+      <Text style={[styles.link, { color: palette.accent }]}>Legg til sted</Text>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   // Full width on phones; a centred column on desktop browsers.
-  screen: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center' },
-  searchBar: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
-  input: {
-    fontSize: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
+  column: { width: '100%', maxWidth: 720, alignSelf: 'center' },
+  hero: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  header: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
+  title: { fontSize: 34, fontWeight: '700', letterSpacing: 0.3 },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    paddingLeft: 10,
   },
+  input: { flex: 1, fontSize: 17, paddingHorizontal: 8, paddingVertical: 9 },
+  list: { paddingBottom: 32 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 20,
+    paddingBottom: 6,
   },
-  sectionTitle: { fontSize: 20, fontWeight: '700' },
-  message: { padding: 16, gap: 10, alignItems: 'flex-start' },
-  link: { fontSize: 16, fontWeight: '600', paddingVertical: 8 },
+  sectionTitle: { fontSize: 13, fontWeight: '400', letterSpacing: 0.2 },
+  message: { paddingHorizontal: 32, paddingVertical: 16, gap: 10, alignItems: 'flex-start' },
+  link: { fontSize: 17 },
+  addLink: { paddingHorizontal: 32, paddingVertical: 16, alignSelf: 'flex-start' },
   spacer: { marginTop: 24 },
 });

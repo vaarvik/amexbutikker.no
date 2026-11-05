@@ -142,7 +142,7 @@ Use these words, with these meanings, in code, docs and conversation. UI copy us
 - **Chain** (kjede): a brand with several physical places.
 - **Evidence**: one observation that a place or chain accepts or rejects the card. Append-only.
 - **Report** (rapport): evidence a user submits from the app (`user_report`). Can be withdrawn by appending `withdrawn`.
-- **Status** (svar): the computed answer for a place: accepted (Ja), rejected (Nei), mixed (Varierer), unknown (Ukjent).
+- **Status** (svar): the computed answer for a place: accepted (Ja), rejected (Nei), mixed (Varierer), unknown (Ikke sjekket).
 - **Basis**: the strongest evidence kind behind a status.
 - **Chain hint**: "7 of 9 places in this chain accept". Shown next to a status, never used as one.
 - **Claim**: one entry from a curated or external list, imported as evidence.
