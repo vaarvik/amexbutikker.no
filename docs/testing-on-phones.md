@@ -61,7 +61,7 @@ Needed for Phase 7: share extensions do not run in Expo Go. Nothing here submits
 These commands need your Expo account (and an Apple Developer account for iPhones). Run them yourself:
 
 ```bash
-npm install --global eas-cli
+brew install eas-cli
 eas login
 cd apps/mobile
 eas init                         # creates the EAS project and prints its id
