@@ -6,6 +6,8 @@ import type {
   ImportContext,
   ImportCounts,
   ImportRunReport,
+  PlaceId,
+  PlaceStatusRefresher,
   SourceImporter,
   TransactionalPorts,
   UpsertOutcome,
@@ -18,6 +20,7 @@ import {
 } from './osm-overpass.model.js';
 import type { ImportUnitOfWork } from '../../imports.ports.js';
 import type {
+  OsmAcceptance,
   OsmAddressLocator,
   OsmElementTranslator,
   OverpassClient,
@@ -43,6 +46,9 @@ type ChainTally = Record<UpsertOutcome, number>;
  * Most places in Norway carry no address of their own (addresses are separate points from the
  * Kartverket import), so a second query loads the address points, and a place without an
  * address takes the nearest one within `addressMaxDistanceM`.
+ * Payment tags (`payment:american_express`, `payment:credit_cards=no`) become external_list
+ * evidence from source `osm`, once per element and tag value, and the place's status is
+ * recalculated. Like every list, OSM alone only ever gives a likely answer.
  * The whole run is one unit of work: it lands completely or not at all.
  */
 export class OverpassOsmImporter implements SourceImporter {
@@ -53,6 +59,7 @@ export class OverpassOsmImporter implements SourceImporter {
     private readonly translator: OsmElementTranslator,
     private readonly addresses: OsmAddressLocator,
     private readonly unitOfWork: ImportUnitOfWork,
+    private readonly refresher: PlaceStatusRefresher,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
     private readonly config: OverpassOsmImporterConfig,
@@ -72,7 +79,7 @@ export class OverpassOsmImporter implements SourceImporter {
       evidenceAppended: 0,
     };
     const chains: ChainTally = { created: 0, updated: 0, unchanged: 0 };
-    const enriched = { addressPoints: 0, addressesFromNearbyPoint: 0 };
+    const enriched = { addressPoints: 0, addressesFromNearbyPoint: 0, placesRefreshed: 0 };
     const report = (status: ImportRunReport['status']): ImportRunReport => ({
       runId: context.runId,
       source: this.source,
@@ -105,8 +112,9 @@ export class OverpassOsmImporter implements SourceImporter {
       enriched.addressPoints = points.length;
       const index = this.addresses.index(points);
       await this.unitOfWork.run(context.dryRun, async (ports) => {
-        enriched.addressesFromNearbyPoint = await this.importElements(
+        const imported = await this.importElements(
           places.elements,
+          places.fetchedAt,
           index,
           ports,
           context,
@@ -114,6 +122,8 @@ export class OverpassOsmImporter implements SourceImporter {
           chains,
           messages,
         );
+        enriched.addressesFromNearbyPoint = imported.fromNearbyPoint;
+        enriched.placesRefreshed = imported.refreshed;
       });
       return report('succeeded');
     } catch (error) {
@@ -157,17 +167,19 @@ export class OverpassOsmImporter implements SourceImporter {
     return points;
   }
 
-  /** @returns how many places took their address from a nearby point. */
+  /** @returns how many places took their address from a nearby point, and how many were refreshed. */
   private async importElements(
     elements: readonly unknown[],
+    fetchedAt: Date,
     addressIndex: OsmAddressIndex,
     ports: TransactionalPorts,
     context: ImportContext,
     counts: Tally,
     chains: ChainTally,
     messages: string[],
-  ): Promise<number> {
+  ): Promise<{ readonly fromNearbyPoint: number; readonly refreshed: number }> {
     let fromNearbyPoint = 0;
+    let refreshed = 0;
     const chainIds = new Map<string, ChainId>();
     for (const [index, raw] of elements.entries()) {
       context.signal?.throwIfAborted();
@@ -203,13 +215,55 @@ export class OverpassOsmImporter implements SourceImporter {
           fromNearbyPoint += 1;
         }
       }
-      const { outcome } = await ports.places.upsertFromSource(
+      const { placeId, outcome } = await ports.places.upsertFromSource(
         { ...translation.place, address, chainId },
         this.ids.placeId(),
       );
       counts[outcome] += 1;
+      if (
+        translation.acceptance !== null &&
+        (await this.appendAcceptance(
+          ports,
+          placeId,
+          translation.place.osmRef,
+          translation.acceptance,
+          fetchedAt,
+        ))
+      ) {
+        counts.evidenceAppended += 1;
+        await this.refresher.refresh(ports, placeId);
+        refreshed += 1;
+      }
     }
-    return fromNearbyPoint;
+    return { fromNearbyPoint, refreshed };
+  }
+
+  /**
+   * Appends the answer once per element and tag value: a changed tag appends newer evidence,
+   * which supersedes the old one.
+   *
+   * @returns whether anything was appended.
+   */
+  private async appendAcceptance(
+    ports: TransactionalPorts,
+    placeId: PlaceId,
+    osmRef: string,
+    acceptance: OsmAcceptance,
+    fetchedAt: Date,
+  ): Promise<boolean> {
+    const outcome = await ports.evidence.append({
+      id: this.ids.evidenceId(),
+      target: { type: 'place', placeId },
+      kind: 'external_list',
+      result: acceptance.result,
+      source: 'osm',
+      sourceRef: `https://www.openstreetmap.org/${osmRef}#${acceptance.tag}`,
+      observedAt: fetchedAt,
+      importedAt: this.clock.now(),
+      userId: null,
+      note: null,
+    });
+    return outcome === 'appended';
   }
 
   /** Upserts each chain once per run. */

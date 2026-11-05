@@ -3,7 +3,7 @@ import type { ChainSourceRecord, GeoPoint, PlaceCategory } from '@amexbutikker/c
 import { z } from 'zod';
 import { OSM_AMENITY_CATEGORIES } from './osm-overpass.model.js';
 import type { OsmAddressPoint, OverpassElement } from './osm-overpass.model.js';
-import type { OsmElementTranslator, OsmTranslation } from './osm-overpass.ports.js';
+import type { OsmAcceptance, OsmElementTranslator, OsmTranslation } from './osm-overpass.ports.js';
 
 const MAX_NAME_LENGTH = 200;
 const WebsiteSchema = z.url({ protocol: /^https?$/ });
@@ -13,6 +13,7 @@ const WikidataIdSchema = z.string().regex(/^Q\d+$/);
 /**
  * Translates OSM tags into the place model. `amenity` wins over `shop`, which wins over
  * `tourism=hotel`. A tag that cannot be used is dropped with a warning; the place is kept.
+ * Payment tags become an Amex answer.
  */
 export class TagOsmElementTranslator implements OsmElementTranslator {
   public translate(element: OverpassElement): OsmTranslation {
@@ -61,8 +62,27 @@ export class TagOsmElementTranslator implements OsmElementTranslator {
       kind: 'place',
       place: { osmRef, name, category, address, location, website },
       chain: this.chain(tags, name, warnings),
+      acceptance: this.acceptance(tags),
       warnings,
     };
+  }
+
+  /**
+   * `payment:american_express=yes|no` decides; without it, `payment:credit_cards=no` means no
+   * Amex either. Other values (`only above 100 NOK`, `limited`) say too little and are ignored.
+   */
+  private acceptance(tags: Readonly<Record<string, string>>): OsmAcceptance | null {
+    const amex = tags['payment:american_express']?.trim().toLowerCase();
+    if (amex === 'yes' || amex === 'no') {
+      return {
+        result: amex === 'yes' ? 'accepted' : 'rejected',
+        tag: `payment:american_express=${amex}`,
+      };
+    }
+    if (amex === undefined && tags['payment:credit_cards']?.trim().toLowerCase() === 'no') {
+      return { result: 'rejected', tag: 'payment:credit_cards=no' };
+    }
+    return null;
   }
 
   public addressPoint(element: OverpassElement): OsmAddressPoint | null {

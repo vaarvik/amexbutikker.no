@@ -337,6 +337,7 @@ export class CompositionRoot {
           new TagOsmElementTranslator(),
           new GridOsmAddressLocator(0.0005),
           importUnitOfWork,
+          refresher,
           ids,
           clock,
           {

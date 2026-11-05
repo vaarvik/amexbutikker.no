@@ -4,7 +4,14 @@ import type {
   ImportRunId,
   TransactionalPorts,
 } from '@amexbutikker/contracts';
-import { TrigramNameSimilarity } from '@amexbutikker/domain';
+import { CalculatingPlaceStatusRefresher } from '@amexbutikker/application';
+import {
+  DecayingAcceptanceStatusCalculator,
+  FixedEvidenceWeightPolicy,
+  ProportionChainHintCalculator,
+  SupersedingEvidenceSelector,
+  TrigramNameSimilarity,
+} from '@amexbutikker/domain';
 import {
   EmptyInMemoryTablesFactory,
   InMemoryChainRepository,
@@ -96,6 +103,18 @@ function portsFor(tables: InMemoryTables): TransactionalPorts {
   };
 }
 
+function refresher(): CalculatingPlaceStatusRefresher {
+  return new CalculatingPlaceStatusRefresher(
+    new DecayingAcceptanceStatusCalculator(
+      new FixedEvidenceWeightPolicy(),
+      {},
+      new SupersedingEvidenceSelector(),
+    ),
+    new ProportionChainHintCalculator(),
+    clock,
+  );
+}
+
 function context(dryRun = false): ImportContext {
   return {
     runId: '0190a000-0000-7000-8000-000000000001' as ImportRunId,
@@ -117,6 +136,7 @@ describe('OverpassOsmImporter', () => {
       new TagOsmElementTranslator(),
       new GridOsmAddressLocator(0.0005),
       new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
+      refresher(),
       new UuidV7IdGenerator(clock),
       clock,
       { areaId: 3_600_406_091, timeoutSeconds: 180, maxMessages: 10, addressMaxDistanceM: 25 },
@@ -213,6 +233,69 @@ describe('OverpassOsmImporter', () => {
     expect(byRef.get('way/2')?.address.street).toBeNull();
   });
 
+  it('turns payment tags into likely answers, once per tag value', async () => {
+    const tagged = (id: number, payment: Record<string, string>) => ({
+      type: 'node',
+      id,
+      lat: 59.93,
+      lon: 10.77,
+      tags: { amenity: 'cafe', name: `Kafé ${String(id)}`, ...payment },
+    });
+    client.body = {
+      elements: [
+        tagged(10, { 'payment:american_express': 'yes' }),
+        tagged(11, { 'payment:credit_cards': 'no' }),
+        tagged(12, {}),
+      ],
+    };
+
+    const first = await importer.run(context());
+    const again = await importer.run(context());
+
+    expect(first.counts.evidenceAppended).toBe(2);
+    expect(first.metrics).toMatchObject({ placesRefreshed: 2 });
+    expect(again.counts.evidenceAppended).toBe(0);
+    const evidence = [...tables.evidence.values()];
+    expect(evidence.map((item) => [item.source, item.kind, item.result, item.sourceRef])).toEqual([
+      [
+        'osm',
+        'external_list',
+        'accepted',
+        'https://www.openstreetmap.org/node/10#payment:american_express=yes',
+      ],
+      [
+        'osm',
+        'external_list',
+        'rejected',
+        'https://www.openstreetmap.org/node/11#payment:credit_cards=no',
+      ],
+    ]);
+    const statuses = [...tables.statuses.values()].map((snapshot) => snapshot.status.status);
+    expect(statuses.sort()).toEqual(['likely_accepted', 'likely_rejected']);
+  });
+
+  it('appends newer evidence when a payment tag changes', async () => {
+    const cafe = (value: string) => ({
+      elements: [
+        {
+          type: 'node',
+          id: 20,
+          lat: 59.93,
+          lon: 10.77,
+          tags: { amenity: 'cafe', name: 'Kafé Bytt', 'payment:american_express': value },
+        },
+      ],
+    });
+    client.body = cafe('yes');
+    await importer.run(context());
+    client.body = cafe('no');
+
+    const changed = await importer.run(context());
+
+    expect(changed.counts.evidenceAppended).toBe(1);
+    expect([...tables.statuses.values()][0]?.status.status).toBe('likely_rejected');
+  });
+
   it('fails when the address query fails', async () => {
     client.addressBody = { remark: 'runtime error: out of memory' };
 
@@ -278,6 +361,7 @@ describe('OverpassOsmImporter', () => {
       new TagOsmElementTranslator(),
       new GridOsmAddressLocator(0.0005),
       new TransactionalImportUnitOfWork(new InMemoryUnitOfWork(tables, portsFor)),
+      refresher(),
       new UuidV7IdGenerator(clock),
       clock,
       { areaId: 1, timeoutSeconds: 1, maxMessages: 10, addressMaxDistanceM: 25 },

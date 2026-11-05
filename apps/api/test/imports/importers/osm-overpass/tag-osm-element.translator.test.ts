@@ -8,7 +8,7 @@ function node(tags: Record<string, string>, extra: Partial<OverpassElement> = {}
   return { type: 'node', id: 42, lat: 59.91, lon: 10.75, tags, ...extra };
 }
 
-describe('DefaultOsmElementTranslator', () => {
+describe('TagOsmElementTranslator', () => {
   it('maps a tagged node to a place with its address and osm ref', () => {
     expect(
       translator.translate(
@@ -33,8 +33,39 @@ describe('DefaultOsmElementTranslator', () => {
         website: 'https://kaffebrenneriet.no/',
       },
       chain: null,
+      acceptance: null,
       warnings: [],
     });
+  });
+
+  it.each([
+    [{ 'payment:american_express': 'yes' }, 'accepted', 'payment:american_express=yes'],
+    [{ 'payment:american_express': ' No ' }, 'rejected', 'payment:american_express=no'],
+    [{ 'payment:credit_cards': 'no' }, 'rejected', 'payment:credit_cards=no'],
+    [
+      { 'payment:american_express': 'yes', 'payment:credit_cards': 'no' },
+      'accepted',
+      'payment:american_express=yes',
+    ],
+  ])('reads the Amex answer from %o', (payment, result, tag) => {
+    expect(translator.translate(node({ amenity: 'cafe', name: 'Kafé', ...payment }))).toMatchObject(
+      {
+        acceptance: { result, tag },
+      },
+    );
+  });
+
+  it.each([
+    [{}],
+    [{ 'payment:american_express': 'only above 100 NOK' }],
+    [{ 'payment:american_express': 'limited', 'payment:credit_cards': 'no' }],
+    [{ 'payment:credit_cards': 'yes' }],
+  ])('has no Amex answer for %o', (payment) => {
+    expect(translator.translate(node({ amenity: 'cafe', name: 'Kafé', ...payment }))).toMatchObject(
+      {
+        acceptance: null,
+      },
+    );
   });
 
   it('uses the center of a way', () => {

@@ -1,4 +1,5 @@
 import type {
+  AcceptanceResult,
   Address,
   ChainSourceRecord,
   GeoPoint,
@@ -30,10 +31,19 @@ export type OsmTranslation =
       /** The place without its chain; the importer resolves `chain` to an id first. */
       readonly place: Omit<PlaceSourceRecord, 'chainId'>;
       readonly chain: ChainSourceRecord | null;
+      /** What the element's payment tags say about Amex, or null when they say nothing. */
+      readonly acceptance: OsmAcceptance | null;
       /** Tags that were present but unusable, e.g. a malformed postcode. */
       readonly warnings: readonly string[];
     }
   | { readonly kind: 'skipped'; readonly reason: string };
+
+/** An Amex answer read from OSM payment tags. */
+export interface OsmAcceptance {
+  readonly result: AcceptanceResult;
+  /** The tag it came from, e.g. `payment:american_express=yes`; part of the evidence sourceRef. */
+  readonly tag: string;
+}
 
 /** Anti-corruption layer: OSM tags in, place model out. Pure. */
 export interface OsmElementTranslator {
