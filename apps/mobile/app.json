@@ -56,6 +56,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4947d2f5-1b82-4767-b5d6-91dc1d0097d6"
+      }
+    },
+    "owner": "vaarvik"
   }
 }

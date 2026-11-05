@@ -58,21 +58,12 @@ It opens two Cloudflare quick tunnels, starts the API with CORS for the web tunn
 
 Needed for Phase 7: share extensions do not run in Expo Go. Nothing here submits to a store.
 
-These commands need your Expo account (and an Apple Developer account for iPhones). Run them yourself:
+The EAS project exists: `@vaarvik/amexbutikker`, id in `apps/mobile/app.json` (`extra.eas.projectId`; `EAS_PROJECT_ID` overrides it). Commands below need a logged-in EAS CLI (`brew install eas-cli`, then `eas login`; in a non-interactive shell `eas login --device` logs in with a code approved in the browser).
+
+The API address for a build goes into the EAS environment:
 
 ```bash
-brew install eas-cli
-eas login
 cd apps/mobile
-eas init                         # creates the EAS project and prints its id
-```
-
-`app.config.ts` reads the project id from `EAS_PROJECT_ID`. Put it in `.env` for local commands and in each EAS environment for cloud builds and updates:
-
-```bash
-for env in development preview production; do
-  eas env:create --environment $env --name EAS_PROJECT_ID --value <project-id> --visibility plaintext
-done
 eas env:create --environment preview --name EXPO_PUBLIC_API_URL --value https://<stable-api-url> --visibility plaintext
 ```
 

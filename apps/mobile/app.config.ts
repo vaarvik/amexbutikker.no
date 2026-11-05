@@ -4,7 +4,7 @@ import type { ConfigContext, ExpoConfig } from 'expo/config';
  * Static settings live in app.json; this adds what comes from the environment, so ids can change
  * without editing code:
  * - APP_IOS_BUNDLE_ID / APP_ANDROID_PACKAGE: the app's identity on each platform;
- * - EAS_PROJECT_ID: set after `eas init`; enables over-the-air updates from EAS Update.
+ * - EAS_PROJECT_ID: overrides the EAS project in app.json (`@vaarvik/amexbutikker`).
  *
  * `runtimeVersion` uses the fingerprint policy: EAS hashes everything native (dependencies with
  * native code, app config, plugins, permissions). An update only reaches builds with the same
@@ -15,7 +15,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const env = process.env as Readonly<Record<string, string | undefined>>;
   const iosBundleId = env.APP_IOS_BUNDLE_ID ?? 'no.amexbutikker.app';
   const androidPackage = env.APP_ANDROID_PACKAGE ?? 'no.amexbutikker.app';
-  const projectId = env.EAS_PROJECT_ID;
+  const extra = config.extra as { eas?: { projectId?: string } } | undefined;
+  const projectId = env.EAS_PROJECT_ID ?? extra?.eas?.projectId;
 
   return {
     ...config,
