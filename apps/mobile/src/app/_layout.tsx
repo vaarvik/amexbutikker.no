@@ -35,11 +35,10 @@ export default function RootLayout() {
             headerBackTitle: 'Tilbake',
           }}
         >
-          <Stack.Screen name="index" options={{ title: 'Tar de Amex?' }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Tar de Amex?' }} />
           <Stack.Screen name="place/[id]" options={{ title: '' }} />
           <Stack.Screen name="add" options={{ title: 'Legg til sted', presentation: 'modal' }} />
           <Stack.Screen name="shared" options={{ title: 'Delt sted' }} />
-          <Stack.Screen name="visits" options={{ title: 'Besøk' }} />
         </Stack>
       </ServicesProvider>
     </ShareIntentProvider>

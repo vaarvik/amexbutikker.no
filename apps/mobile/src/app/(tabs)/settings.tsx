@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import { useServices } from '../ui/services';
-import { usePalette } from '../ui/theme';
+import { useServices } from '../../ui/services';
+import { usePalette } from '../../ui/theme';
 
-/** Turns visit questions on and off. Native only; the home screen hides the entry on the web. */
-export default function VisitsScreen() {
+/** App settings. Today only visit questions, which exist in the native app only. */
+export default function SettingsScreen() {
   const { visits } = useServices();
   const palette = usePalette();
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -16,7 +16,13 @@ export default function VisitsScreen() {
   }, [visits]);
 
   if (visits === null) {
-    return null;
+    return (
+      <View style={[styles.empty, { backgroundColor: palette.background }]}>
+        <Text style={[styles.note, { color: palette.muted }]}>
+          Ingen innstillinger på nettet ennå.
+        </Text>
+      </View>
+    );
   }
 
   const toggle = (on: boolean) => {
@@ -47,6 +53,7 @@ export default function VisitsScreen() {
       style={{ backgroundColor: palette.background }}
       contentContainerStyle={styles.content}
     >
+      <Text style={[styles.section, muted]}>BESØK</Text>
       <View style={[styles.card, { backgroundColor: palette.card }]}>
         <View style={styles.row}>
           <Text style={[styles.label, text]}>Spør meg etter besøk</Text>
@@ -96,8 +103,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 52,
+    gap: 12,
+    paddingVertical: 11,
   },
-  label: { fontSize: 17 },
+  label: { fontSize: 17, flex: 1 },
+  section: { fontSize: 13, paddingHorizontal: 16, marginBottom: -4 },
+  empty: { flex: 1, paddingTop: 24 },
   note: { fontSize: 14, lineHeight: 20, paddingHorizontal: 16 },
 });

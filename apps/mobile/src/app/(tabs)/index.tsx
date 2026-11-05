@@ -1,5 +1,5 @@
 import type { PlaceSummaryDto } from '@amexbutikker/contracts';
-import { Stack, router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { NearbyState } from '../places/places.model';
-import { PlaceRow } from '../ui/place-row';
-import { useServices } from '../ui/services';
-import { usePalette } from '../ui/theme';
+import type { NearbyState } from '../../places/places.model';
+import { PlaceRow } from '../../ui/place-row';
+import { useServices } from '../../ui/services';
+import { usePalette } from '../../ui/theme';
 
 const SEARCH_DELAY_MS = 250;
 
@@ -89,7 +89,6 @@ export default function Home() {
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.background }]}>
-      <Stack.Screen options={{ headerShown: false }} />
       <View style={[styles.hero, { backgroundColor: palette.hero, paddingTop: insets.top + 12 }]}>
         <View style={[styles.column, styles.header]}>
           <Text style={[styles.title, { color: palette.onHero }]} accessibilityRole="header">
