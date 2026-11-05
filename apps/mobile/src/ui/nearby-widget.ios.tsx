@@ -5,7 +5,6 @@ import {
   foregroundStyle,
   frame,
   lineLimit,
-  padding,
   widgetURL,
 } from '@expo/ui/swift-ui/modifiers';
 import { createWidget } from 'expo-widgets';
@@ -48,65 +47,77 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
     );
   }
 
-  const herePanel = (
-    <VStack alignment="leading" spacing={4}>
-      <Text modifiers={[font({ weight: 'semibold', size: 12 }), secondary]}>
-        {here === null ? 'TAR DE AMEX?' : 'DU ER HER'}
-      </Text>
-      {here === null ? (
-        <Text modifiers={[font({ weight: 'semibold', size: 15 }), lineLimit(3)]}>
-          Ingen steder rett her
-        </Text>
-      ) : (
-        <VStack alignment="leading" spacing={6}>
-          <Text modifiers={[font({ weight: 'bold', size: 17 }), lineLimit(2)]}>{here.name}</Text>
-          <HStack spacing={6}>
-            <Image systemName={here.symbol as 'questionmark.circle'} size={22} color={here.color} />
-            <Text modifiers={[font({ weight: 'bold', size: 20 }), lineLimit(1)]}>
-              {here.answer}
-            </Text>
-          </HStack>
-        </VStack>
-      )}
-      <Spacer />
-      <Text modifiers={[font({ size: 11 }), secondary]}>{props.updated}</Text>
-    </VStack>
+  const title = (text: string) => (
+    <Text modifiers={[font({ weight: 'semibold', size: 12 }), secondary]}>{text}</Text>
   );
+  const updated = <Text modifiers={[font({ size: 11 }), secondary]}>{props.updated}</Text>;
 
-  if (family === 'systemSmall') {
+  // Before the app has written anything (or nothing is known nearby): one plain line.
+  if (here === null && props.accepted.length === 0) {
     return (
       <VStack
         alignment="leading"
-        modifiers={[...link, frame({ maxWidth: 10_000, alignment: 'leading' }), background]}
+        spacing={4}
+        modifiers={[frame({ maxWidth: 10_000, alignment: 'leading' }), background]}
       >
-        {herePanel}
+        {title('TAR DE AMEX?')}
+        <Text modifiers={[font({ weight: 'semibold', size: 15 }), lineLimit(3)]}>
+          {props.updated === ''
+            ? 'Åpne appen for å se steder i nærheten'
+            : 'Ingen kjente steder i nærheten ennå'}
+        </Text>
+        <Spacer />
+        {updated}
+      </VStack>
+    );
+  }
+
+  const herePanel =
+    here === null ? null : (
+      <VStack alignment="leading" spacing={6}>
+        {title('DU ER HER')}
+        <Text modifiers={[font({ weight: 'bold', size: 17 }), lineLimit(2)]}>{here.name}</Text>
+        <HStack spacing={6}>
+          <Image systemName={here.symbol as 'questionmark.circle'} size={22} color={here.color} />
+          <Text modifiers={[font({ weight: 'bold', size: 20 }), lineLimit(1)]}>{here.answer}</Text>
+        </HStack>
+        <Spacer />
+        {updated}
+      </VStack>
+    );
+
+  const acceptedList = (limit: number) => (
+    <VStack alignment="leading" spacing={6}>
+      {title('I NÆRHETEN MED AMEX')}
+      {props.accepted.slice(0, limit).map((place) => (
+        <Link key={place.url} destination={place.url}>
+          <HStack spacing={6}>
+            <Image systemName="checkmark.circle.fill" size={14} color="#1E6B34" />
+            <Text modifiers={[font({ size: 14 }), lineLimit(1)]}>{place.name}</Text>
+            <Spacer />
+            <Text modifiers={[font({ size: 12 }), secondary]}>{place.distance}</Text>
+          </HStack>
+        </Link>
+      ))}
+      <Spacer />
+      {herePanel === null ? updated : null}
+    </VStack>
+  );
+
+  const fill = frame({ maxWidth: 10_000, alignment: 'leading' });
+
+  if (family === 'systemSmall') {
+    return (
+      <VStack alignment="leading" modifiers={[...link, fill, background]}>
+        {herePanel ?? acceptedList(2)}
       </VStack>
     );
   }
 
   return (
-    <HStack alignment="top" spacing={16} modifiers={[...link, padding({ all: 2 }), background]}>
+    <HStack alignment="top" spacing={16} modifiers={[...link, fill, background]}>
       {herePanel}
-      <VStack alignment="leading" spacing={6}>
-        <Text modifiers={[font({ weight: 'semibold', size: 12 }), secondary]}>
-          TAR AMEX I NÆRHETEN
-        </Text>
-        {props.accepted.length === 0 ? (
-          <Text modifiers={[font({ size: 14 }), secondary]}>Ingen kjente ennå</Text>
-        ) : (
-          props.accepted.map((place) => (
-            <Link key={place.url} destination={place.url}>
-              <HStack spacing={6}>
-                <Image systemName="checkmark.circle.fill" size={14} color="#1E6B34" />
-                <Text modifiers={[font({ size: 14 }), lineLimit(1)]}>{place.name}</Text>
-                <Spacer />
-                <Text modifiers={[font({ size: 12 }), secondary]}>{place.distance}</Text>
-              </HStack>
-            </Link>
-          ))
-        )}
-        <Spacer />
-      </VStack>
+      {props.accepted.length === 0 ? null : acceptedList(3)}
     </HStack>
   );
 }
