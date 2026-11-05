@@ -23,14 +23,8 @@ describe('NorwegianStatusPresenter', () => {
     it.each([
       [{ kind: 'transaction' as const }, 'Bekreftet med kjøp 3. nov. 2026.'],
       [{ kind: 'visit_report' as const, observedAt: null }, 'Bekreftet ved besøk.'],
-      [
-        { kind: 'external_list' as const, source: 'kredittkort360' },
-        'Ifølge ekstern informasjon. Ikke bekreftet av brukere ennå.',
-      ],
-      [
-        { kind: 'checkout_logo' as const, source: 'a list' },
-        'Amex-logo i kassen. Ikke bekreftet av brukere ennå.',
-      ],
+      [{ kind: 'external_list' as const, source: 'kredittkort360' }, 'Ifølge ekstern informasjon.'],
+      [{ kind: 'checkout_logo' as const, source: 'a list' }, 'Amex-logo i kassen.'],
       [
         { kind: null, scope: 'none' as const, observedAt: null, userAccepted: 0 },
         'Ingen har rapportert om dette stedet ennå.',
@@ -59,10 +53,10 @@ describe('NorwegianStatusPresenter', () => {
             { chain: { id: CHAIN_ID, name: 'Rema 1000' } },
           ),
         ),
-      ).toBe('Skal gjelde hele Rema 1000. Ikke bekreftet av brukere her ennå.');
+      ).toBe('Skal gjelde hele Rema 1000.');
       expect(
         presenter.basis(details({ kind: 'chain_confirmation', scope: 'chain', source: null })),
-      ).toBe('Skal gjelde hele kjeden. Ikke bekreftet av brukere her ennå.');
+      ).toBe('Skal gjelde hele kjeden.');
     });
 
     it('never names the source, only that it is not from users', () => {

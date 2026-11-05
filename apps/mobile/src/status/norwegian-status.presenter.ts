@@ -96,11 +96,11 @@ export class NorwegianStatusPresenter implements StatusPresenter {
         return likely ? `${reports} Ett svar til gjør svaret sikrere.` : reports;
       }
       case 'chain_confirmation':
-        return `Skal gjelde hele ${details.chain?.name ?? 'kjeden'}. Ikke bekreftet av brukere her ennå.`;
+        return `Skal gjelde hele ${details.chain?.name ?? 'kjeden'}.`;
       case 'external_list':
-        return 'Ifølge ekstern informasjon. Ikke bekreftet av brukere ennå.';
+        return 'Ifølge ekstern informasjon.';
       case 'checkout_logo':
-        return 'Amex-logo i kassen. Ikke bekreftet av brukere ennå.';
+        return 'Amex-logo i kassen.';
       case null:
         return 'Ingen har rapportert om dette stedet ennå.';
     }
