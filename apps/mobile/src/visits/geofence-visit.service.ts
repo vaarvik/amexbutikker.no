@@ -1,4 +1,5 @@
 import type { Clock, PlaceSummaryDto } from '@amexbutikker/contracts';
+import type { NearbyCache } from '../places/places.ports';
 import { EMPTY_VISIT_STATE } from './visits.model';
 import type {
   RegionMonitor,
@@ -20,6 +21,7 @@ export class GeofenceVisitService implements VisitService {
     private readonly selector: VisitRegionSelector,
     private readonly decider: VisitPromptDecider,
     private readonly storage: VisitStateStorage,
+    private readonly nearbyCache: NearbyCache,
     private readonly clock: Clock,
   ) {}
 
@@ -32,6 +34,11 @@ export class GeofenceVisitService implements VisitService {
       return false;
     }
     await this.storage.save({ ...(await this.storage.find()), enabled: true });
+    // Start watching at once from the last nearby list, instead of waiting for a fresh one.
+    const snapshot = await this.nearbyCache.find().catch(() => null);
+    if (snapshot !== null) {
+      await this.refresh(snapshot.results);
+    }
     return true;
   }
 

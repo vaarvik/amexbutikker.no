@@ -1,4 +1,6 @@
 import type { Clock, PlaceSummaryDto } from '@amexbutikker/contracts';
+import type { NearbySnapshot } from '../../src/places/places.model';
+import type { NearbyCache } from '../../src/places/places.ports';
 import { describe, expect, it } from 'vitest';
 import { GeofenceVisitService } from '../../src/visits/geofence-visit.service';
 import { KeyValueVisitStateStorage } from '../../src/visits/key-value-visit-state.storage';
@@ -50,6 +52,16 @@ class FakeNotifier implements VisitNotifier {
   }
 }
 
+class StubNearbyCache implements NearbyCache {
+  public constructor(public snapshot: NearbySnapshot | null = null) {}
+  public find() {
+    return Promise.resolve(this.snapshot);
+  }
+  public save() {
+    return Promise.resolve();
+  }
+}
+
 class FixedSelector implements VisitRegionSelector {
   public constructor(private readonly regions: readonly VisitRegion[]) {}
   public select(): readonly VisitRegion[] {
@@ -74,7 +86,11 @@ class EveryExitDecider implements VisitPromptDecider {
 
 const clock: Clock = { now: () => NOW };
 
-function setup(initial?: VisitState, regions = [region(ASK_ID, 'ask')]) {
+function setup(
+  initial?: VisitState,
+  regions = [region(ASK_ID, 'ask')],
+  cache = new StubNearbyCache(),
+) {
   const values = new MapKeyValueStorage();
   const storage = new KeyValueVisitStateStorage(values, { key: 'visits' });
   const monitor = new FakeMonitor();
@@ -85,6 +101,7 @@ function setup(initial?: VisitState, regions = [region(ASK_ID, 'ask')]) {
     new FixedSelector(regions),
     new EveryExitDecider(),
     storage,
+    cache,
     clock,
   );
   const ready = initial === undefined ? Promise.resolve() : storage.save(initial);
@@ -100,6 +117,18 @@ describe('GeofenceVisitService', () => {
     await expect(service.isEnabled()).resolves.toBe(false);
     await expect(service.enable()).resolves.toBe(true);
     await expect(service.isEnabled()).resolves.toBe(true);
+  });
+
+  it('starts watching from the last nearby list as soon as it is enabled', async () => {
+    const snapshot = { center: { lat: 59.9, lng: 10.7 }, fetchedAt: NOW.toISOString(), results };
+    const withCache = setup(undefined, undefined, new StubNearbyCache(snapshot));
+    const withoutCache = setup();
+
+    await withCache.service.enable();
+    await withoutCache.service.enable();
+
+    expect(withCache.monitor.watching).toEqual([region(ASK_ID, 'ask')]);
+    expect(withoutCache.monitor.watching).toBeNull();
   });
 
   it('stays off when notifications or location are not allowed', async () => {

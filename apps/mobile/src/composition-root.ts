@@ -86,13 +86,10 @@ export class CompositionRoot implements AppServices {
     this.places = new FetchPlacesApiClient(transport, this.session);
     this.location = adapters.location;
     const clock = new SystemClock();
-    this.nearby = new CachingNearbyService(
-      this.places,
-      new KeyValueNearbyCache(AsyncStorage, { key: 'nearby-snapshot-v1' }),
-      this.location,
-      clock,
-      { radiusM: 1500 },
-    );
+    const nearbyCache = new KeyValueNearbyCache(AsyncStorage, { key: 'nearby-snapshot-v1' });
+    this.nearby = new CachingNearbyService(this.places, nearbyCache, this.location, clock, {
+      radiusM: 1500,
+    });
     this.presenter = new NorwegianStatusPresenter();
     this.visits =
       adapters.regionMonitor === null || adapters.visitNotifier === null
@@ -129,6 +126,7 @@ export class CompositionRoot implements AppServices {
             ),
             // v2: visits are tracked as stays across overlapping fences.
             new KeyValueVisitStateStorage(AsyncStorage, { key: 'visit-state-v2' }),
+            nearbyCache,
             clock,
           );
   }
