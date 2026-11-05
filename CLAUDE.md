@@ -81,7 +81,7 @@ Everywhere else (rule (f)): one exported class per file, Error subclasses aside.
 
 The class name must end in a known role:
 
-`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`, `session`, `cache`, `storage`, `transport`, `presenter`, `monitor`, `notifier`.
+`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`, `session`, `cache`, `storage`, `transport`, `presenter`, `monitor`, `notifier`, `ranker`.
 
 To add a role, add it to `ClassFileNamingRule` and this list in the same change.
 

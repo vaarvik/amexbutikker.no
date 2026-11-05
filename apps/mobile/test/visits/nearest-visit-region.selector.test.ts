@@ -28,6 +28,7 @@ describe('NearestVisitRegionSelector', () => {
     expect(regions[0]).toEqual({
       placeId: id(2),
       name: 'Sted 2',
+      category: 'cafe',
       center: { lat: 59.915, lng: 10.752 },
       radiusM: 75,
       prompt: 'ask',

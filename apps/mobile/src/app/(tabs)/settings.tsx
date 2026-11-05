@@ -73,23 +73,28 @@ export default function SettingsScreen() {
         Posisjonen din lagres bare på telefonen. Bare svaret ditt sendes.
       </Text>
 
-      {__DEV__ && enabled === true ? (
-        <Pressable
-          onPress={() => {
-            void visits.sendTest().then((sent) => {
-              setMessage(sent ? null : 'Ingen steder å spørre om ennå. Åpne forsiden først.');
-            });
-          }}
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.card,
-            styles.row,
-            { backgroundColor: palette.card, opacity: pressed ? 0.6 : 1 },
-          ]}
-        >
-          <Text style={[styles.label, { color: palette.accent }]}>Send testvarsel</Text>
-        </Pressable>
-      ) : null}
+      {__DEV__ && enabled === true
+        ? (['ask', 'pick'] as const).map((kind) => (
+            <Pressable
+              key={kind}
+              onPress={() => {
+                void visits.sendTest(kind).then((sent) => {
+                  setMessage(sent ? null : 'Ingen steder å spørre om ennå. Åpne Steder først.');
+                });
+              }}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.card,
+                styles.row,
+                { backgroundColor: palette.card, opacity: pressed ? 0.6 : 1 },
+              ]}
+            >
+              <Text style={[styles.label, { color: palette.accent }]}>
+                {kind === 'ask' ? 'Send testvarsel' : 'Send testvarsel med flere steder'}
+              </Text>
+            </Pressable>
+          ))
+        : null}
 
       {message === null ? null : <Text style={[styles.note, text]}>{message}</Text>}
     </ScrollView>

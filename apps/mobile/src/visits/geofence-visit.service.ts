@@ -54,11 +54,9 @@ export class GeofenceVisitService implements VisitService {
     }
     const regions = this.selector.select(results);
     const ids = new Set<string>(regions.map((region) => region.placeId));
-    // Keep the enter times of regions that are still watched, so a dwell survives a refresh.
-    const enteredAt = Object.fromEntries(
-      Object.entries(state.enteredAt).filter(([placeId]) => ids.has(placeId)),
-    );
-    await this.storage.save({ ...state, regions, enteredAt });
+    // Keep the stays of regions that are still watched, so a visit survives a refresh.
+    const stays = state.stays.filter((stay) => ids.has(stay.placeId));
+    await this.storage.save({ ...state, regions, stays });
     await this.monitor.start(regions);
   }
 
@@ -78,14 +76,18 @@ export class GeofenceVisitService implements VisitService {
     }
   }
 
-  public async sendTest(): Promise<boolean> {
-    const region = (await this.storage.find()).regions.find(
-      (candidate) => candidate.prompt === 'ask',
-    );
-    if (region === undefined) {
+  public async sendTest(kind: 'ask' | 'pick'): Promise<boolean> {
+    const candidates = (await this.storage.find()).regions
+      .filter((region) => region.prompt === 'ask')
+      .slice(0, kind === 'ask' ? 1 : 3)
+      .map(({ placeId, name, category }) => ({ placeId, name, category }));
+    const [first] = candidates;
+    if (first === undefined || (kind === 'pick' && candidates.length < 2)) {
       return false;
     }
-    await this.notifier.show({ kind: 'ask', placeId: region.placeId, name: region.name });
+    await this.notifier.show(
+      kind === 'ask' ? { kind: 'ask', candidate: first } : { kind: 'pick', candidates },
+    );
     return true;
   }
 }

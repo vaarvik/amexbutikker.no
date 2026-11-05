@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ExpoVisitNotifier } from '../../src/visits/expo-visit.notifier';
 import type { ExpoNotificationsModule } from '../../src/visits/visits.ports';
-import { ASK_ID } from './visits-test.data';
+import { ANNOUNCE_ID, ASK_ID, candidate } from './visits-test.data';
 
 class FakeNotifications implements ExpoNotificationsModule {
   public categories: { id: string; actions: unknown[] }[] = [];
@@ -74,8 +74,7 @@ describe('ExpoVisitNotifier', () => {
 
     await new ExpoVisitNotifier(notifications, config).show({
       kind: 'ask',
-      placeId: ASK_ID,
-      name: 'Kafé Åsen',
+      candidate: candidate(ASK_ID),
     });
 
     expect(notifications.scheduled).toEqual([
@@ -83,7 +82,7 @@ describe('ExpoVisitNotifier', () => {
         content: {
           title: 'Betalte du med Amex hos Kafé Åsen?',
           body: 'Trykk og hold for å svare. Svaret hjelper neste person.',
-          data: { placeId: ASK_ID, kind: 'ask' },
+          data: { kind: 'ask', placeId: ASK_ID },
           categoryIdentifier: 'visit-ask',
         },
         trigger: null,
@@ -96,8 +95,7 @@ describe('ExpoVisitNotifier', () => {
 
     await new ExpoVisitNotifier(notifications, config).show({
       kind: 'announce',
-      placeId: ASK_ID,
-      name: 'Bar Boka',
+      candidate: candidate(ASK_ID, 'Bar Boka'),
     });
 
     expect(notifications.scheduled).toEqual([
@@ -105,7 +103,29 @@ describe('ExpoVisitNotifier', () => {
         content: {
           title: 'Her kan du betale med Amex',
           body: 'Bar Boka tar Amex, ifølge appen.',
-          data: { placeId: ASK_ID, kind: 'announce' },
+          data: { kind: 'announce', placeId: ASK_ID },
+        },
+        trigger: null,
+      },
+    ]);
+  });
+
+  it.each([
+    [['A', 'B'], 'Var du hos A eller B? Trykk for å svare.'],
+    [['A', 'B', 'C'], 'Var du hos A, B eller C? Trykk for å svare.'],
+    [['A', 'B', 'C', 'D'], 'Var du hos A, B, C eller et annet sted i nærheten? Trykk for å svare.'],
+  ])('lists the places %j without buttons', async (names, body) => {
+    const notifications = new FakeNotifications();
+    const candidates = names.map((name, i) => candidate(i === 0 ? ASK_ID : ANNOUNCE_ID, name));
+
+    await new ExpoVisitNotifier(notifications, config).show({ kind: 'pick', candidates });
+
+    expect(notifications.scheduled).toEqual([
+      {
+        content: {
+          title: 'Betalte du med Amex nå nettopp?',
+          body,
+          data: { kind: 'pick', candidates: JSON.stringify(candidates) },
         },
         trigger: null,
       },

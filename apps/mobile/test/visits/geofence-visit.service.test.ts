@@ -15,7 +15,7 @@ import type {
   VisitRegionSelector,
 } from '../../src/visits/visits.ports';
 import { MapKeyValueStorage, summary } from '../shared/mobile-test.data';
-import { ANNOUNCE_ID, ASK_ID, enabledState, region } from './visits-test.data';
+import { ANNOUNCE_ID, ASK_ID, candidate, enabledState, region } from './visits-test.data';
 
 const NOW = new Date('2026-11-05T12:00:00.000Z');
 
@@ -62,14 +62,12 @@ class EveryExitDecider implements VisitPromptDecider {
   public decide(state: VisitState, event: VisitEvent) {
     const next = {
       ...state,
-      enteredAt: { ...state.enteredAt, [event.placeId]: NOW.toISOString() },
+      stays: [{ placeId: ASK_ID, enteredAt: NOW.toISOString(), insideMs: 0 }],
     };
     return {
       state: next,
       prompt:
-        event.kind === 'exit'
-          ? ({ kind: 'ask', placeId: ASK_ID, name: 'Kafé Åsen' } as const)
-          : null,
+        event.kind === 'exit' ? ({ kind: 'ask', candidate: candidate(ASK_ID) } as const) : null,
     };
   }
 }
@@ -126,14 +124,20 @@ describe('GeofenceVisitService', () => {
     expect(monitor.watching).toEqual([region(ASK_ID, 'ask')]);
   });
 
-  it('keeps enter times only for regions that are still watched', async () => {
-    const inside = { [ASK_ID]: NOW.toISOString(), [ANNOUNCE_ID]: NOW.toISOString() };
-    const { service, storage, ready } = setup(enabledState({ enteredAt: inside }));
+  it('keeps the stays of regions that are still watched', async () => {
+    const stay = (placeId: typeof ASK_ID) => ({
+      placeId,
+      enteredAt: NOW.toISOString(),
+      insideMs: 0,
+    });
+    const { service, storage, ready } = setup(
+      enabledState({ stays: [stay(ASK_ID), stay(ANNOUNCE_ID)] }),
+    );
     await ready;
 
     await service.refresh(results);
 
-    expect((await storage.find()).enteredAt).toEqual({ [ASK_ID]: NOW.toISOString() });
+    expect((await storage.find()).stays).toEqual([stay(ASK_ID)]);
   });
 
   it('shows the decided prompt and stores the new state', async () => {
@@ -143,8 +147,8 @@ describe('GeofenceVisitService', () => {
     await service.handle({ kind: 'enter', placeId: ASK_ID });
     await service.handle({ kind: 'exit', placeId: ASK_ID });
 
-    expect(notifier.shown).toEqual([{ kind: 'ask', placeId: ASK_ID, name: 'Kafé Åsen' }]);
-    expect((await storage.find()).enteredAt[ASK_ID]).toBe(NOW.toISOString());
+    expect(notifier.shown).toEqual([{ kind: 'ask', candidate: candidate(ASK_ID) }]);
+    expect((await storage.find()).stays).toHaveLength(1);
   });
 
   it('ignores payloads that are not region events, and events while disabled', async () => {
@@ -170,7 +174,7 @@ describe('GeofenceVisitService', () => {
     expect(await storage.find()).toMatchObject({
       enabled: false,
       regions: [],
-      enteredAt: {},
+      stays: [],
       askedAt: asked,
       recentAsks: [NOW.toISOString()],
     });
@@ -180,14 +184,30 @@ describe('GeofenceVisitService', () => {
     const { service, notifier, ready } = setup(enabledState());
     await ready;
 
-    await expect(service.sendTest()).resolves.toBe(true);
-    expect(notifier.shown).toEqual([{ kind: 'ask', placeId: ASK_ID, name: 'Kafé Åsen' }]);
+    await expect(service.sendTest('ask')).resolves.toBe(true);
+    expect(notifier.shown).toEqual([{ kind: 'ask', candidate: candidate(ASK_ID) }]);
   });
 
-  it('has no test question when it watches nothing to ask about', async () => {
-    const { service, ready } = setup(enabledState({ regions: [region(ANNOUNCE_ID, 'announce')] }));
+  it('sends a test list of the nearest places it would ask about', async () => {
+    const second = region(ANNOUNCE_ID, 'ask', 'Bar Boka');
+    const { service, notifier, ready } = setup(
+      enabledState({ regions: [region(ASK_ID, 'ask'), second] }),
+    );
     await ready;
 
-    await expect(service.sendTest()).resolves.toBe(false);
+    await expect(service.sendTest('pick')).resolves.toBe(true);
+    expect(notifier.shown).toEqual([
+      { kind: 'pick', candidates: [candidate(ASK_ID), candidate(ANNOUNCE_ID, 'Bar Boka')] },
+    ]);
+  });
+
+  it('has no test question without enough places to ask about', async () => {
+    const { service, ready } = setup(enabledState());
+    await ready;
+    const announceOnly = setup(enabledState({ regions: [region(ANNOUNCE_ID, 'announce')] }));
+    await announceOnly.ready;
+
+    await expect(service.sendTest('pick')).resolves.toBe(false);
+    await expect(announceOnly.service.sendTest('ask')).resolves.toBe(false);
   });
 });

@@ -14,6 +14,7 @@ import type { KeyValueStorage } from './shared/shared.ports';
 import { SystemClock } from './shared/system.clock';
 import { NorwegianStatusPresenter } from './status/norwegian-status.presenter';
 import type { StatusPresenter } from './status/status.ports';
+import { CategoryDwellVisitCandidateRanker } from './visits/category-dwell-visit-candidate.ranker';
 import { DwellVisitPromptDecider } from './visits/dwell-visit-prompt.decider';
 import { GeofenceVisitService } from './visits/geofence-visit.service';
 import { KeyValueVisitStateStorage } from './visits/key-value-visit-state.storage';
@@ -100,14 +101,34 @@ export class CompositionRoot implements AppServices {
             adapters.regionMonitor,
             adapters.visitNotifier,
             new NearestVisitRegionSelector({ maxRegions: 18, radiusM: 75 }),
-            new DwellVisitPromptDecider({
-              minDwellMs: config.visitMinDwellMs,
-              askCooldownMs: 30 * DAY_MS,
-              minGapBetweenAsksMs: 10 * MINUTE_MS,
-              maxAsksPerDay: 3,
-              announceCooldownMs: DAY_MS,
-            }),
-            new KeyValueVisitStateStorage(AsyncStorage, { key: 'visit-state-v1' }),
+            new DwellVisitPromptDecider(
+              new CategoryDwellVisitCandidateRanker({
+                dwellRanges: {
+                  shop: { minMs: 1 * MINUTE_MS, maxMs: 30 * MINUTE_MS },
+                  cafe: { minMs: 5 * MINUTE_MS, maxMs: 60 * MINUTE_MS },
+                  fast_food: { minMs: 5 * MINUTE_MS, maxMs: 40 * MINUTE_MS },
+                  restaurant: { minMs: 30 * MINUTE_MS, maxMs: 150 * MINUTE_MS },
+                  bar: { minMs: 20 * MINUTE_MS, maxMs: 180 * MINUTE_MS },
+                  pub: { minMs: 20 * MINUTE_MS, maxMs: 180 * MINUTE_MS },
+                  hotel: { minMs: 10 * MINUTE_MS, maxMs: 600 * MINUTE_MS },
+                  online_shop: { minMs: 1 * MINUTE_MS, maxMs: 30 * MINUTE_MS },
+                  other: { minMs: 2 * MINUTE_MS, maxMs: 60 * MINUTE_MS },
+                },
+                timeWeight: 0.6,
+                categoryWeight: 0.4,
+              }),
+              {
+                minDwellMs: config.visitMinDwellMs,
+                askCooldownMs: 30 * DAY_MS,
+                minGapBetweenAsksMs: 10 * MINUTE_MS,
+                maxAsksPerDay: 3,
+                announceCooldownMs: DAY_MS,
+                minLead: 0.15,
+                maxCandidates: 5,
+              },
+            ),
+            // v2: visits are tracked as stays across overlapping fences.
+            new KeyValueVisitStateStorage(AsyncStorage, { key: 'visit-state-v2' }),
             clock,
           );
   }

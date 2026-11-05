@@ -1,5 +1,11 @@
 import type { PlaceSummaryDto } from '@amexbutikker/contracts';
-import type { VisitEvent, VisitPrompt, VisitRegion, VisitState } from './visits.model';
+import type {
+  RankedVisitCandidate,
+  VisitEvent,
+  VisitPrompt,
+  VisitRegion,
+  VisitState,
+} from './visits.model';
 
 /** Turns on visit detection, keeps the regions current and reacts to region events. */
 export interface VisitService {
@@ -11,8 +17,11 @@ export interface VisitService {
   refresh(results: readonly PlaceSummaryDto[]): Promise<void>;
   /** Handles a payload from the OS region task. */
   handle(payload: unknown): Promise<void>;
-  /** Shows a sample question for the nearest monitored place. False when there is none. */
-  sendTest(): Promise<boolean>;
+  /**
+   * Shows a sample question: for the nearest watched place, or (`pick`) a list of the nearest
+   * three. False when there are not enough watched places.
+   */
+  sendTest(kind: 'ask' | 'pick'): Promise<boolean>;
 }
 
 /** Picks which places to watch. */
@@ -27,6 +36,13 @@ export interface VisitPromptDecider {
     event: VisitEvent,
     now: Date,
   ): { readonly state: VisitState; readonly prompt: VisitPrompt | null };
+}
+
+/** Orders the places of a finished visit by how likely the user paid there. Pure. */
+export interface VisitCandidateRanker {
+  rank(
+    stays: readonly { readonly region: VisitRegion; readonly insideMs: number }[],
+  ): readonly RankedVisitCandidate[];
 }
 
 export interface VisitStateStorage {

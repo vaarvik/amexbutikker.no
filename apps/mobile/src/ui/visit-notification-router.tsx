@@ -6,7 +6,8 @@ import { useServices } from './services';
 
 /**
  * Handles taps on visit notifications. "Det funket" / "Ble avvist" send the report, then open
- * the place; a plain tap opens the place; "Prøvde ikke" opens nothing. Renders nothing.
+ * the place; a plain tap opens the place; "Prøvde ikke" opens nothing. A list of likely places
+ * opens the pick screen. Renders nothing.
  * Native only: the root layout leaves it out on the web.
  */
 export function VisitNotificationRouter() {
@@ -25,7 +26,12 @@ export function VisitNotificationRouter() {
     handled.current = id;
     Notifications.clearLastNotificationResponse();
 
-    const placeId = PlaceIdSchema.safeParse(response.notification.request.content.data?.placeId);
+    const data = response.notification.request.content.data;
+    if (data?.kind === 'pick' && typeof data.candidates === 'string') {
+      router.push({ pathname: '/visit', params: { candidates: data.candidates } });
+      return;
+    }
+    const placeId = PlaceIdSchema.safeParse(data?.placeId);
     if (!placeId.success) {
       return;
     }

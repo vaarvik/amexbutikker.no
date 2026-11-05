@@ -33,6 +33,7 @@ export class NearestVisitRegionSelector implements VisitRegionSelector {
       regions.push({
         placeId: place.id,
         name: place.name,
+        category: place.category,
         center: place.location,
         radiusM: this.config.radiusM,
         prompt,

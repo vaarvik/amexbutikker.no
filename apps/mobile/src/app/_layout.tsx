@@ -39,6 +39,10 @@ export default function RootLayout() {
           <Stack.Screen name="place/[id]" options={{ title: '' }} />
           <Stack.Screen name="add" options={{ title: 'Legg til sted', presentation: 'modal' }} />
           <Stack.Screen name="shared" options={{ title: 'Delt sted' }} />
+          <Stack.Screen
+            name="visit"
+            options={{ title: 'Hvor betalte du?', presentation: 'modal' }}
+          />
         </Stack>
       </ServicesProvider>
     </ShareIntentProvider>
