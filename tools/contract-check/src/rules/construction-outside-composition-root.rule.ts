@@ -18,6 +18,7 @@ export class ConstructionOutsideCompositionRootRule implements Rule {
       'packages/application',
       'packages/in-memory',
       'apps/api/src',
+      'apps/mobile/src',
     ],
     private readonly exemptDirs: readonly string[] = ['apps/api/src/migrations'],
   ) {}

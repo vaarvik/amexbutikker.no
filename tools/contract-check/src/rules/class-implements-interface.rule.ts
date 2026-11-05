@@ -16,6 +16,7 @@ export class ClassImplementsInterfaceRule implements Rule {
       'packages/application/src',
       'packages/in-memory/src',
       'apps/api/src',
+      'apps/mobile/src',
     ],
   ) {}
 

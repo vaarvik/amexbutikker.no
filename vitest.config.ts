@@ -31,6 +31,7 @@ export default defineConfig({
         'packages/application/src/**',
         'packages/in-memory/src/**',
         'apps/api/src/**',
+        'apps/mobile/src/**',
       ],
       // Wiring and entry points: exercised by the API tests, not worth a floor of their own.
       exclude: [
@@ -39,12 +40,16 @@ export default defineConfig({
         '**/server.ts',
         '**/migrate.ts',
         '**/cli.ts',
+        // Screens and components: React views, checked by hand on a device (see CLAUDE.md, UI exception).
+        'apps/mobile/src/app/**',
+        'apps/mobile/src/ui/**',
       ],
       thresholds: {
         'packages/domain/src/**': { statements: 100, branches: 100, functions: 100, lines: 100 },
         'packages/application/src/**': { statements: 95, branches: 95, functions: 95, lines: 95 },
         'packages/in-memory/src/**': { statements: 90, branches: 90, functions: 90, lines: 90 },
         'apps/api/src/**': { statements: 90, branches: 90, functions: 90, lines: 90 },
+        'apps/mobile/src/**': { statements: 90, branches: 90, functions: 90, lines: 90 },
       },
     },
     projects: [
@@ -53,6 +58,7 @@ export default defineConfig({
       'packages/in-memory',
       'packages/application',
       'apps/api',
+      'apps/mobile',
       'tools/contract-check',
     ].map((root) => ({
       extends: true,

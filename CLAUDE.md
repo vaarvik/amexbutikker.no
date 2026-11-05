@@ -41,6 +41,9 @@ apps/api/src/<feature>/                controllers, Pg* adapters, other adapters
 apps/api/src/imports/importers/<source>/   one importer per source; folder = source id in kebab-case (rule (g))
 apps/api/src/migrations/               all migrations, one ordered sequence (not per feature)
 apps/api/src/composition-root.ts
+apps/mobile/src/<feature>/              non-visual services (classes behind ports), same rules as apps/api
+apps/mobile/src/app/                    expo-router screens; apps/mobile/src/ui/ shared components
+apps/mobile/src/composition-root.ts
 <package>/test/<feature>/              tests, mirroring src (see Testing)
 ```
 
@@ -78,7 +81,7 @@ Everywhere else (rule (f)): one exported class per file, Error subclasses aside.
 
 The class name must end in a known role:
 
-`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`.
+`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`, `session`, `cache`, `storage`, `transport`, `presenter`.
 
 To add a role, add it to `ClassFileNamingRule` and this list in the same change.
 
@@ -187,8 +190,8 @@ Use these words, with these meanings, in code, docs and conversation. UI copy us
 - **Coverage floors:** enforced by `pnpm test:coverage`, which CI runs.
   - `packages/domain/src`: 100 %
   - `packages/application/src`: 95 %
-  - `packages/in-memory/src` and `apps/api/src`: 90 %
-  - Entry points and the composition root are excluded.
+  - `packages/in-memory/src`, `apps/api/src` and `apps/mobile/src`: 90 %
+  - Entry points and the composition roots are excluded, and so are the mobile screens and components (`apps/mobile/src/app`, `apps/mobile/src/ui`).
   - A floor is a floor: cover a gap with a test of the behaviour, not a test of the line.
   - Domain code must not need integration tests to reach 100 %.
 
@@ -228,7 +231,7 @@ TypeScript interfaces disappear at runtime, and TypeScript is structurally typed
 
 ### UI exception
 
-React components in `apps/mobile` are function components, because class components cannot use hooks. Everything non-visual in the app (API client, session, location, share handling, caching) follows the class and interface rules and is injected through a React context that holds the composition root.
+React components in `apps/mobile` are function components, because class components cannot use hooks. Everything non-visual in the app (API client, session, location, share handling, caching) follows the class and interface rules and is injected through a React context that holds the composition root (`useServices()`). contract-check covers `apps/mobile/src` except `app/` and `ui/`. Mobile files import each other without extensions (Metro); Metro maps the workspace packages' `./x.js` imports to `./x.ts` (`apps/mobile/metro.config.js`).
 
 ### TypeScript
 

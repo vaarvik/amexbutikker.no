@@ -104,6 +104,7 @@ describe('contract-check', () => {
       { ruleId: rule, file: 'apps/api/src/places/place-row.model.ts', line: 1 },
       { ruleId: rule, file: 'apps/api/src/places/places.widget.ts', line: 1 },
       { ruleId: rule, file: 'apps/api/src/places/places.widget.ts', line: 5 },
+      { ruleId: rule, file: 'apps/mobile/src/devices/token-thing.ts', line: 1 },
       { ruleId: rule, file: 'packages/application/src/places.use-case.ts', line: 11 },
       { ruleId: rule, file: 'packages/domain/src/calculator.ts', line: 1 },
       { ruleId: rule, file: 'packages/domain/src/calculator.ts', line: 5 },

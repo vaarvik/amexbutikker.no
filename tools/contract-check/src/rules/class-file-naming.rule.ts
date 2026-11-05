@@ -20,6 +20,8 @@ export class ClassFileNamingRule implements Rule {
       /^packages\/(domain|application|in-memory)\/src\//,
       /^apps\/api\/src\//,
       /^tools\/[^/]+\/src\//,
+      // Screens (app/) and components (ui/) are React function components: the UI exception.
+      /^apps\/mobile\/src\/(?!app\/|ui\/)/,
     ],
     private readonly roles: readonly string[] = [
       'use-case',
@@ -60,6 +62,11 @@ export class ClassFileNamingRule implements Rule {
       'writer',
       'client',
       'locator',
+      'session',
+      'cache',
+      'storage',
+      'transport',
+      'presenter',
     ],
     private readonly classlessKinds: readonly string[] = ['ports', 'model'],
     private readonly vagueMechanisms: readonly string[] = [

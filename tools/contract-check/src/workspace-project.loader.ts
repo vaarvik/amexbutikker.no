@@ -10,6 +10,7 @@ export class WorkspaceProjectLoader implements ProjectLoader {
       'packages/*/test/**/*.{ts,tsx}',
       'apps/api/src/**/*.{ts,tsx}',
       'apps/api/test/**/*.{ts,tsx}',
+      'apps/mobile/src/**/*.{ts,tsx}',
       'tools/*/src/**/*.{ts,tsx}',
     ],
   ) {}
