@@ -5,6 +5,8 @@ import type { LocationProvider } from './location/location.ports';
 import { LocalStorageKeyValueStorage } from './shared/local-storage-key-value.storage';
 import type { KeyValueStorage } from './shared/shared.ports';
 import type { RegionMonitor, VisitNotifier } from './visits/visits.ports';
+import { NullNearbyWidgetWriter } from './widgets/null-nearby-widget.writer';
+import type { NearbyWidgetWriter } from './widgets/widgets.ports';
 
 /** The browser: localStorage for the device token, browser geolocation. */
 export class CurrentPlatform implements PlatformAdapters {
@@ -18,6 +20,7 @@ export class CurrentPlatform implements PlatformAdapters {
   );
   public readonly regionMonitor: RegionMonitor | null = null;
   public readonly visitNotifier: VisitNotifier | null = null;
+  public readonly widgetWriter: NearbyWidgetWriter = new NullNearbyWidgetWriter();
   /** Native-only features are hidden on the web, not stubbed. */
   public readonly native = false;
 }

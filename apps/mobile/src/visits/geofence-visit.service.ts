@@ -1,5 +1,6 @@
 import type { Clock, PlaceSummaryDto } from '@amexbutikker/contracts';
 import type { NearbyCache } from '../places/places.ports';
+import type { NearbyWidgetService } from '../widgets/widgets.ports';
 import { EMPTY_VISIT_STATE } from './visits.model';
 import type {
   RegionMonitor,
@@ -22,6 +23,7 @@ export class GeofenceVisitService implements VisitService {
     private readonly decider: VisitPromptDecider,
     private readonly storage: VisitStateStorage,
     private readonly nearbyCache: NearbyCache,
+    private readonly widgets: NearbyWidgetService,
     private readonly clock: Clock,
   ) {}
 
@@ -78,6 +80,10 @@ export class GeofenceVisitService implements VisitService {
     }
     const { state, prompt } = this.decider.decide(before, event, this.clock.now());
     await this.storage.save(state);
+    if (event.kind === 'enter') {
+      // The widget shows the place just entered as "Du er her".
+      await this.widgets.enter(event.placeId);
+    }
     if (prompt !== null) {
       await this.notifier.show(prompt);
     }

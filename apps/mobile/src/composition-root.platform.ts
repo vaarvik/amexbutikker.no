@@ -11,6 +11,10 @@ import type { KeyValueStorage } from './shared/shared.ports';
 import { ExpoGeofenceRegionMonitor } from './visits/expo-geofence-region.monitor';
 import { ExpoVisitNotifier } from './visits/expo-visit.notifier';
 import type { RegionMonitor, VisitNotifier } from './visits/visits.ports';
+import { nearbyWidget } from './ui/nearby-widget';
+import { ExpoNearbyWidgetWriter } from './widgets/expo-nearby-widget.writer';
+import { NullNearbyWidgetWriter } from './widgets/null-nearby-widget.writer';
+import type { NearbyWidgetWriter } from './widgets/widgets.ports';
 
 /** The expo-task-manager task that receives geofence events; defined in composition-root.tasks.ts. */
 export const VISIT_TASK = 'visit-geofence';
@@ -33,6 +37,9 @@ export class CurrentPlatform implements PlatformAdapters {
   public readonly visitNotifier: VisitNotifier = new ExpoVisitNotifier(Notifications, {
     askCategory: 'visit-ask',
   });
+  /** iOS has the widget; Metro picks `nearby-widget.ios.tsx` there and the stand-in elsewhere. */
+  public readonly widgetWriter: NearbyWidgetWriter =
+    nearbyWidget === null ? new NullNearbyWidgetWriter() : new ExpoNearbyWidgetWriter(nearbyWidget);
   /** Share intake and visit detection exist only in the native app. */
   public readonly native = true;
 }

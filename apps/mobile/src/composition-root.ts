@@ -14,12 +14,16 @@ import type { KeyValueStorage } from './shared/shared.ports';
 import { SystemClock } from './shared/system.clock';
 import { NorwegianStatusPresenter } from './status/norwegian-status.presenter';
 import type { StatusPresenter } from './status/status.ports';
+import { STATUS_COLORS } from './ui/theme';
 import { CategoryDwellVisitCandidateRanker } from './visits/category-dwell-visit-candidate.ranker';
 import { DwellVisitPromptDecider } from './visits/dwell-visit-prompt.decider';
 import { GeofenceVisitService } from './visits/geofence-visit.service';
 import { KeyValueVisitStateStorage } from './visits/key-value-visit-state.storage';
 import { NearestVisitRegionSelector } from './visits/nearest-visit-region.selector';
 import type { RegionMonitor, VisitNotifier, VisitService } from './visits/visits.ports';
+import { SnapshotNearbyWidgetService } from './widgets/snapshot-nearby-widget.service';
+import { StatusNearbyWidgetPropsMapper } from './widgets/status-nearby-widget-props.mapper';
+import type { NearbyWidgetService, NearbyWidgetWriter } from './widgets/widgets.ports';
 
 /** What the screens get through `useServices()`. */
 export interface AppServices {
@@ -30,6 +34,8 @@ export interface AppServices {
   readonly presenter: StatusPresenter;
   /** Visit detection; null on the web. */
   readonly visits: VisitService | null;
+  /** The home screen widget; does nothing where there is none. */
+  readonly widgets: NearbyWidgetService;
   /** False on the web: native-only features (share intake, visit detection) are hidden there. */
   readonly native: boolean;
 }
@@ -43,6 +49,8 @@ export interface PlatformAdapters {
   /** OS geofencing and local notifications; null on the web. */
   readonly regionMonitor: RegionMonitor | null;
   readonly visitNotifier: VisitNotifier | null;
+  /** The home screen widget; a Null writer where there is none. */
+  readonly widgetWriter: NearbyWidgetWriter;
   readonly native: boolean;
 }
 
@@ -67,6 +75,7 @@ export class CompositionRoot implements AppServices {
   public readonly session: DeviceSession;
   public readonly presenter: StatusPresenter;
   public readonly visits: VisitService | null;
+  public readonly widgets: NearbyWidgetService;
   public readonly native: boolean;
 
   public constructor(config: MobileConfig, adapters: PlatformAdapters) {
@@ -91,6 +100,17 @@ export class CompositionRoot implements AppServices {
       radiusM: 1500,
     });
     this.presenter = new NorwegianStatusPresenter();
+    this.widgets = new SnapshotNearbyWidgetService(
+      new StatusNearbyWidgetPropsMapper(this.presenter, {
+        hereWithinM: 60,
+        maxAccepted: 3,
+        placeUrl: 'amexbutikker://place/',
+        colors: STATUS_COLORS,
+      }),
+      adapters.widgetWriter,
+      nearbyCache,
+      clock,
+    );
     this.visits =
       adapters.regionMonitor === null || adapters.visitNotifier === null
         ? null
@@ -127,6 +147,7 @@ export class CompositionRoot implements AppServices {
             // v2: visits are tracked as stays across overlapping fences.
             new KeyValueVisitStateStorage(AsyncStorage, { key: 'visit-state-v2' }),
             nearbyCache,
+            this.widgets,
             clock,
           );
   }

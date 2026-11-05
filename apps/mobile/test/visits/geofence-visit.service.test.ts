@@ -1,6 +1,7 @@
 import type { Clock, PlaceSummaryDto } from '@amexbutikker/contracts';
 import type { NearbySnapshot } from '../../src/places/places.model';
 import type { NearbyCache } from '../../src/places/places.ports';
+import type { NearbyWidgetService } from '../../src/widgets/widgets.ports';
 import { describe, expect, it } from 'vitest';
 import { GeofenceVisitService } from '../../src/visits/geofence-visit.service';
 import { KeyValueVisitStateStorage } from '../../src/visits/key-value-visit-state.storage';
@@ -62,6 +63,17 @@ class StubNearbyCache implements NearbyCache {
   }
 }
 
+class RecordingWidgets implements NearbyWidgetService {
+  public entered: string[] = [];
+  public update() {
+    return Promise.resolve();
+  }
+  public enter(placeId: string) {
+    this.entered.push(placeId);
+    return Promise.resolve();
+  }
+}
+
 class FixedSelector implements VisitRegionSelector {
   public constructor(private readonly regions: readonly VisitRegion[]) {}
   public select(): readonly VisitRegion[] {
@@ -95,6 +107,7 @@ function setup(
   const storage = new KeyValueVisitStateStorage(values, { key: 'visits' });
   const monitor = new FakeMonitor();
   const notifier = new FakeNotifier();
+  const widgets = new RecordingWidgets();
   const service = new GeofenceVisitService(
     monitor,
     notifier,
@@ -102,10 +115,11 @@ function setup(
     new EveryExitDecider(),
     storage,
     cache,
+    widgets,
     clock,
   );
   const ready = initial === undefined ? Promise.resolve() : storage.save(initial);
-  return { service, storage, monitor, notifier, ready };
+  return { service, storage, monitor, notifier, widgets, ready };
 }
 
 const results: readonly PlaceSummaryDto[] = [summary()];
@@ -170,12 +184,13 @@ describe('GeofenceVisitService', () => {
   });
 
   it('shows the decided prompt and stores the new state', async () => {
-    const { service, notifier, storage, ready } = setup(enabledState());
+    const { service, notifier, storage, widgets, ready } = setup(enabledState());
     await ready;
 
     await service.handle({ kind: 'enter', placeId: ASK_ID });
     await service.handle({ kind: 'exit', placeId: ASK_ID });
 
+    expect(widgets.entered).toEqual([ASK_ID]);
     expect(notifier.shown).toEqual([{ kind: 'ask', candidate: candidate(ASK_ID) }]);
     expect((await storage.find()).stays).toHaveLength(1);
   });

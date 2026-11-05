@@ -25,7 +25,7 @@ type SearchResult =
   | { readonly query: string; readonly message: string };
 
 export default function Home() {
-  const { nearby, places, presenter, visits } = useServices();
+  const { nearby, places, presenter, visits, widgets } = useServices();
   const palette = usePalette();
   const [query, setQuery] = useState('');
   const [nearbyState, setNearbyState] = useState<NearbyState>({ kind: 'loading' });
@@ -46,14 +46,15 @@ export default function Home() {
     }, []),
   );
 
-  // A fresh list from the network re-selects the places visit detection watches.
+  // A fresh list from the network re-selects the watched places and refreshes the widget.
   const freshResults =
     nearbyState.kind === 'ready' && !nearbyState.fromCache ? nearbyState.snapshot.results : null;
   useEffect(() => {
     if (freshResults !== null) {
       void visits?.refresh(freshResults).catch(() => undefined);
+      void widgets.update(freshResults);
     }
-  }, [freshResults, visits]);
+  }, [freshResults, visits, widgets]);
 
   const center = 'snapshot' in nearbyState ? nearbyState.snapshot?.center : undefined;
   const lat = center?.lat;

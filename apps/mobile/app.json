@@ -59,7 +59,28 @@
         }
       ],
       "expo-task-manager",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "NearbyWidget",
+              "displayName": "Tar de Amex?",
+              "description": "Om stedet du er på tar Amex, og steder i nærheten som gjør det.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryRectangular",
+                  "accessoryInline"
+                ],
+                "initialLayout": "./src/ui/nearby-widget.ios.tsx"
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
