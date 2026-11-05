@@ -259,7 +259,24 @@ Stop before running any EAS command that needs my Expo or Apple account, and lis
 
 ---
 
+## Phase 7b: UX pass and first visit detection (done)
+
+```
+Done after testing in the iOS Simulator, ahead of Phase 8:
+- "Ukjent" renamed "Ikke sjekket" (shown as quiet text in lists). SF Symbols / Material Symbols instead of emoji,
+  map-style category colours, navy header, grouped list, solid "Det funket" / "Ble avvist" buttons.
+- Bottom tabs: Steder, Innstillinger (a Kart tab joins in Phase 11).
+- Visit detection v1 (docs/adr/0001-visit-detection.md): expo-location geofences around up to 18 nearby places,
+  ask on leaving after a dwell, announce accepted places on arrival, local notifications with answer buttons,
+  rate limits, opt-in under Innstillinger. infra/simulate-visit.sh walks the simulator in and out of a place.
+```
+
+---
+
 ## Phase 8: Design only, no code
+
+Item 1 is partly done: ADR 0001 covers the geofence version that Phase 7b built. Extend it with CLVisit / DWELL
+and per-category dwell rather than writing a new one.
 
 ```
 Write ADRs in docs/adr/ (context, options, decision, consequences, open questions) for:
@@ -275,3 +292,69 @@ Write ADRs in docs/adr/ (context, options, decision, consequences, open question
    American Express cards. Matching of descriptor + visit happens on the device; only place id, result and date leave it.
 3. DPIA outline for processing location and transaction data.
 ```
+
+---
+
+## Phase 9: Visit candidates
+
+```
+Geofences in a busy street overlap: at Oslo S ten places are within 20 m. Do not guess.
+- When a visit ends, collect every watched place the phone was inside during the visit, not only the region that
+  reported the exit first. Rank them by time inside, distance from the fence centre at entry, and how well the dwell
+  fits the category (kiosk short, restaurant long). Put the ranking behind a VisitCandidateRanker port, pure and tested.
+- One clear candidate: the notification names it, as today.
+- Several: "Betalte du med Amex ved <area or nearest street>?"; tapping opens a /visit screen listing the top
+  3–5 candidates with "Det funket" / "Ble avvist" on each and "Ingen av disse".
+- Rate limits stay per visit, not per place.
+- Extend infra/simulate-visit.sh to walk past several places, and test the candidate list in the simulator.
+```
+
+---
+
+## Phase 10: iOS widget
+
+```
+A home screen and lock screen widget that answers "can I pay with Amex here?" without opening the app.
+- The app writes a small snapshot to an App Group: the guessed current place (from the latest geofence enter or
+  the nearest place when the app was last open) with its status, and the 3 nearest accepted places with distance.
+  The geofence task updates it on enter and asks WidgetKit to reload.
+- Small and lock screen: "<place> · Ja / Nei / Varierer / Ikke sjekket". Medium: the 3 nearest places that take Amex.
+  Tapping opens the place (deep link).
+- Evaluate Expo's widget support (@expo/ui, expo-widgets) against a hand-written SwiftUI extension via a config plugin.
+- iOS refreshes widgets a limited number of times a day; show "oppdatert <time>" so a stale answer is visible.
+- Android widget later, as its own item.
+```
+
+---
+
+## Phase 11: Map tab
+
+```
+A Kart tab showing places as pins coloured by status (with the status symbol, never colour alone).
+- No Google APIs: MapLibre (maplibre-react-native) with a vector tile provider that allows app use (MapTiler or
+  Stadia free tier; OSM's own tile servers do not). Attribution "© OpenStreetMap contributors" and the provider's.
+- New query endpoint for a bounding box (GET /v1/places/in-area), with the same p95 budget as nearby.
+  Cluster pins when zoomed out.
+- Tapping a pin opens a sheet with name, status and the answer buttons.
+```
+
+---
+
+## Phase 12: More evidence sources
+
+```
+- OsmOverpassImporter: read payment:american_express=yes|no (and payment:credit_cards=no) as external_list evidence,
+  source osm, with the OSM element as sourceRef.
+- Curated claims: I paste claims into data/curated-claims.yaml by hand (source, sourceUrl, fetchedAt); chain-level
+  claims first, since one claim covers every place in the chain. Never scrape curated lists in bulk.
+- Statement importer: finish once I provide an anonymised Amex export (Phase 5 item 4).
+```
+
+---
+
+## Open items
+
+- Real share payloads for data/fixtures/shared/ (the current six are synthetic).
+- A stable public API address before any preview build for testers.
+- Status decay goes stale without a refresh job.
+- CreatePlace has no duplicate detection.
