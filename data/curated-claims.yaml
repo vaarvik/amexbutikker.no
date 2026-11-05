@@ -319,3 +319,227 @@ claims:
     source: amexvenn
     sourceUrl: https://amexvenn.no
     fetchedAt: 2026-11-05
+
+  # Chains, from the app owner (personal knowledge and people they know), 2026-11-06.
+  - target: chain
+    name: 'Kiwi'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Joker'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Extra'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Meny'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Spar'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Matkroken'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Obs'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Kaffebrenneriet'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Subway'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Egon'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Los Tacos'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Vinmonopolet'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Elkjøp'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Ark bokhandel'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Clas Ohlson'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Norli'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Power'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'H&M'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Cubus'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Kjell & Company'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Dressmann'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'XXL'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Bohus'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Bik Bok'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Vero Moda'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Eurosko'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Anton Sport'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'IKEA'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Nike'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Match'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Skoringen'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Byggmakker'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Fagmøbler'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Radisson Blu'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Radisson'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Scandic'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
+  - target: chain
+    name: 'Esso'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-06
