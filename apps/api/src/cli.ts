@@ -1,16 +1,32 @@
 import { IMPORT_SOURCES, ImportSourceSchema } from '@amexbutikker/contracts';
 import { CompositionRoot } from './composition-root.js';
 
-// Usage: cli import <source> [--dry-run]
-const [command, source, ...flags] = process.argv.slice(2);
-const usage = `Usage: import <${IMPORT_SOURCES.join(' | ')}> [--dry-run]`;
-const parsedSource = ImportSourceSchema.safeParse(source);
-const unknownFlags = flags.filter((flag) => flag !== '--dry-run');
+const HOUR_MS = 3_600_000;
+const usage = [
+  `Usage: import <${IMPORT_SOURCES.join(' | ')}> [--dry-run]`,
+  '       refresh-statuses [--older-than-hours <n>]   (default 24)',
+].join('\n');
 
-if (command !== 'import' || !parsedSource.success || unknownFlags.length > 0) {
+// pnpm passes a literal "--" through when arguments follow `pnpm run <script> --`.
+const [command, ...rest] = process.argv.slice(2).filter((arg) => arg !== '--');
+
+if (command === 'import') {
+  await runImport(rest);
+} else if (command === 'refresh-statuses') {
+  await refreshStatuses(rest);
+} else {
   console.error(usage);
   process.exitCode = 2;
-} else {
+}
+
+async function runImport(args: readonly string[]): Promise<void> {
+  const [source, ...flags] = args;
+  const parsedSource = ImportSourceSchema.safeParse(source);
+  if (!parsedSource.success || flags.some((flag) => flag !== '--dry-run')) {
+    console.error(usage);
+    process.exitCode = 2;
+    return;
+  }
   const root = CompositionRoot.fromEnv(process.env);
   try {
     const report = await root.runImport.execute({
@@ -32,6 +48,33 @@ if (command !== 'import' || !parsedSource.success || unknownFlags.length > 0) {
     if (report.status === 'failed') {
       process.exitCode = 1;
     }
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  } finally {
+    await root.close();
+  }
+}
+
+/** Recalculates statuses not calculated within the last n hours. Meant to run nightly. */
+async function refreshStatuses(args: readonly string[]): Promise<void> {
+  const [flag, value] = args;
+  const hours = flag === undefined ? 24 : flag === '--older-than-hours' ? Number(value) : NaN;
+  if (!Number.isFinite(hours) || hours < 0 || args.length > 2) {
+    console.error(usage);
+    process.exitCode = 2;
+    return;
+  }
+  const root = CompositionRoot.fromEnv(process.env);
+  try {
+    const started = Date.now();
+    const { refreshed } = await root.refreshStaleStatuses.execute({
+      calculatedBefore: new Date(started - hours * HOUR_MS),
+      batchSize: 200,
+    });
+    console.log(
+      `refreshed ${String(refreshed)} statuses in ${((Date.now() - started) / 1000).toFixed(1)} s`,
+    );
   } catch (error) {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;

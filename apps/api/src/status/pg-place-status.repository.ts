@@ -1,4 +1,4 @@
-import { NotFoundError, PlaceStatusSnapshotSchema } from '@amexbutikker/contracts';
+import { NotFoundError, PlaceIdSchema, PlaceStatusSnapshotSchema } from '@amexbutikker/contracts';
 import type {
   ChainId,
   PlaceId,
@@ -58,6 +58,17 @@ export class PgPlaceStatusRepository implements PlaceStatusReader, PlaceStatusWr
       SELECT s.* FROM place_status s JOIN places p ON p.id = s.place_id WHERE p.chain_id = ${chainId}
     `.execute(this.db);
     return rows.map((row) => this.toSnapshot(row));
+  }
+
+  public async listStale(calculatedBefore: Date, limit: number): Promise<PlaceId[]> {
+    const { rows } = await sql`
+      SELECT place_id FROM place_status
+      WHERE calculated_at < ${calculatedBefore}
+      ORDER BY calculated_at, place_id
+      LIMIT ${limit}
+    `.execute(this.db);
+    const row = z.object({ place_id: PlaceIdSchema });
+    return rows.map((value) => row.parse(value).place_id);
   }
 
   public async save(snapshot: PlaceStatusSnapshot): Promise<void> {

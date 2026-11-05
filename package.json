@@ -26,7 +26,8 @@
     "web:export": "pnpm --filter @amexbutikker/mobile web:export",
     "web:serve": "pnpm --filter @amexbutikker/mobile web:serve",
     "tunnel": "bash infra/tunnel.sh",
-    "simulate:visit": "infra/simulate-visit.sh"
+    "simulate:visit": "infra/simulate-visit.sh",
+    "refresh-statuses": "tsc -b apps/api && node --env-file-if-exists=.env apps/api/dist/src/cli.js refresh-statuses"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

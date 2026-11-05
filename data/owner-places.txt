@@ -1,0 +1,7 @@
+# Places the app owner knows take Amex (own experience or people they know).
+# One place name per line, as it is written on the sign. Lines starting with # are ignored.
+# Prefix with "nei:" for a place that does NOT take Amex, e.g.  nei: Kafé Eksempel
+#
+# Claude matches the names against the places in the database, shows which ones hit,
+# and adds them to curated-claims.yaml as Trolig ja / Trolig nei with source "owner".
+

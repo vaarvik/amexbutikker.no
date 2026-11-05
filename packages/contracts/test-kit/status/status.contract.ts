@@ -115,6 +115,34 @@ export function describePlaceStatusContract(
       expect(listed.map((snapshot) => snapshot.placeId).sort()).toEqual([a.id, b.id].sort());
     });
 
+    it('listStale returns places calculated before the cutoff, oldest first, up to the limit', async () => {
+      const data = new TestData();
+      const at = (iso: string) => new Date(iso);
+      const places = [data.physicalPlace(), data.physicalPlace(), data.physicalPlace()];
+      const times = [
+        '2026-11-03T00:00:00.000Z',
+        '2026-11-01T00:00:00.000Z',
+        '2026-11-05T00:00:00.000Z',
+      ];
+      for (const [index, place] of places.entries()) {
+        await fixture.current.places.create(place);
+        await fixture.current.writer.save(
+          data.statusSnapshot(place.id, { calculatedAt: at(times[index] ?? '') }),
+        );
+      }
+      const [middle, oldest] = places;
+
+      await expect(
+        fixture.current.reader.listStale(at('2026-11-04T00:00:00.000Z'), 10),
+      ).resolves.toEqual([oldest?.id, middle?.id]);
+      await expect(
+        fixture.current.reader.listStale(at('2026-11-04T00:00:00.000Z'), 1),
+      ).resolves.toEqual([oldest?.id]);
+      await expect(
+        fixture.current.reader.listStale(at('2026-10-01T00:00:00.000Z'), 10),
+      ).resolves.toEqual([]);
+    });
+
     it('save throws NotFoundError for an unknown place', async () => {
       const data = new TestData();
 

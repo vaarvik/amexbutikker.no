@@ -273,6 +273,7 @@ pnpm db:down                 # stop it (data persists in the db-data volume)
 pnpm db:migrate              # build api, migrate DATABASE_URL (from .env) to latest
 pnpm db:migrate:down         # revert the last migration
 pnpm run import <source>     # run an importer (osm_overpass, ...); add --dry-run to roll back. `pnpm import` is a pnpm builtin
+pnpm refresh-statuses        # recalculate statuses older than 24 h (decay); run nightly. `-- --older-than-hours 0` for all
 pnpm api                     # build and start the API (HOST/PORT/CORS_ORIGINS from .env)
 pnpm mobile                  # Expo dev server (QR code for Expo Go, w for web)
 pnpm web:export              # static web build in apps/mobile/dist; pnpm web:serve serves it

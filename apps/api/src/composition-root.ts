@@ -7,6 +7,7 @@ import {
   MatchSharedPlaceUseCase,
   RegisterDeviceUseCase,
   RemoveMyReportUseCase,
+  RefreshStaleStatusesUseCase,
   RunImportUseCase,
   SearchPlacesUseCase,
   SubmitReportUseCase,
@@ -20,6 +21,7 @@ import type {
   PlaceReader,
   PlaceStatusReader,
   PlaceWriter,
+  RefreshStaleStatuses,
   RunImport,
   TransactionalPorts,
   UnitOfWork,
@@ -219,6 +221,7 @@ interface Storage {
 export class CompositionRoot {
   public readonly httpServer: HttpServer;
   public readonly runImport: RunImport;
+  public readonly refreshStaleStatuses: RefreshStaleStatuses;
   private readonly db: Kysely<Database> | null;
   private readonly storage: Storage;
 
@@ -318,6 +321,12 @@ export class CompositionRoot {
 
     const importUnitOfWork = new TransactionalImportUnitOfWork(unitOfWork);
     const cache = { maxAgeMs: config.imports.cacheMaxAgeHours * 3_600_000 };
+    this.refreshStaleStatuses = new RefreshStaleStatusesUseCase(
+      unitOfWork,
+      refresher,
+      clock,
+      validator,
+    );
     this.runImport = new RunImportUseCase(
       [
         new OverpassOsmImporter(

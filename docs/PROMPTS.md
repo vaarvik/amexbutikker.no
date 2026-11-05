@@ -364,10 +364,8 @@ user give Trolig ja / Trolig nei. Sources are stored, never shown.
 
 ## Open items
 
-- A job that recalculates every status regularly: decay changes answers over time (Ja can fall back to
-  Trolig ja), but a stored status only changes when new evidence arrives at that place.
+- Schedule `pnpm refresh-statuses` nightly (cron or the host's scheduler) once the API is hosted.
 
 - Real share payloads for data/fixtures/shared/ (the current six are synthetic).
 - A stable public API address before any preview build for testers.
-- Status decay goes stale without a refresh job.
 - CreatePlace has no duplicate detection.

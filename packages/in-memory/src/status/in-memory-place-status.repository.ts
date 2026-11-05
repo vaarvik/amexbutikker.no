@@ -37,6 +37,16 @@ export class InMemoryPlaceStatusRepository implements PlaceStatusReader, PlaceSt
     );
   }
 
+  public listStale(calculatedBefore: Date, limit: number): Promise<PlaceId[]> {
+    return Promise.resolve(
+      [...this.tables.statuses.values()]
+        .filter((snapshot) => snapshot.calculatedAt.getTime() < calculatedBefore.getTime())
+        .sort((a, b) => a.calculatedAt.getTime() - b.calculatedAt.getTime())
+        .slice(0, limit)
+        .map((snapshot) => snapshot.placeId),
+    );
+  }
+
   public save(snapshot: PlaceStatusSnapshot): Promise<void> {
     if (!this.tables.places.has(snapshot.placeId)) {
       return Promise.reject(new NotFoundError('Place', snapshot.placeId));

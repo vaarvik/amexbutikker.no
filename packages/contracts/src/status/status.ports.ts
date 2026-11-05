@@ -23,6 +23,14 @@ export interface PlaceStatusReader {
    * Snapshots of every place in the chain that has one. Order is unspecified.
    */
   listForChain(chainId: ChainId): Promise<PlaceStatusSnapshot[]>;
+
+  /**
+   * Places whose snapshot was calculated before `calculatedBefore`, oldest first, so a
+   * recalculation that is interrupted resumes where it stopped.
+   *
+   * @returns at most `limit` place ids; empty when every snapshot is newer.
+   */
+  listStale(calculatedBefore: Date, limit: number): Promise<PlaceId[]>;
 }
 
 /** Write access to calculated place statuses. */

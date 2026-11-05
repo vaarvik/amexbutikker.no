@@ -27,3 +27,4 @@ export * from './shared/shared.ports.js';
 export * from './status/status.dtos.js';
 export * from './status/status.model.js';
 export * from './status/status.ports.js';
+export * from './status/status.use-cases.js';
