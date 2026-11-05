@@ -18,4 +18,304 @@
 #     sourceUrl: https://example.no/amex
 #     fetchedAt: 2026-11-04
 
-claims: []
+claims:
+  - target: place
+    name: "Maaemo"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Ekebergrestauranten"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Jensens Bøfhus"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Brasserie France"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Lofoten Fiskerestaurant"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Sjømagasinet"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Havsmak"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Trattoria Crudo"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Wallmans Salonger"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Koie Ramen"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Hanami"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Gate of India"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Punjab Tandoori"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Mesob Restaurant"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Festningen Restaurant"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Restaurant Betong"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Smalhans"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Txotx"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Vaaghals"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Den glade gris"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Dattera til Hagen"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Café Skansen"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Tim Wendelboe"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Theatercafeen"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Kikutstua"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Skjennungstua"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Wyllerstua"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Karlsborg Spiseforretning"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Bar Babylon"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Brewgata"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Herr Nilsen"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Kulturhuset"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Oslo Bar & Bowling"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Torggata Botaniske"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Under brua bar"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Lincoln Sports Bar"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Galgeberg Corner"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Grünerhaven"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "The Scotsman"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Sir Winston"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Gunnar Øye"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Oslo Sportslager"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Stereofil"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Strøm-Larsen"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Rose Systue"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Pur Norsk"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Syverkiosken"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Black Cat Kaffe & Tehus"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Banh Mi Xo"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
+  - target: place
+    name: "Render Burger"
+    result: accepted
+    source: amexvenn
+    sourceUrl: https://amexvenn.no
+    fetchedAt: 2026-11-05
