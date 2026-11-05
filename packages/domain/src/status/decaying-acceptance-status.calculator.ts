@@ -25,6 +25,12 @@ export interface DecayingAcceptanceStatusCalculatorConfig {
   readonly maxAgeInHalfLives?: number;
   /** Total decayed weight at which confidence is no longer scaled down. > 0. Default 1. */
   readonly fullConfidenceWeight?: number;
+  /**
+   * Decayed weight of users' own evidence (transaction, visit, report) the winning side needs
+   * for accepted / rejected; below it the status is likely_accepted / likely_rejected. > 0.
+   * Default 1: two fresh user reports or one purchase, so no single user decides alone.
+   */
+  readonly confirmedWeight?: number;
 }
 
 const DAY_MS = 86_400_000;
@@ -48,14 +54,16 @@ interface WeightedEvidence {
  * 3. If the place has any remaining direct evidence (transaction, visit_report, user_report),
  *    only that is used. Otherwise its indirect evidence and the chain's evidence are pooled.
  * 4. Weight = policy weight * 0.5^(age / half-life).
- * 5. Unknown below `minimumTotalWeight`; accepted or rejected when one side has at least
- *    `decisiveShare` of the weight; mixed otherwise.
+ * 5. Unknown below `minimumTotalWeight`; mixed when neither side has `decisiveShare` of the
+ *    weight. Otherwise the winning side is accepted / rejected when its direct weight reaches
+ *    `confirmedWeight`, and likely_accepted / likely_rejected below that.
  */
 export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalculator {
   private readonly decisiveShare: number;
   private readonly minimumTotalWeight: number;
   private readonly maxAgeInHalfLives: number;
   private readonly fullConfidenceWeight: number;
+  private readonly confirmedWeight: number;
 
   /** @throws ValidationError when an option is out of range. */
   public constructor(
@@ -67,6 +75,7 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
     this.minimumTotalWeight = options.minimumTotalWeight ?? 0.05;
     this.maxAgeInHalfLives = options.maxAgeInHalfLives ?? 4;
     this.fullConfidenceWeight = options.fullConfidenceWeight ?? 1;
+    this.confirmedWeight = options.confirmedWeight ?? 1;
 
     const issues: ValidationIssue[] = [];
     if (!(this.decisiveShare > 0.5 && this.decisiveShare <= 1)) {
@@ -80,6 +89,9 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
     }
     if (!(Number.isFinite(this.fullConfidenceWeight) && this.fullConfidenceWeight > 0)) {
       issues.push({ path: ['fullConfidenceWeight'], message: 'must be a finite number > 0' });
+    }
+    if (!(Number.isFinite(this.confirmedWeight) && this.confirmedWeight > 0)) {
+      issues.push({ path: ['confirmedWeight'], message: 'must be a finite number > 0' });
     }
     if (issues.length > 0) {
       throw new ValidationError('Invalid acceptance status options.', issues);
@@ -129,11 +141,16 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
   private decide(pool: readonly WeightedEvidence[]): PlaceStatus {
     let accepted = 0;
     let rejected = 0;
+    let directAccepted = 0;
+    let directRejected = 0;
     for (const item of pool) {
+      const direct = DIRECT_KINDS.has(item.kind) ? item.weight : 0;
       if (item.result === 'accepted') {
         accepted += item.weight;
+        directAccepted += direct;
       } else {
         rejected += item.weight;
+        directRejected += direct;
       }
     }
     const total = accepted + rejected;
@@ -143,12 +160,19 @@ export class DecayingAcceptanceStatusCalculator implements AcceptanceStatusCalcu
     }
 
     const winningShare = Math.max(accepted, rejected) / total;
+    const acceptedWins = accepted >= rejected;
+    const confirmed =
+      (acceptedWins ? directAccepted : directRejected) + EPSILON >= this.confirmedWeight;
     const status =
       winningShare + EPSILON < this.decisiveShare
         ? 'mixed'
-        : accepted >= rejected
-          ? 'accepted'
-          : 'rejected';
+        : acceptedWins
+          ? confirmed
+            ? 'accepted'
+            : 'likely_accepted'
+          : confirmed
+            ? 'rejected'
+            : 'likely_rejected';
     const confidence = Math.min(1, winningShare * Math.min(1, total / this.fullConfidenceWeight));
 
     return {

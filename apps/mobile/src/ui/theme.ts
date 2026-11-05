@@ -1,10 +1,15 @@
 import type { AcceptanceStatus } from '@amexbutikker/contracts';
 import { useColorScheme } from 'react-native';
 
-/** Status badges: white text on each colour has a contrast of at least 6.3:1 (WCAG AA needs 4.5). */
+/**
+ * Status colours: white text on each, and each as text on white, has a contrast of at least
+ * 6.3:1 (WCAG AA needs 4.5). Likely answers use the same colour, outlined instead of filled.
+ */
 export const STATUS_COLORS: Readonly<Record<AcceptanceStatus, string>> = {
   accepted: '#1E6B34',
+  likely_accepted: '#1E6B34',
   rejected: '#B3261E',
+  likely_rejected: '#B3261E',
   mixed: '#8A5300',
   unknown: '#4A5560',
 };
@@ -63,4 +68,9 @@ const DARK: Palette = {
 
 export function usePalette(): Palette {
   return useColorScheme() === 'dark' ? DARK : LIGHT;
+}
+
+/** Confirmed answers are filled; likely answers are outlined; unknown is plain text. */
+export function isLikely(status: AcceptanceStatus): boolean {
+  return status === 'likely_accepted' || status === 'likely_rejected';
 }

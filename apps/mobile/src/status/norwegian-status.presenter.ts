@@ -10,7 +10,19 @@ import type { StatusPresenter } from './status.ports';
 
 const VIEWS: Readonly<Record<AcceptanceStatus, StatusView>> = {
   accepted: { status: 'accepted', answer: 'Ja', label: 'Tar Amex', symbol: '✓' },
+  likely_accepted: {
+    status: 'likely_accepted',
+    answer: 'Trolig ja',
+    label: 'Ikke bekreftet av brukere ennå',
+    symbol: '✓',
+  },
   rejected: { status: 'rejected', answer: 'Nei', label: 'Tar ikke Amex', symbol: '✕' },
+  likely_rejected: {
+    status: 'likely_rejected',
+    answer: 'Trolig nei',
+    label: 'Ikke bekreftet av brukere ennå',
+    symbol: '✕',
+  },
   mixed: {
     status: 'mixed',
     answer: 'Varierer',
@@ -65,23 +77,30 @@ export class NorwegianStatusPresenter implements StatusPresenter {
     return VIEWS[status];
   }
 
+  /**
+   * Why the answer is what it is. Sources are never named, just as users who answered are not:
+   * both stay in the database.
+   */
   public basis(details: PlaceDetailsResponseDto): string {
     const { basis } = details;
-    const source = basis.source ?? 'en ekstern liste';
     const date = basis.observedAt === null ? null : this.date(basis.observedAt);
+    const likely =
+      details.status.status === 'likely_accepted' || details.status.status === 'likely_rejected';
     switch (basis.kind) {
       case 'transaction':
         return `Bekreftet med kjøp${this.on(date)}.`;
       case 'visit_report':
         return `Bekreftet ved besøk${this.on(date)}.`;
-      case 'user_report':
-        return this.userReports(basis.userAccepted, basis.userRejected, date);
+      case 'user_report': {
+        const reports = this.userReports(basis.userAccepted, basis.userRejected, date);
+        return likely ? `${reports} Ett svar til gjør svaret sikrere.` : reports;
+      }
       case 'chain_confirmation':
-        return `Ifølge ${source} gjelder dette hele ${details.chain?.name ?? 'kjeden'}. Ikke bekreftet av brukere her.`;
+        return `Skal gjelde hele ${details.chain?.name ?? 'kjeden'}. Ikke bekreftet av brukere her ennå.`;
       case 'external_list':
-        return `Ifølge ${source}${date === null ? '' : ` (hentet ${date})`}, ikke bekreftet av brukere.`;
+        return 'Ifølge ekstern informasjon. Ikke bekreftet av brukere ennå.';
       case 'checkout_logo':
-        return `Amex-logo i kassen ifølge ${source}, ikke bekreftet av brukere.`;
+        return 'Amex-logo i kassen. Ikke bekreftet av brukere ennå.';
       case null:
         return 'Ingen har rapportert om dette stedet ennå.';
     }

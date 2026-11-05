@@ -38,10 +38,10 @@ describe('DecayingAcceptanceStatusCalculator', () => {
     });
 
   describe('required cases', () => {
-    it('only an external claim: accepted, unverified, low confidence', () => {
+    it('only an external claim: likely accepted, unverified, low confidence', () => {
       const status = calculator.calculate([imported({ observedAt: daysAgo(10) })], [], NOW);
 
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
       expect(status.basis).toBe('external_list');
       expect(status.verified).toBe(false);
       expect(status.lastEvidenceAt).toEqual(daysAgo(10));
@@ -59,7 +59,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('rejected');
+      expect(status.status).toBe('likely_rejected');
       expect(status.basis).toBe('user_report');
       expect(status.lastEvidenceAt).toEqual(daysAgo(1));
     });
@@ -75,7 +75,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('rejected');
+      expect(status.status).toBe('likely_rejected');
       expect(status.lastEvidenceAt).toEqual(daysAgo(2));
     });
 
@@ -86,7 +86,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('rejected');
+      expect(status.status).toBe('likely_rejected');
       expect(status.basis).toBe('user_report');
     });
 
@@ -119,6 +119,111 @@ describe('DecayingAcceptanceStatusCalculator', () => {
       expect(status.status).toBe('mixed');
       expect(status.basis).toBe('user_report');
       expect(status.lastEvidenceAt).toEqual(daysAgo(3));
+    });
+  });
+
+  describe('confirmation by users', () => {
+    const user = () => data.userId();
+
+    it('stays likely with one fresh user report, however strong the list support', () => {
+      const status = calculator.calculate(
+        [onPlace({ userId: user() })],
+        [onChain(), onChain({ source: 'other' })],
+        NOW,
+      );
+
+      expect(status.status).toBe('likely_accepted');
+    });
+
+    it('is accepted with two fresh user reports', () => {
+      const status = calculator.calculate(
+        [onPlace({ userId: user() }), onPlace({ userId: user() })],
+        [],
+        NOW,
+      );
+
+      expect(status.status).toBe('accepted');
+    });
+
+    it('is accepted with one purchase', () => {
+      const status = calculator.calculate([onPlace({ kind: 'transaction' })], [], NOW);
+
+      expect(status.status).toBe('accepted');
+    });
+
+    it('is rejected with two fresh rejections', () => {
+      const status = calculator.calculate(
+        [
+          onPlace({ userId: user(), result: 'rejected' }),
+          onPlace({ userId: user(), result: 'rejected' }),
+        ],
+        [],
+        NOW,
+      );
+
+      expect(status.status).toBe('rejected');
+    });
+
+    it('falls back to likely when confirmations age below the threshold', () => {
+      // Two reports at half weight each: 0.3 + 0.3 = 0.6 < 1.
+      const status = calculator.calculate(
+        [
+          onPlace({ userId: user(), observedAt: daysAgo(180) }),
+          onPlace({ userId: user(), observedAt: daysAgo(180) }),
+        ],
+        [],
+        NOW,
+      );
+
+      expect(status.status).toBe('likely_accepted');
+    });
+
+    it('is mixed when users disagree, before any confirmation question', () => {
+      const status = calculator.calculate(
+        [onPlace({ userId: user() }), onPlace({ userId: user(), result: 'rejected' })],
+        [],
+        NOW,
+      );
+
+      expect(status.status).toBe('mixed');
+    });
+
+    it('counts only the winning side towards confirmation', () => {
+      // Accepted 1.2 + rejected 0.6 = 67 % < 80 %: mixed, even though accepted alone is confirmed.
+      const disputed = calculator.calculate(
+        [
+          onPlace({ userId: user() }),
+          onPlace({ userId: user() }),
+          onPlace({ userId: user(), result: 'rejected' }),
+        ],
+        [],
+        NOW,
+      );
+      const loose = new DecayingAcceptanceStatusCalculator(policy, {
+        decisiveShare: 0.6,
+        confirmedWeight: 1,
+      });
+      const decided = loose.calculate(
+        [
+          onPlace({ userId: user() }),
+          onPlace({ userId: user(), result: 'rejected' }),
+          onPlace({ userId: user(), result: 'rejected' }),
+        ],
+        [],
+        NOW,
+      );
+
+      expect(disputed.status).toBe('mixed');
+      expect(decided.status).toBe('rejected');
+    });
+
+    it('takes the threshold from its config', () => {
+      const trusting = new DecayingAcceptanceStatusCalculator(policy, { confirmedWeight: 0.5 });
+
+      expect(trusting.calculate([onPlace({ userId: user() })], [], NOW).status).toBe('accepted');
+      expect(() => new DecayingAcceptanceStatusCalculator(policy, { confirmedWeight: 0 })).toThrow(
+        ValidationError,
+      );
     });
   });
 
@@ -156,7 +261,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
       const strict = new DecayingAcceptanceStatusCalculator(policy, { minimumTotalWeight: 0.5 });
 
       expect(strict.calculate([imported()], [], NOW).status).toBe('unknown');
-      expect(strict.calculate([onPlace()], [], NOW).status).toBe('accepted');
+      expect(strict.calculate([onPlace()], [], NOW).status).toBe('likely_accepted');
     });
 
     it('rejects nonsensical options', () => {
@@ -205,7 +310,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
       );
 
       // 0.8 / 8 = 0.1 rejected vs 0.6 accepted: 86 % accepted.
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
       expect(status.basis).toBe('visit_report');
       expect(status.verified).toBe(true);
     });
@@ -213,7 +318,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
     it('treats evidence from the future as fresh', () => {
       const status = calculator.calculate([onPlace({ observedAt: daysAfter(NOW, 2) })], [], NOW);
 
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
       expect(status.confidence).toBeCloseTo(0.6, 5);
     });
   });
@@ -246,7 +351,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
     it('uses chain confirmation when the place has no direct evidence', () => {
       const status = calculator.calculate([], [onChain({ observedAt: daysAgo(30) })], NOW);
 
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
       expect(status.basis).toBe('chain_confirmation');
       expect(status.verified).toBe(false);
     });
@@ -273,7 +378,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
       expect(status.confidence).toBeCloseTo(0.6, 5);
       expect(status.lastEvidenceAt).toEqual(NOW);
     });
@@ -285,7 +390,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
       expect(status.basis).toBe('chain_confirmation');
     });
 
@@ -299,7 +404,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('rejected');
+      expect(status.status).toBe('likely_rejected');
     });
   });
 
@@ -330,7 +435,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
     });
 
     it('lets a user’s latest evidence of any kind replace their earlier evidence', () => {
@@ -344,7 +449,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('rejected');
+      expect(status.status).toBe('likely_rejected');
       expect(status.verified).toBe(false);
     });
 
@@ -359,7 +464,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('rejected');
+      expect(status.status).toBe('likely_rejected');
     });
 
     it('keeps only the newest claim per source and kind for imported evidence', () => {
@@ -372,7 +477,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
         NOW,
       );
 
-      expect(status.status).toBe('rejected');
+      expect(status.status).toBe('likely_rejected');
     });
 
     it('counts imported claims from different sources separately', () => {
@@ -391,7 +496,7 @@ describe('DecayingAcceptanceStatusCalculator', () => {
     it('ignores a withdrawal without a user', () => {
       const status = calculator.calculate([imported({ result: 'withdrawn' }), onPlace()], [], NOW);
 
-      expect(status.status).toBe('accepted');
+      expect(status.status).toBe('likely_accepted');
     });
   });
 

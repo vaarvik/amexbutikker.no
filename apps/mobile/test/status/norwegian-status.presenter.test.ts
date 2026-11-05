@@ -10,7 +10,9 @@ const observedAt = '2026-11-03T12:00:00.000Z';
 describe('NorwegianStatusPresenter', () => {
   it.each([
     ['accepted', 'Ja', '✓'],
+    ['likely_accepted', 'Trolig ja', '✓'],
     ['rejected', 'Nei', '✕'],
+    ['likely_rejected', 'Trolig nei', '✕'],
     ['mixed', 'Varierer', '±'],
     ['unknown', 'Ikke sjekket', '?'],
   ] as const)('shows %s as %s with its own symbol', (status, answer, symbol) => {
@@ -23,15 +25,11 @@ describe('NorwegianStatusPresenter', () => {
       [{ kind: 'visit_report' as const, observedAt: null }, 'Bekreftet ved besøk.'],
       [
         { kind: 'external_list' as const, source: 'kredittkort360' },
-        'Ifølge kredittkort360 (hentet 3. nov. 2026), ikke bekreftet av brukere.',
+        'Ifølge ekstern informasjon. Ikke bekreftet av brukere ennå.',
       ],
       [
-        { kind: 'external_list' as const, source: null, observedAt: null },
-        'Ifølge en ekstern liste, ikke bekreftet av brukere.',
-      ],
-      [
-        { kind: 'checkout_logo' as const, source: 'Amexvenn' },
-        'Amex-logo i kassen ifølge Amexvenn, ikke bekreftet av brukere.',
+        { kind: 'checkout_logo' as const, source: 'a list' },
+        'Amex-logo i kassen. Ikke bekreftet av brukere ennå.',
       ],
       [
         { kind: null, scope: 'none' as const, observedAt: null, userAccepted: 0 },
@@ -61,12 +59,28 @@ describe('NorwegianStatusPresenter', () => {
             { chain: { id: CHAIN_ID, name: 'Rema 1000' } },
           ),
         ),
-      ).toBe(
-        'Ifølge kjedens nettside gjelder dette hele Rema 1000. Ikke bekreftet av brukere her.',
-      );
+      ).toBe('Skal gjelde hele Rema 1000. Ikke bekreftet av brukere her ennå.');
       expect(
         presenter.basis(details({ kind: 'chain_confirmation', scope: 'chain', source: null })),
-      ).toBe('Ifølge en ekstern liste gjelder dette hele kjeden. Ikke bekreftet av brukere her.');
+      ).toBe('Skal gjelde hele kjeden. Ikke bekreftet av brukere her ennå.');
+    });
+
+    it('never names the source, only that it is not from users', () => {
+      const sentence = presenter.basis(
+        details({ kind: 'external_list', source: 'secret-source', observedAt }),
+      );
+
+      expect(sentence).not.toContain('secret-source');
+    });
+
+    it('asks for one more answer while user reports are not yet confirmed', () => {
+      const base = details({ kind: 'user_report', userAccepted: 1, userRejected: 0, observedAt });
+
+      expect(
+        presenter.basis({ ...base, status: { ...base.status, status: 'likely_accepted' } }),
+      ).toBe(
+        'Én bruker har fått betale med Amex her. Sist rapportert 3. nov. 2026. Ett svar til gjør svaret sikrere.',
+      );
     });
   });
 

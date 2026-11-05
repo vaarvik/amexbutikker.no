@@ -73,7 +73,7 @@ describe('CalculatingPlaceStatusRefresher', () => {
     await refresher.refresh(ports, silent.id);
     const output = await refresher.refresh(ports, accepting.id);
 
-    expect(output.status.status).toBe('accepted');
+    expect(output.status.status).toBe('likely_accepted');
     expect(output.chainHint).toEqual({
       chainId: chain.id,
       acceptedCount: 1,
@@ -82,10 +82,10 @@ describe('CalculatingPlaceStatusRefresher', () => {
     });
     await expect(ports.chains.findHint(chain.id)).resolves.toEqual(output.chainHint);
     await expect(ports.statuses.find(silent.id)).resolves.toMatchObject({
-      status: { status: 'accepted', basis: 'chain_confirmation' },
+      status: { status: 'likely_accepted', basis: 'chain_confirmation' },
     });
     await expect(ports.statuses.find(rejecting.id)).resolves.toMatchObject({
-      status: { status: 'rejected' },
+      status: { status: 'likely_rejected' },
     });
   });
 

@@ -11,7 +11,7 @@ const DIRECT_KINDS: ReadonlySet<EvidenceKind> = new Set(DIRECT_EVIDENCE_KINDS);
 
 /**
  * "7 of 9 stores in this chain accept": among the chain's places whose status rests on direct
- * evidence, how many are accepted. Places decided by chain or external evidence are left out,
+ * evidence, how many are accepted or likely accepted (both come from users' own answers). Places decided by chain or external evidence are left out,
  * so the hint never feeds on itself.
  */
 export class ProportionChainHintCalculator implements ChainHintCalculator {
@@ -22,7 +22,9 @@ export class ProportionChainHintCalculator implements ChainHintCalculator {
     );
     return {
       chainId,
-      acceptedCount: direct.filter((status) => status.status === 'accepted').length,
+      acceptedCount: direct.filter(
+        (status) => status.status === 'accepted' || status.status === 'likely_accepted',
+      ).length,
       totalWithEvidence: direct.length,
       calculatedAt: now,
     };

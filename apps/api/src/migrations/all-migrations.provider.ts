@@ -7,6 +7,7 @@ import { M0005ApplicationRoleMigration } from './m0005-application-role.migratio
 import { M0006PlacesNormalizedNameMigration } from './m0006-places-normalized-name.migration.js';
 import { M0007TrigramOperatorCostsMigration } from './m0007-trigram-operator-costs.migration.js';
 import { M0008UnmatchedDescriptorsMigration } from './m0008-unmatched-descriptors.migration.js';
+import { M0009LikelyStatusesMigration } from './m0009-likely-statuses.migration.js';
 
 /**
  * Every migration, keyed so that string order is execution order. Add new ones at the end.
@@ -24,6 +25,7 @@ export class AllMigrationsProvider implements MigrationProvider {
       '0006_places_normalized_name': new M0006PlacesNormalizedNameMigration(),
       '0007_trigram_operator_costs': new M0007TrigramOperatorCostsMigration(),
       '0008_unmatched_descriptors': new M0008UnmatchedDescriptorsMigration(),
+      '0009_likely_statuses': new M0009LikelyStatusesMigration(),
     };
     return Promise.resolve(
       Object.fromEntries(

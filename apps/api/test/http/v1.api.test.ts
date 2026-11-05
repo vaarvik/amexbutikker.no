@@ -245,7 +245,7 @@ describe('HTTP API (in-memory storage)', () => {
       });
       expect(submitted.statusCode).toBe(200);
       expect(submitted.json()).toMatchObject({
-        status: { status: 'accepted', basis: 'user_report' },
+        status: { status: 'likely_accepted', basis: 'user_report' },
         chainHint: null,
       });
 
@@ -255,7 +255,7 @@ describe('HTTP API (in-memory storage)', () => {
         headers: { authorization: me.authorization },
       });
       expect(details.json()).toMatchObject({
-        status: { status: 'accepted' },
+        status: { status: 'likely_accepted' },
         basis: {
           kind: 'user_report',
           scope: 'place',
@@ -272,7 +272,7 @@ describe('HTTP API (in-memory storage)', () => {
       expect(anonymous.json()).toMatchObject({ myReport: null });
 
       const search = await app.inject({ method: 'GET', url: '/v1/places/search?q=kafe' });
-      expect(search.json()).toMatchObject({ results: [{ status: { status: 'accepted' } }] });
+      expect(search.json()).toMatchObject({ results: [{ status: { status: 'likely_accepted' } }] });
 
       const removed = await app.inject({
         method: 'DELETE',
@@ -304,7 +304,7 @@ describe('HTTP API (in-memory storage)', () => {
       await report('accepted');
       const second = await report('rejected');
 
-      expect(second.json()).toMatchObject({ status: { status: 'rejected' } });
+      expect(second.json()).toMatchObject({ status: { status: 'likely_rejected' } });
       const details = await app.inject({ method: 'GET', url: `/v1/places/${id}` });
       expect(details.json()).toMatchObject({ basis: { userAccepted: 0, userRejected: 1 } });
     });

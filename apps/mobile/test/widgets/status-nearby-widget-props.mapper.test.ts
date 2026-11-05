@@ -5,7 +5,14 @@ import { StatusNearbyWidgetPropsMapper } from '../../src/widgets/status-nearby-w
 import { physicalPlace, summary } from '../shared/mobile-test.data';
 
 const id = (n: number) => `0190a000-0000-7000-8000-${String(n).padStart(12, '0')}` as PlaceId;
-const colors = { accepted: '#0A0', rejected: '#A00', mixed: '#AA0', unknown: '#555' };
+const colors = {
+  accepted: '#0A0',
+  likely_accepted: '#0A0',
+  rejected: '#A00',
+  likely_rejected: '#A00',
+  mixed: '#AA0',
+  unknown: '#555',
+};
 const mapper = new StatusNearbyWidgetPropsMapper(new NorwegianStatusPresenter(), {
   hereWithinM: 60,
   maxAccepted: 2,
@@ -69,8 +76,8 @@ describe('StatusNearbyWidgetPropsMapper', () => {
 
     expect(props.here?.name).toBe('Sted 1');
     expect(props.accepted).toEqual([
-      { name: 'Sted 1', distance: '10 m', url: `amexbutikker://place/${id(1)}` },
-      { name: 'Sted 4', distance: '90 m', url: `amexbutikker://place/${id(4)}` },
+      { name: 'Sted 1', confirmed: true, distance: '10 m', url: `amexbutikker://place/${id(1)}` },
+      { name: 'Sted 4', confirmed: true, distance: '90 m', url: `amexbutikker://place/${id(4)}` },
     ]);
   });
 
@@ -78,7 +85,19 @@ describe('StatusNearbyWidgetPropsMapper', () => {
     const props = mapper.map([at(1, 'accepted', null)], null, now);
 
     expect(props.accepted).toEqual([
-      { name: 'Sted 1', distance: '', url: `amexbutikker://place/${id(1)}` },
+      { name: 'Sted 1', confirmed: true, distance: '', url: `amexbutikker://place/${id(1)}` },
+    ]);
+  });
+
+  it('lists likely places too, marked as not confirmed, and leaves out the rest', () => {
+    const props = mapper.map(
+      [at(1, 'likely_accepted', 100), at(2, 'likely_rejected', 50), at(3, 'mixed', 20)],
+      null,
+      now,
+    );
+
+    expect(props.accepted).toEqual([
+      { name: 'Sted 1', confirmed: false, distance: '100 m', url: `amexbutikker://place/${id(1)}` },
     ]);
   });
 });

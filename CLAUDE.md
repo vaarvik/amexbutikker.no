@@ -142,7 +142,7 @@ Use these words, with these meanings, in code, docs and conversation. UI copy us
 - **Chain** (kjede): a brand with several physical places.
 - **Evidence**: one observation that a place or chain accepts or rejects the card. Append-only.
 - **Report** (rapport): evidence a user submits from the app (`user_report`). Can be withdrawn by appending `withdrawn`.
-- **Status** (svar): the computed answer for a place: accepted (Ja), rejected (Nei), mixed (Varierer), unknown (Ikke sjekket).
+- **Status** (svar): the computed answer for a place: accepted (Ja), likely_accepted (Trolig ja), rejected (Nei), likely_rejected (Trolig nei), mixed (Varierer), unknown (Ikke sjekket). Ja/Nei need users' own answers worth `confirmedWeight` (default 1.0: two fresh reports or one purchase); lists and chain claims alone only ever give Trolig.
 - **Basis**: the strongest evidence kind behind a status.
 - **Chain hint**: "7 of 9 places in this chain accept". Shown next to a status, never used as one.
 - **Claim**: one entry from a curated or external list, imported as evidence.
@@ -243,7 +243,7 @@ React components in `apps/mobile` are function components, because class compone
 - **Evidence** is append-only: `kind`, `result` (`accepted` | `rejected`), `source`, `sourceRef`, `observedAt`, `importedAt`, optional `userId`. Never update or delete evidence. Newer evidence supersedes older.
 - Evidence kinds, strongest first: `transaction`, `visit_report`, `user_report`, `chain_confirmation`, `external_list`, `checkout_logo`.
 - For a given user and place, only that user's latest evidence counts.
-- **Status** per place is always computed, never written by hand: `accepted` | `rejected` | `mixed` | `unknown`, plus `confidence`, `basis` (the evidence kind that decided it), `verified` (any transaction or visit evidence) and `lastEvidenceAt`.
+- **Status** per place is always computed, never written by hand: `accepted` | `likely_accepted` | `rejected` | `likely_rejected` | `mixed` | `unknown`, plus `confidence`, `basis` (the evidence kind that decided it), `verified` (any transaction or visit evidence) and `lastEvidenceAt`.
 - Precedence for a physical place: its own direct evidence, then chain confirmation, then nothing. The **chain hint** ("7 of 9 stores in this chain accept") is shown alongside, never used as the status.
 - All weights and half-lives live in one `EvidenceWeightPolicy` implementation, configured through its constructor.
 - External sources are seeds. They are shown as "unconfirmed, according to <source> (fetched <date>)" until users confirm or contradict them.

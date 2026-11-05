@@ -6,7 +6,7 @@ import type { AcceptanceStatus } from '@amexbutikker/contracts';
  */
 export interface StatusView {
   readonly status: AcceptanceStatus;
-  /** The one-word answer: Ja, Nei, Varierer, Ikke sjekket. */
+  /** The short answer: Ja, Trolig ja, Nei, Trolig nei, Varierer, Ikke sjekket. */
   readonly answer: string;
   /** A short explanation of the answer, e.g. "Tar Amex". */
   readonly label: string;

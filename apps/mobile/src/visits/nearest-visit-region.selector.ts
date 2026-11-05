@@ -8,10 +8,15 @@ export interface NearestVisitRegionSelectorConfig {
   readonly radiusM: number;
 }
 
-/** Ask where the answer is missing or disputed; announce where Amex works; skip "Nei". */
+/**
+ * Ask where the answer is missing, disputed or not yet confirmed by users; announce where Amex
+ * is confirmed to work; skip a confirmed "Nei".
+ */
 const PROMPTS: Readonly<Record<AcceptanceStatus, VisitPromptKind | null>> = {
   unknown: 'ask',
   mixed: 'ask',
+  likely_accepted: 'ask',
+  likely_rejected: 'ask',
   accepted: 'announce',
   rejected: null,
 };

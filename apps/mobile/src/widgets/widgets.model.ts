@@ -8,7 +8,7 @@ export interface NearbyWidgetProps {
    * props are stored in UserDefaults, which cannot hold null.
    */
   readonly here?: NearbyWidgetHere;
-  /** The nearest places that take Amex, nearest first; "here" included. */
+  /** The nearest places that take or likely take Amex, nearest first; "here" included. */
   readonly accepted: readonly NearbyWidgetPlace[];
   /** "Oppdatert 20:15". */
   readonly updated: string;
@@ -28,6 +28,8 @@ export interface NearbyWidgetHere {
 
 export interface NearbyWidgetPlace {
   readonly name: string;
+  /** False for "Trolig ja": shown with an outlined symbol. */
+  readonly confirmed: boolean;
   /** "40 m". */
   readonly distance: string;
   readonly url: string;

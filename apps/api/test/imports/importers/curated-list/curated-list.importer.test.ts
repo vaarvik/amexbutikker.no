@@ -169,9 +169,9 @@ describe('CuratedListImporter', () => {
         }),
       ]),
     );
-    expect(tables.statuses.get(remaA.id)?.status.status).toBe('accepted');
-    expect(tables.statuses.get(remaB.id)?.status.status).toBe('accepted');
-    expect(tables.statuses.get(kafe.id)?.status.status).toBe('rejected');
+    expect(tables.statuses.get(remaA.id)?.status.status).toBe('likely_accepted');
+    expect(tables.statuses.get(remaB.id)?.status.status).toBe('likely_accepted');
+    expect(tables.statuses.get(kafe.id)?.status.status).toBe('likely_rejected');
   });
 
   it('is idempotent: a second run appends nothing', async () => {

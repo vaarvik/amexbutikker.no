@@ -20,20 +20,23 @@ describe('ProportionChainHintCalculator', () => {
   const calculator = new ProportionChainHintCalculator();
   const chainId = new TestData().chainId();
 
-  it('counts accepted places among places with direct evidence', () => {
+  it('counts accepted and likely accepted places among places with direct evidence', () => {
     const hint = calculator.calculate(
       chainId,
       [
         status('accepted', 'user_report'),
         status('accepted', 'transaction'),
         status('accepted', 'visit_report'),
+        status('likely_accepted', 'user_report'),
         status('rejected', 'user_report'),
+        status('likely_rejected', 'user_report'),
         status('mixed', 'user_report'),
       ],
       NOW,
     );
 
-    expect(hint).toEqual({ chainId, acceptedCount: 3, totalWithEvidence: 5, calculatedAt: NOW });
+    // Likely accepted counts: it also comes from users' own answers.
+    expect(hint).toEqual({ chainId, acceptedCount: 4, totalWithEvidence: 7, calculatedAt: NOW });
   });
 
   it('ignores places whose status comes from chain or external evidence, or is unknown', () => {

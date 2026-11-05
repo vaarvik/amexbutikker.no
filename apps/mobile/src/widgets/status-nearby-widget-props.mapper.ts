@@ -14,7 +14,9 @@ export interface StatusNearbyWidgetPropsMapperConfig {
 
 const SYMBOLS: Readonly<Record<AcceptanceStatus, string>> = {
   accepted: 'checkmark.circle.fill',
+  likely_accepted: 'checkmark.circle',
   rejected: 'xmark.circle.fill',
+  likely_rejected: 'xmark.circle',
   mixed: 'plusminus.circle.fill',
   unknown: 'questionmark.circle',
 };
@@ -51,10 +53,11 @@ export class StatusNearbyWidgetPropsMapper implements NearbyWidgetPropsMapper {
             },
           }),
       accepted: byDistance
-        .filter((r) => r.status.status === 'accepted')
+        .filter((r) => r.status.status === 'accepted' || r.status.status === 'likely_accepted')
         .slice(0, this.config.maxAccepted)
         .map((r) => ({
           name: r.place.name,
+          confirmed: r.status.status === 'accepted',
           distance: this.presenter.distance(r.distanceM) ?? '',
           url: this.url(r.place.id),
         })),

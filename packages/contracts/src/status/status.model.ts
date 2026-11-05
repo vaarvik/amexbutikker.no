@@ -4,11 +4,17 @@ import type { EvidenceKind } from '../evidence/evidence.model.js';
 import { ChainIdSchema, PlaceIdSchema } from '../shared/shared.model.js';
 import type { ChainId, PlaceId } from '../shared/shared.model.js';
 
-/** The answer shown to users. */
-export type AcceptanceStatus = 'accepted' | 'rejected' | 'mixed' | 'unknown';
+/**
+ * The answer shown to users. `accepted` / `rejected` need confirmation from users' own answers;
+ * with less (only lists and chain claims, or a single user) the answer is `likely_*`.
+ */
+export type AcceptanceStatus =
+  'accepted' | 'likely_accepted' | 'rejected' | 'likely_rejected' | 'mixed' | 'unknown';
 export const ACCEPTANCE_STATUSES = [
   'accepted',
+  'likely_accepted',
   'rejected',
+  'likely_rejected',
   'mixed',
   'unknown',
 ] as const satisfies readonly AcceptanceStatus[];

@@ -89,7 +89,11 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
         props.accepted.slice(0, rows).map((place) => (
           <Link key={place.url} destination={place.url}>
             <HStack spacing={8}>
-              <Image systemName="checkmark.circle.fill" size={15} color="#1E6B34" />
+              <Image
+                systemName={place.confirmed ? 'checkmark.circle.fill' : 'checkmark.circle'}
+                size={15}
+                color="#1E6B34"
+              />
               <Text modifiers={[font({ weight: 'medium', size: 15 }), lineLimit(1)]}>
                 {place.name}
               </Text>
