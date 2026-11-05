@@ -57,6 +57,40 @@ describe('AddressBrregPlaceMatcher', () => {
     });
   });
 
+  it('needs the first word of the place name in the registry name, so shops in one centre do not mix', () => {
+    const anton = place('Anton Sport CC Vest');
+    const candidates = [place("McDonald's CC Vest"), anton];
+
+    expect(matcher.match(unit({ name: 'ANTON SPORT CC VEST' }), candidates)).toMatchObject({
+      kind: 'matched',
+      place: anton,
+    });
+    expect(matcher.match(unit({ name: 'SØSTRENE GRENE CC VEST' }), candidates)).toEqual({
+      kind: 'unmatched',
+      reason: 'no place at Grønlandsleiret 9, 0190 is named like "SØSTRENE GRENE CC VEST"',
+    });
+  });
+
+  it.each([
+    ['NG KIWI OSLO AKERSHUS AS AVD 397 RØA', 'Kiwi Røa'],
+    ['VEROMODAOSLO.NO', 'Vero Moda'],
+    ['SMOOTHIE XCHANGE AS AVD KARL JOHAN', 'Smoothiexhange'],
+  ])('accepts the leading word inside or similar to a registry word: %s', (name, placeName) => {
+    expect(matcher.match(unit({ name }), [place(placeName)])).toMatchObject({ kind: 'matched' });
+  });
+
+  it.each([
+    ['NG AVD 397 RØA', '7-Eleven Røa'],
+    ['VINMONOPOLET AS BUTIKK STOVNER', 'Telenorbutikken Stovner'],
+  ])(
+    'does not count a short word, or a registry word inside the place word: %s',
+    (name, placeName) => {
+      expect(matcher.match(unit({ name }), [place(placeName)])).toMatchObject({
+        kind: 'unmatched',
+      });
+    },
+  );
+
   it.each([
     [unit({ street: null }), [place('Rema 1000 Grønland')], 'has no street address'],
     [unit(), [place('Rema 1000 Grønland', 'Tøyengata 2')], 'no place at Grønlandsleiret 9, 0190'],

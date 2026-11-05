@@ -5,5 +5,5 @@ coverage/
 .env
 .env*.local
 .DS_Store
-data/cache/
+**/data/cache/
 data/statements/

@@ -12,9 +12,18 @@ export interface AddressBrregPlaceMatcherConfig {
 /** Legal-form words that registry names carry and place names do not. */
 const LEGAL_WORDS = new Set(['as', 'asa', 'ans', 'da', 'nuf', 'sa', 'ba', 'avd', 'avdeling']);
 
+/** Trigram similarity at which two single words count as the same word. */
+const SAME_WORD_SCORE = 0.5;
+
+/** Shortest word that counts when found inside another ("vero" in "veromodaoslo"). */
+const MIN_CONTAINED_LENGTH = 3;
+
 /**
  * Matches a unit to a place with the same street address (the candidates already share its
  * postcode) and a similar name. Conservative: an unclear case stays unmatched.
+ * The first word of the place name must also appear in the registry name. Shops in a shopping
+ * centre share one address, and names like "Anton Sport CC Vest" and "McDonald's CC Vest" are
+ * similar only through the centre's name.
  */
 export class AddressBrregPlaceMatcher implements BrregPlaceMatcher {
   public constructor(
@@ -36,7 +45,9 @@ export class AddressBrregPlaceMatcher implements BrregPlaceMatcher {
     }
 
     const name = this.businessName(unit.name);
+    const unitWords = this.words(name);
     const [best, runnerUp] = atAddress
+      .filter((place) => this.sharesLeadingWord(place.name, unitWords))
       .map((place) => ({
         place,
         score: this.names.similarity(name, this.names.normalize(place.name)),
@@ -48,8 +59,9 @@ export class AddressBrregPlaceMatcher implements BrregPlaceMatcher {
     if (runnerUp !== undefined && best.score - runnerUp.score < this.config.minimumLead) {
       const tied = atAddress.filter(
         (place) =>
+          this.sharesLeadingWord(place.name, unitWords) &&
           best.score - this.names.similarity(name, this.names.normalize(place.name)) <
-          this.config.minimumLead,
+            this.config.minimumLead,
       ).length;
       return {
         kind: 'unmatched',
@@ -65,10 +77,28 @@ export class AddressBrregPlaceMatcher implements BrregPlaceMatcher {
   }
 
   private businessName(name: string): string {
-    return this.names
-      .normalize(name)
-      .split(/[^\p{L}\p{N}]+/u)
-      .filter((word) => word !== '' && !LEGAL_WORDS.has(word))
+    return this.words(this.names.normalize(name))
+      .filter((word) => !LEGAL_WORDS.has(word))
       .join(' ');
+  }
+
+  /**
+   * Whether the first word of the place name is, or is part of, a word of the unit name.
+   * Not the other way round: "butikk" inside "Telenorbutikken" says nothing.
+   */
+  private sharesLeadingWord(placeName: string, unitWords: readonly string[]): boolean {
+    const [leading] = this.words(this.names.normalize(placeName));
+    return (
+      leading !== undefined &&
+      unitWords.some(
+        (word) =>
+          (leading.length >= MIN_CONTAINED_LENGTH && word.includes(leading)) ||
+          this.names.similarity(word, leading) >= SAME_WORD_SCORE,
+      )
+    );
+  }
+
+  private words(normalized: string): string[] {
+    return normalized.split(/[^\p{L}\p{N}]+/u).filter((word) => word !== '');
   }
 }
