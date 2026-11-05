@@ -1,0 +1,11 @@
+{
+  "provider": "apple_maps",
+  "name": "Kaffebrenneriet Storgata",
+  "street": "Storgata 2",
+  "postcode": "0155",
+  "city": "Oslo",
+  "location": { "lat": 59.9139, "lng": 10.7522 },
+  "urls": [
+    "https://maps.apple.com/?address=Storgata%202,%200155%20Oslo,%20Norge&auid=123&ll=59.913900,10.752200&lsp=9902&q=Kaffebrenneriet%20Storgata"
+  ]
+}

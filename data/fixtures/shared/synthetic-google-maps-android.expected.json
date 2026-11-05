@@ -1,0 +1,9 @@
+{
+  "provider": "google_maps",
+  "name": "Fuglen Oslo",
+  "street": "Universitetsgata 2",
+  "postcode": "0164",
+  "city": "Oslo",
+  "location": null,
+  "urls": ["https://maps.app.goo.gl/XyZ987"]
+}

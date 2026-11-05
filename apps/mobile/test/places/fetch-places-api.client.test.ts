@@ -97,6 +97,32 @@ describe('FetchPlacesApiClient', () => {
     expect(session.registrations).toBe(1);
   });
 
+  it('sends shared text to the match endpoint without a token', async () => {
+    const response = {
+      parsed: {
+        provider: 'apple_maps',
+        name: 'Kafé Åsen',
+        street: null,
+        postcode: null,
+        city: null,
+      },
+      candidates: [{ place: physicalPlace(), status: summary().status, score: 0.9, reasons: [] }],
+      decision: { type: 'open', placeId: PLACE_ID },
+    };
+    transport.answer(response);
+
+    await expect(client.matchShared('Kafé Åsen\nhttps://maps.apple.com/?q=x')).resolves.toEqual(
+      response,
+    );
+    expect(transport.requests).toEqual([
+      {
+        method: 'POST',
+        path: '/v1/match/shared',
+        body: { text: 'Kafé Åsen\nhttps://maps.apple.com/?q=x' },
+      },
+    ]);
+  });
+
   it('drops a rejected token, registers again and retries once', async () => {
     session.token = 'revoked';
     transport.answer(unauthorized(), statusChange);

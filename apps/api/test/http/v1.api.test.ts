@@ -378,6 +378,48 @@ describe('HTTP API (in-memory storage)', () => {
     expect(response.json()).toMatchObject({ error: { code: 'not_found' } });
   });
 
+  describe('POST /v1/match/shared', () => {
+    it('opens the place directly for a clear Apple Maps share', async () => {
+      const { authorization } = await registerDevice();
+      const id = await createCafe(authorization);
+      await createCafe(authorization, 'Narvesen');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/match/shared',
+        payload: {
+          text: `Kafé Åsen\nKarl Johans gate 1, 0154 Oslo, Norge\nhttps://maps.apple.com/?ll=${String(OSLO_S.lat)},${String(OSLO_S.lng)}&q=Kaf%C3%A9%20%C3%85sen`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        parsed: { provider: 'apple_maps', name: 'Kafé Åsen', postcode: '0154' },
+        decision: { type: 'open', placeId: id },
+      });
+      const { candidates } = response.json<{ candidates: { place: { name: string } }[] }>();
+      // The other place at the same address comes second, well behind.
+      expect(candidates.map((candidate) => candidate.place.name)).toEqual([
+        'Kafé Åsen',
+        'Narvesen',
+      ]);
+    });
+
+    it('finds nothing for a short link it may not follow', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/match/shared',
+        payload: { text: 'https://maps.app.goo.gl/AbCd' },
+      });
+
+      expect(response.json()).toMatchObject({
+        parsed: { provider: 'google_maps', name: null },
+        candidates: [],
+        decision: { type: 'none' },
+      });
+    });
+  });
+
   describe('CORS', () => {
     it('answers a preflight from an allowed origin', async () => {
       const response = await app.inject({

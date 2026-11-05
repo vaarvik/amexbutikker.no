@@ -1,0 +1,9 @@
+{
+  "provider": "google_maps",
+  "name": "Mathallen Oslo",
+  "street": null,
+  "postcode": null,
+  "city": null,
+  "location": { "lat": 59.9222, "lng": 10.752 },
+  "urls": ["https://www.google.com/maps/place/Mathallen+Oslo/@59.9222,10.7520,17z/data=!3m1!4b1"]
+}

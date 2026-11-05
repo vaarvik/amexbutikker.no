@@ -99,6 +99,14 @@ eas build --profile preview --platform ios
 
 After registering new devices, build again. Testers install from the build page link. On iOS 16 and later they must turn on Developer Mode (Settings → Privacy & Security) once.
 
+### Sharing from Google Maps and Apple Maps
+
+The app appears in the share sheet only in an EAS build (preview or development), never in Expo Go: the share extension is native code. Share a place from Google Maps or Apple Maps and pick amexbutikker. The app sends the shared text to the API, which matches it without calling Google. A clear match opens the place; otherwise the app lists up to three candidates and offers to add the place.
+
+Short links (`maps.app.goo.gl/…`) are not followed, so a Google share that holds only a link finds nothing. Google Maps on Android and Apple Maps include the name and address, which is what the match uses.
+
+To improve matching, save real share texts in `data/fixtures/shared/` (see the README there).
+
 ### Development builds
 
 `eas build --profile development --platform android|ios` makes a build of your own Expo Go: it loads JavaScript from `pnpm mobile` and includes our native modules. Use it once Phase 7 adds native code.

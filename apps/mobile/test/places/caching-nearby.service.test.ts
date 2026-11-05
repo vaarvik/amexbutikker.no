@@ -2,6 +2,7 @@ import type {
   Clock,
   CreatePlaceResponseDto,
   GeoPoint,
+  MatchSharedResponseDto,
   NearbyPlacesQueryDto,
   PlaceDetailsResponseDto,
   PlaceListResponseDto,
@@ -51,6 +52,10 @@ class StubPlacesApi implements PlacesApiClient {
   }
 
   public removeMyReport(): Promise<StatusChangeResponseDto> {
+    return Promise.reject(new Error('not used'));
+  }
+
+  public matchShared(): Promise<MatchSharedResponseDto> {
     return Promise.reject(new Error('not used'));
   }
 }

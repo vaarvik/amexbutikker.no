@@ -39,6 +39,18 @@
         {
           "locationWhenInUsePermission": "Posisjonen brukes til å vise steder i nærheten og om de tar Amex."
         }
+      ],
+      [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsText": true,
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsWebPageWithMaxCount": 1
+          },
+          "androidIntentFilters": ["text/*"],
+          "iosShareExtensionName": "amexbutikker"
+        }
       ]
     ],
     "experiments": {

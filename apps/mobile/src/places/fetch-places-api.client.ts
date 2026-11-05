@@ -1,5 +1,6 @@
 import {
   CreatePlaceResponseDtoSchema,
+  MatchSharedResponseDtoSchema,
   PlaceDetailsResponseDtoSchema,
   PlaceListResponseDtoSchema,
   StatusChangeResponseDtoSchema,
@@ -7,6 +8,7 @@ import {
 import type {
   CreatePlaceRequestDto,
   CreatePlaceResponseDto,
+  MatchSharedResponseDto,
   NearbyPlacesQueryDto,
   PlaceDetailsResponseDto,
   PlaceId,
@@ -71,6 +73,13 @@ export class FetchPlacesApiClient implements PlacesApiClient {
     return this.authorized(
       { method: 'DELETE', path: `${this.placePath(placeId)}/reports/me` },
       StatusChangeResponseDtoSchema,
+    );
+  }
+
+  public matchShared(text: string): Promise<MatchSharedResponseDto> {
+    return this.transport.request(
+      { method: 'POST', path: '/v1/match/shared', body: { text } },
+      MatchSharedResponseDtoSchema,
     );
   }
 

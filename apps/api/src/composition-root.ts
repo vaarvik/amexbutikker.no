@@ -3,6 +3,7 @@ import {
   CreatePlaceUseCase,
   ListNearbyPlacesUseCase,
   GetPlaceDetailsUseCase,
+  MatchSharedPlaceUseCase,
   RegisterDeviceUseCase,
   RemoveMyReportUseCase,
   RunImportUseCase,
@@ -28,7 +29,9 @@ import {
   FixedEvidenceWeightPolicy,
   LatestEvidenceSummarizer,
   ProportionChainHintCalculator,
+  RegexSharedTextParser,
   SupersedingEvidenceSelector,
+  ThresholdMatchDecider,
   TrigramNameSimilarity,
 } from '@amexbutikker/domain';
 import { Kysely, PostgresDialect } from 'kysely';
@@ -77,6 +80,9 @@ import { PlacesController } from './places/places.controller.js';
 import { PgPlaceRepository } from './places/pg-place.repository.js';
 import { ReportsController } from './reports/reports.controller.js';
 import { FastifyHttpServer } from './shared/fastify-http.server.js';
+import { NullSharedLinkResolver } from './shared-match/null-shared-link.resolver.js';
+import { SharedMatchController } from './shared-match/shared-match.controller.js';
+import { TrigramGeoPlaceMatcher } from './shared-match/trigram-geo-place.matcher.js';
 import { DomainHttpErrorMapper } from './shared/domain-http-error.mapper.js';
 import { AllowlistHttpDtoMapper } from './shared/allowlist-http-dto.mapper.js';
 import { BearerTokenAuthenticator } from './shared/bearer-token.authenticator.js';
@@ -287,7 +293,21 @@ export class CompositionRoot {
           new RegisterDeviceUseCase(devices, tokens, ids, clock, rateLimiter),
           validator,
         ),
-        // SharedMatchController is registered in phase 7, with the real parser and matcher.
+        new SharedMatchController(
+          new MatchSharedPlaceUseCase(
+            new RegexSharedTextParser(),
+            new NullSharedLinkResolver(),
+            new TrigramGeoPlaceMatcher(places, names, {
+              radiusM: 300,
+              searchLimit: 20,
+              minimumScore: 0.25,
+            }),
+            new ThresholdMatchDecider({ openThreshold: 0.6, minimumLead: 0.15 }),
+            statuses,
+          ),
+          validator,
+          dtos,
+        ),
       ],
       new DomainHttpErrorMapper(),
       pino({ level: config.logLevel }),

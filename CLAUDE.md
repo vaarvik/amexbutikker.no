@@ -177,7 +177,7 @@ Use these words, with these meanings, in code, docs and conversation. UI copy us
 
 - **Where:** each package has `test/` mirroring `src/`: `src/places/create-place.use-case.ts` is tested in `test/places/create-place.use-case.test.ts`. Shared test helpers sit in `test/shared/`.
 - **Suffixes:**
-  - `*.test.ts`: unit. No network, no Docker. A file adapter may use its own temp directory (`fs.mkdtemp`, removed after the test); nothing else touches the disk.
+  - `*.test.ts`: unit. No network, no Docker. A file adapter may use its own temp directory (`fs.mkdtemp`, removed after the test), and a test may read checked-in fixtures under `data/fixtures/`; nothing else touches the disk.
   - `*.integration.test.ts`: needs Docker (Testcontainers).
   - `*.api.test.ts`: HTTP through Fastify `inject`.
   - `*.perf.test.ts`: latency budget (p95 < 100 ms) and query plans on seeded data. Only `pnpm test:perf` runs them; CI runs them in a separate `perf` job.

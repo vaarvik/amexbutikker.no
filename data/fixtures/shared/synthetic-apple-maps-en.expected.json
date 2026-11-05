@@ -1,0 +1,9 @@
+{
+  "provider": "apple_maps",
+  "name": "Tim Wendelboe",
+  "street": "Grüners gate 1",
+  "postcode": "0552",
+  "city": "Oslo",
+  "location": { "lat": 59.9234, "lng": 10.7558 },
+  "urls": ["https://maps.apple.com/?ll=59.923400,10.755800&q=Tim%20Wendelboe"]
+}

@@ -1,6 +1,6 @@
 import { CreatePlaceRequestDtoSchema, PLACE_CATEGORIES } from '@amexbutikker/contracts';
 import type { GeoPoint, PlaceCategory } from '@amexbutikker/contracts';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -16,7 +16,9 @@ export default function AddPlace() {
   const { places, location, presenter } = useServices();
   const palette = usePalette();
   const [kind, setKind] = useState<Kind>('physical');
-  const [name, setName] = useState('');
+  // A share that matched nothing arrives with the shared name filled in.
+  const params = useLocalSearchParams<{ name?: string }>();
+  const [name, setName] = useState(params.name ?? '');
   const [category, setCategory] = useState<PlaceCategory>('shop');
   const [street, setStreet] = useState('');
   const [postcode, setPostcode] = useState('');

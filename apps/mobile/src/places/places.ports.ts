@@ -1,6 +1,7 @@
 import type {
   CreatePlaceRequestDto,
   CreatePlaceResponseDto,
+  MatchSharedResponseDto,
   NearbyPlacesQueryDto,
   PlaceDetailsResponseDto,
   PlaceId,
@@ -20,6 +21,8 @@ export interface PlacesApiClient {
   create(input: CreatePlaceRequestDto): Promise<CreatePlaceResponseDto>;
   submitReport(placeId: PlaceId, input: SubmitReportRequestDto): Promise<StatusChangeResponseDto>;
   removeMyReport(placeId: PlaceId): Promise<StatusChangeResponseDto>;
+  /** Matches text shared from a maps app to known places. The API never calls Google. */
+  matchShared(text: string): Promise<MatchSharedResponseDto>;
 }
 
 /** Keeps the last nearby list across app starts. */

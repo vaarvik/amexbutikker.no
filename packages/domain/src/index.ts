@@ -1,5 +1,6 @@
 export * from './evidence/superseding-evidence.selector.js';
 export * from './shared/trigram-name.similarity.js';
+export * from './shared-match/regex-shared-text.parser.js';
 export * from './shared-match/threshold-match.decider.js';
 export * from './status/decaying-acceptance-status.calculator.js';
 export * from './status/fixed-evidence-weight.policy.js';
