@@ -4,7 +4,8 @@ export type RuleId =
   | 'construction-outside-composition-root'
   | 'contracts-class'
   | 'contracts-file-naming'
-  | 'class-file-naming';
+  | 'class-file-naming'
+  | 'importer-folder-naming';
 
 export interface Violation {
   readonly ruleId: RuleId;

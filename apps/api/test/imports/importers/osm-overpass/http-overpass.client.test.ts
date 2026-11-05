@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HttpOverpassClient } from '../../../../src/imports/importers/osm/http-overpass.client.js';
+import { HttpOverpassClient } from '../../../../src/imports/importers/osm-overpass/http-overpass.client.js';
 
 const fetchedAt = new Date('2026-11-04T08:00:00Z');
 const config = {

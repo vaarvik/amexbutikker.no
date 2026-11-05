@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { GridOsmAddressLocator } from '../../../../src/imports/importers/osm/grid-osm-address.locator.js';
-import type { OsmAddressPoint } from '../../../../src/imports/importers/osm/osm.model.js';
+import { GridOsmAddressLocator } from '../../../../src/imports/importers/osm-overpass/grid-osm-address.locator.js';
+import type { OsmAddressPoint } from '../../../../src/imports/importers/osm-overpass/osm.model.js';
 
 const locator = new GridOsmAddressLocator(0.0005);
 const METRE_LAT = 1 / 111_195;

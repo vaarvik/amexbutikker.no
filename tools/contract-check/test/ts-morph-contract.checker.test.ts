@@ -106,4 +106,17 @@ describe('contract-check', () => {
       { ruleId: rule, file: 'tools/demo/src/printer.ts', line: 5 },
     ]);
   });
+
+  it('(g) flags importer folders not named after their source', () => {
+    const rule = 'importer-folder-naming';
+    const dir = 'apps/api/src/imports/importers';
+    expect(checkFixture('fail-g', rule)).toEqual([
+      { ruleId: rule, file: `${dir}/brreg-underenheter/b-brreg.importer.ts`, line: 1 },
+      { ruleId: rule, file: `${dir}/empty/empty.model.ts`, line: 1 },
+      { ruleId: rule, file: `${dir}/loose.model.ts`, line: 1 },
+      { ruleId: rule, file: `${dir}/osm/overpass-osm.importer.ts`, line: 2 },
+      { ruleId: rule, file: `${dir}/statement/parsers/csv-statement.parser.ts`, line: 1 },
+      { ruleId: rule, file: `${dir}/statement/statement.importer.ts`, line: 4 },
+    ]);
+  });
 });

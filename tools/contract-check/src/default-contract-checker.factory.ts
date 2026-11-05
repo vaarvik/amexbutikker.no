@@ -7,6 +7,7 @@ import { ConstructionOutsideCompositionRootRule } from './rules/construction-out
 import { ContractsClassRule } from './rules/contracts-class.rule.js';
 import { ContractsFileNamingRule } from './rules/contracts-file-naming.rule.js';
 import { ForbiddenImportRule } from './rules/forbidden-import.rule.js';
+import { ImporterFolderNamingRule } from './rules/importer-folder-naming.rule.js';
 import { WorkspaceProjectLoader } from './workspace-project.loader.js';
 import { RootRelativeWorkspacePaths } from './root-relative-workspace.paths.js';
 
@@ -28,6 +29,7 @@ export class DefaultContractCheckerFactory implements ContractCheckerFactory {
         new ContractsClassRule(heritage),
         new ContractsFileNamingRule(),
         new ClassFileNamingRule(heritage),
+        new ImporterFolderNamingRule(),
       ],
     );
   }

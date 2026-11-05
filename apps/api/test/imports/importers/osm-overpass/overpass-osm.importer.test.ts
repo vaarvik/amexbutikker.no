@@ -15,14 +15,14 @@ import {
 } from '@amexbutikker/in-memory';
 import type { InMemoryTables } from '@amexbutikker/in-memory';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DefaultOsmElementTranslator } from '../../../../src/imports/importers/osm/default-osm-element.translator.js';
+import { DefaultOsmElementTranslator } from '../../../../src/imports/importers/osm-overpass/default-osm-element.translator.js';
 import type {
   OverpassClient,
   OverpassResponse,
-} from '../../../../src/imports/importers/osm/osm.ports.js';
+} from '../../../../src/imports/importers/osm-overpass/osm.ports.js';
 import { TransactionalImportUnitOfWork } from '../../../../src/imports/transactional-import.unit-of-work.js';
-import { GridOsmAddressLocator } from '../../../../src/imports/importers/osm/grid-osm-address.locator.js';
-import { OverpassOsmImporter } from '../../../../src/imports/importers/osm/overpass-osm.importer.js';
+import { GridOsmAddressLocator } from '../../../../src/imports/importers/osm-overpass/grid-osm-address.locator.js';
+import { OverpassOsmImporter } from '../../../../src/imports/importers/osm-overpass/overpass-osm.importer.js';
 import { UuidV7IdGenerator } from '../../../../src/shared/uuid-v7-id.generator.js';
 
 const fetchedAt = new Date('2026-11-04T06:00:00Z');

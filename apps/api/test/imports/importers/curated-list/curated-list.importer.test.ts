@@ -19,7 +19,7 @@ import {
 import type { InMemoryTables } from '@amexbutikker/in-memory';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { TextFileLoader } from '../../../../src/imports/imports.ports.js';
-import { CuratedListImporter } from '../../../../src/imports/importers/curated/curated-list.importer.js';
+import { CuratedListImporter } from '../../../../src/imports/importers/curated-list/curated-list.importer.js';
 import { TransactionalImportUnitOfWork } from '../../../../src/imports/transactional-import.unit-of-work.js';
 import { UuidV7IdGenerator } from '../../../../src/shared/uuid-v7-id.generator.js';
 

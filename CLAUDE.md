@@ -38,7 +38,7 @@ packages/domain/src/<feature>/         domain services
 packages/application/src/<feature>/    use case classes
 packages/in-memory/src/<feature>/      InMemory* adapters
 apps/api/src/<feature>/                controllers, Pg* adapters, other adapters, side by side
-apps/api/src/imports/importers/<source>/
+apps/api/src/imports/importers/<source>/   one importer per source; folder = source id in kebab-case (rule (g))
 apps/api/src/migrations/               all migrations, one ordered sequence (not per feature)
 apps/api/src/composition-root.ts
 <package>/test/<feature>/              tests, mirroring src (see Testing)
@@ -98,6 +98,8 @@ Code names:
 - Methods do not repeat the noun: `placeReader.getById()`, not `getPlaceById()`.
 
 contract-check rule (e) enforces the contracts file names.
+
+Importers: each folder in `apps/api/src/imports/importers/` is the source id in kebab-case (`osm_overpass` → `osm-overpass/`) and holds exactly one `*.importer.ts` whose `source` is that id. Importer folders are one level deep. contract-check rule (g) enforces this.
 
 ## Architecture patterns
 
@@ -259,7 +261,7 @@ pnpm test                    # Vitest, all projects; needs Docker (Testcontainer
 pnpm test:unit               # everything except *.integration.test.ts; no Docker needed
 pnpm test:coverage           # all tests plus coverage floors (what CI runs)
 pnpm test:perf               # *.perf.test.ts: 50k seeded places, p95 budget and query plans; needs Docker
-pnpm contract-check          # architecture rules (a)-(f) from tools/contract-check
+pnpm contract-check          # architecture rules (a)-(g) from tools/contract-check
 pnpm db:up                   # Postgres 16 + PostGIS/pg_trgm/unaccent via Docker Compose
 pnpm db:down                 # stop it (data persists in the db-data volume)
 pnpm db:migrate              # build api, migrate DATABASE_URL (from .env) to latest

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CachedBrregUnderenhetReader } from '../../../../src/imports/importers/brreg/cached-brreg-underenhet.reader.js';
+import { CachedBrregUnderenhetReader } from '../../../../src/imports/importers/brreg-underenheter/cached-brreg-underenhet.reader.js';
 
 const HOUR = 3_600_000;
 const CSV =

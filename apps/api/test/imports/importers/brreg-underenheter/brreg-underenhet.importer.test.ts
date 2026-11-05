@@ -16,12 +16,12 @@ import {
 } from '@amexbutikker/in-memory';
 import type { InMemoryTables } from '@amexbutikker/in-memory';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AddressBrregPlaceMatcher } from '../../../../src/imports/importers/brreg/address-brreg-place.matcher.js';
-import { BrregUnderenhetImporter } from '../../../../src/imports/importers/brreg/brreg-underenhet.importer.js';
+import { AddressBrregPlaceMatcher } from '../../../../src/imports/importers/brreg-underenheter/address-brreg-place.matcher.js';
+import { BrregUnderenhetImporter } from '../../../../src/imports/importers/brreg-underenheter/brreg-underenhet.importer.js';
 import type {
   BrregUnderenhetFile,
   BrregUnderenhetReader,
-} from '../../../../src/imports/importers/brreg/brreg.ports.js';
+} from '../../../../src/imports/importers/brreg-underenheter/brreg.ports.js';
 import { TransactionalImportUnitOfWork } from '../../../../src/imports/transactional-import.unit-of-work.js';
 
 const now = new Date('2026-11-04T08:00:00Z');
