@@ -18,7 +18,7 @@ export class SearchPlacesUseCase implements SearchPlaces {
   public async execute(input: PlaceSearchQuery): Promise<PlaceListOutput> {
     const query = this.validator.validate(PlaceSearchQuerySchema, input);
     const hits = await this.places.search(query);
-    const snapshots = await this.statuses.findMany(hits.map((hit) => hit.place.id));
+    const snapshots = await this.statuses.listByPlaces(hits.map((hit) => hit.place.id));
     return {
       results: hits.map((hit) => ({
         place: hit.place,

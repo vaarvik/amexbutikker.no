@@ -127,4 +127,15 @@ describe('contract-check', () => {
       { ruleId: rule, file: `${dir}/statement/statement.importer.ts`, line: 4 },
     ]);
   });
+
+  it('(h) flags Reader and Writer port methods that do not start with an allowed verb', () => {
+    const rule = 'port-method-verb';
+    const places = 'packages/contracts/src/places/places.ports.ts';
+    expect(checkFixture('fail-h', rule)).toEqual([
+      { ruleId: rule, file: 'apps/api/src/feeds/feeds.ports.ts', line: 2 },
+      { ruleId: rule, file: places, line: 3 },
+      { ruleId: rule, file: places, line: 4 },
+      { ruleId: rule, file: places, line: 9 },
+    ]);
+  });
 });

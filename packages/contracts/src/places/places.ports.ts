@@ -33,7 +33,7 @@ export interface PlaceReader {
    *
    * @returns at most `query.limit` hits, nearest first. Online places are never returned.
    */
-  nearby(query: NearbyQuery): Promise<NearbyPlaceHit[]>;
+  listNearby(query: NearbyQuery): Promise<NearbyPlaceHit[]>;
 
   /**
    * The physical places that belong to a chain, in no particular order.
@@ -94,5 +94,5 @@ export interface PlaceWriter {
    *
    * @throws NotFoundError when the place does not exist or is online.
    */
-  attachBrregOrgnr(placeId: PlaceId, orgnr: string): Promise<void>;
+  saveBrregOrgnr(placeId: PlaceId, orgnr: string): Promise<void>;
 }

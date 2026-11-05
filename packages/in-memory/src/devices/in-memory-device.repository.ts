@@ -5,7 +5,7 @@ import type { InMemoryTables } from '../shared/shared.ports.js';
 export class InMemoryDeviceRepository implements DeviceWriter {
   public constructor(private readonly tables: InMemoryTables) {}
 
-  public register(device: Device): Promise<void> {
+  public create(device: Device): Promise<void> {
     if (this.tables.devices.has(device.userId)) {
       return Promise.reject(new ConflictError(`Device ${device.userId} is already registered.`));
     }

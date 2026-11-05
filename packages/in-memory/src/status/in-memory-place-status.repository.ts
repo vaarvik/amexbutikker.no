@@ -15,7 +15,7 @@ export class InMemoryPlaceStatusRepository implements PlaceStatusReader, PlaceSt
     return Promise.resolve(this.tables.statuses.get(placeId) ?? null);
   }
 
-  public findMany(
+  public listByPlaces(
     placeIds: readonly PlaceId[],
   ): Promise<ReadonlyMap<PlaceId, PlaceStatusSnapshot>> {
     const found = new Map<PlaceId, PlaceStatusSnapshot>();

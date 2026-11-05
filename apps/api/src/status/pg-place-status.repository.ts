@@ -36,7 +36,7 @@ export class PgPlaceStatusRepository implements PlaceStatusReader, PlaceStatusWr
     return row === undefined ? null : this.toSnapshot(row);
   }
 
-  public async findMany(
+  public async listByPlaces(
     placeIds: readonly PlaceId[],
   ): Promise<ReadonlyMap<PlaceId, PlaceStatusSnapshot>> {
     if (placeIds.length === 0) {

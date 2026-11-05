@@ -72,7 +72,7 @@ export class BrregUnderenhetImporter implements SourceImporter {
     };
 
     try {
-      const file = await this.reader.open(context.signal);
+      const file = await this.reader.getFile(context.signal);
       fetchedAt = file.fetchedAt;
       const byPostcode = new Map<string, BrregUnderenhet[]>();
       for await (const row of file.rows) {
@@ -157,7 +157,7 @@ export class BrregUnderenhetImporter implements SourceImporter {
           counts.unchanged += 1;
           continue;
         }
-        await ports.places.attachBrregOrgnr(place.id, unit.orgnr);
+        await ports.places.saveBrregOrgnr(place.id, unit.orgnr);
         counts.updated += 1;
       }
     }

@@ -220,7 +220,7 @@ export function describePlaceReaderContract(
       });
     });
 
-    describe('nearby', () => {
+    describe('listNearby', () => {
       it('returns physical places within the radius, nearest first', async () => {
         const data = new TestData();
         const far = data.physicalPlace({ location: offset(OSLO_S, 800) });
@@ -232,7 +232,7 @@ export function describePlaceReaderContract(
         }
         await fixture.current.writer.create(data.onlinePlace());
 
-        const hits = await fixture.current.reader.nearby({
+        const hits = await fixture.current.reader.listNearby({
           center: OSLO_S,
           radiusM: 1000,
           limit: 10,
@@ -250,7 +250,7 @@ export function describePlaceReaderContract(
           );
         }
 
-        const hits = await fixture.current.reader.nearby({
+        const hits = await fixture.current.reader.listNearby({
           center: OSLO_S,
           radiusM: 1000,
           limit: 2,
@@ -265,7 +265,7 @@ export function describePlaceReaderContract(
         );
 
         await expect(
-          fixture.current.reader.nearby({ center: OSLO_S, radiusM: 500, limit: 10 }),
+          fixture.current.reader.listNearby({ center: OSLO_S, radiusM: 500, limit: 10 }),
         ).resolves.toEqual([]);
       });
     });
@@ -355,7 +355,7 @@ export function describePlaceWriterContract(
         const data = new TestData();
         const record = sourceRecord(data);
         const { placeId } = await fixture.current.writer.upsertFromSource(record, data.placeId());
-        await fixture.current.writer.attachBrregOrgnr(placeId, '987654321');
+        await fixture.current.writer.saveBrregOrgnr(placeId, '987654321');
         const before = await fixture.current.reader.getById(placeId);
 
         const result = await fixture.current.writer.upsertFromSource(
@@ -370,12 +370,12 @@ export function describePlaceWriterContract(
       });
     });
 
-    describe('attachBrregOrgnr', () => {
+    describe('saveBrregOrgnr', () => {
       it('sets the organisation number', async () => {
         const place = new TestData().physicalPlace();
         await fixture.current.writer.create(place);
 
-        await fixture.current.writer.attachBrregOrgnr(place.id, '912345678');
+        await fixture.current.writer.saveBrregOrgnr(place.id, '912345678');
 
         await expect(fixture.current.reader.getById(place.id)).resolves.toMatchObject({
           brregOrgnr: '912345678',
@@ -384,7 +384,7 @@ export function describePlaceWriterContract(
 
       it('throws NotFoundError for an unknown place', async () => {
         await expect(
-          fixture.current.writer.attachBrregOrgnr(new TestData().placeId(), '912345678'),
+          fixture.current.writer.saveBrregOrgnr(new TestData().placeId(), '912345678'),
         ).rejects.toBeInstanceOf(NotFoundError);
       });
 
@@ -393,7 +393,7 @@ export function describePlaceWriterContract(
         await fixture.current.writer.create(place);
 
         await expect(
-          fixture.current.writer.attachBrregOrgnr(place.id, '912345678'),
+          fixture.current.writer.saveBrregOrgnr(place.id, '912345678'),
         ).rejects.toBeInstanceOf(NotFoundError);
       });
     });

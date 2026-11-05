@@ -29,7 +29,7 @@ export class CachedBrregUnderenhetReader implements BrregUnderenhetReader {
     private readonly clock: Clock,
   ) {}
 
-  public async open(signal?: AbortSignal): Promise<BrregUnderenhetFile> {
+  public async getFile(signal?: AbortSignal): Promise<BrregUnderenhetFile> {
     const { cacheFile } = this.config;
     let fetchedAt = await this.modifiedAt(cacheFile);
     if (

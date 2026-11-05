@@ -17,7 +17,7 @@ export interface PlaceStatusReader {
    *
    * @returns a map containing only the places that have a snapshot.
    */
-  findMany(placeIds: readonly PlaceId[]): Promise<ReadonlyMap<PlaceId, PlaceStatusSnapshot>>;
+  listByPlaces(placeIds: readonly PlaceId[]): Promise<ReadonlyMap<PlaceId, PlaceStatusSnapshot>>;
 
   /**
    * Snapshots of every place in the chain that has one. Order is unspecified.

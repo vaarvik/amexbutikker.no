@@ -23,7 +23,7 @@ export class MatchSharedPlaceUseCase implements MatchSharedPlace {
   public async execute(input: MatchSharedPlaceInput): Promise<MatchSharedPlaceOutput> {
     const parsed = await this.enrich(this.parser.parse(input.text));
     const candidates = (await this.matcher.match(parsed)).slice(0, 3);
-    const snapshots = await this.statuses.findMany(
+    const snapshots = await this.statuses.listByPlaces(
       candidates.map((candidate) => candidate.place.id),
     );
     return {

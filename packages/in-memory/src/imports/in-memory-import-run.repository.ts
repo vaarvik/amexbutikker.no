@@ -10,7 +10,7 @@ import type { InMemoryTables } from '../shared/shared.ports.js';
 export class InMemoryImportRunRepository implements ImportRunWriter {
   public constructor(private readonly tables: InMemoryTables) {}
 
-  public start(
+  public create(
     runId: ImportRunId,
     source: ImportSource,
     startedAt: Date,
@@ -23,7 +23,7 @@ export class InMemoryImportRunRepository implements ImportRunWriter {
     return Promise.resolve();
   }
 
-  public finish(report: ImportRunReport): Promise<void> {
+  public saveReport(report: ImportRunReport): Promise<void> {
     const run = this.tables.importRuns.get(report.runId);
     if (run === undefined) {
       return Promise.reject(new NotFoundError('Import run', report.runId));

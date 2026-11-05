@@ -9,7 +9,7 @@ export interface ImportRunWriter {
    *
    * @throws ConflictError when the run id exists.
    */
-  start(runId: ImportRunId, source: ImportSource, startedAt: Date, dryRun: boolean): Promise<void>;
+  create(runId: ImportRunId, source: ImportSource, startedAt: Date, dryRun: boolean): Promise<void>;
 
   /**
    * Stores the final report of a started run.
@@ -17,7 +17,7 @@ export interface ImportRunWriter {
    * @throws NotFoundError when the run was never started.
    * @throws ConflictError when the run already finished.
    */
-  finish(report: ImportRunReport): Promise<void>;
+  saveReport(report: ImportRunReport): Promise<void>;
 }
 
 export interface ImportContext {
@@ -56,7 +56,7 @@ export interface UnmatchedDescriptorWriter {
    * @returns `created` for a new descriptor, `updated` when the day widens its seen range,
    *   `unchanged` otherwise, so importing the same statement twice changes nothing.
    */
-  record(descriptor: string, seenOn: Date): Promise<UpsertOutcome>;
+  upsert(descriptor: string, seenOn: Date): Promise<UpsertOutcome>;
 }
 
 export interface UnmatchedDescriptorReader {

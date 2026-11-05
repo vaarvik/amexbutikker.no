@@ -74,7 +74,7 @@ export class StatementImporter implements SourceImporter {
           counts.created += 1;
           continue;
         }
-        counts[await this.review.record(line.descriptor, line.postedOn)] += 1;
+        counts[await this.review.upsert(line.descriptor, line.postedOn)] += 1;
       }
       if (counts.skipped > 0) {
         messages.push(

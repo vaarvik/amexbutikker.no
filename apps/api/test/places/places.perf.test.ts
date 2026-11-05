@@ -283,7 +283,7 @@ describe(`places read paths with ${String(PLACE_COUNT)} places`, () => {
 
   it('finds nearby places through the spatial index, not a sequential scan', async () => {
     const plan = await planOf((places) =>
-      places.nearby({ center: point(1), radiusM: 1000, limit: 50 }),
+      places.listNearby({ center: point(1), radiusM: 1000, limit: 50 }),
     );
     console.log(`EXPLAIN ANALYZE nearby:\n${plan}`);
 

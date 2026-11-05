@@ -74,7 +74,7 @@ export function describePlaceStatusContract(
       await expect(fixture.current.reader.find(place.id)).resolves.toEqual(snapshot);
     });
 
-    it('findMany returns only places that have a snapshot', async () => {
+    it('listByPlaces returns only places that have a snapshot', async () => {
       const data = new TestData();
       const withStatus = data.physicalPlace();
       const without = data.physicalPlace();
@@ -83,7 +83,7 @@ export function describePlaceStatusContract(
       const snapshot = data.statusSnapshot(withStatus.id);
       await fixture.current.writer.save(snapshot);
 
-      const found = await fixture.current.reader.findMany([
+      const found = await fixture.current.reader.listByPlaces([
         withStatus.id,
         without.id,
         data.placeId(),
@@ -92,8 +92,8 @@ export function describePlaceStatusContract(
       expect([...found.entries()]).toEqual([[withStatus.id, snapshot]]);
     });
 
-    it('findMany of nothing is an empty map', async () => {
-      await expect(fixture.current.reader.findMany([])).resolves.toEqual(new Map());
+    it('listByPlaces of nothing is an empty map', async () => {
+      await expect(fixture.current.reader.listByPlaces([])).resolves.toEqual(new Map());
     });
 
     it('listForChain returns snapshots of that chain only', async () => {

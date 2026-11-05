@@ -59,9 +59,9 @@ describe('CachedBrregUnderenhetReader', () => {
   }
 
   it('downloads once, then streams rows keyed by header with quotes and BOM handled', async () => {
-    const first = await reader().open();
+    const first = await reader().getFile();
     const rows = await collect(first.rows);
-    const second = await reader().open();
+    const second = await reader().getFile();
 
     expect(rows).toEqual([
       { organisasjonsnummer: '912345678', navn: 'KAFE, ASEN AS' },
@@ -73,19 +73,19 @@ describe('CachedBrregUnderenhetReader', () => {
   });
 
   it('downloads again when the cached file is too old, and reports its age otherwise', async () => {
-    await collect((await reader().open()).rows);
+    await collect((await reader().getFile()).rows);
     const old = new Date(now.getTime() - 2 * HOUR);
     await utimes(join(directory, 'nested', 'u.csv.gz'), old, old);
 
-    expect((await reader(3 * HOUR).open()).fetchedAt.getTime()).toBeCloseTo(old.getTime(), -4);
-    await collect((await reader(HOUR).open()).rows);
+    expect((await reader(3 * HOUR).getFile()).fetchedAt.getTime()).toBeCloseTo(old.getTime(), -4);
+    await collect((await reader(HOUR).getFile()).rows);
     expect(downloads).toBe(2);
   });
 
   it('fails when the download fails', async () => {
     status = 503;
 
-    await expect(reader().open()).rejects.toThrow(
+    await expect(reader().getFile()).rejects.toThrow(
       'Brønnøysund answered 503 Service Unavailable for https://brreg.test/lastned/csv.',
     );
   });

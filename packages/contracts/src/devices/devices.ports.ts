@@ -22,5 +22,5 @@ export interface DeviceTokenService {
 /** Records registered devices. */
 export interface DeviceWriter {
   /** @throws ConflictError when a device with this user id exists. */
-  register(device: Device): Promise<void>;
+  create(device: Device): Promise<void>;
 }

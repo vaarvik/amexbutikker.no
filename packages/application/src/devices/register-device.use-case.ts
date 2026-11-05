@@ -21,7 +21,7 @@ export class RegisterDeviceUseCase implements RegisterDevice {
   public async execute(input: RegisterDeviceInput): Promise<RegisterDeviceOutput> {
     await this.rateLimiter.consume({ action: 'register_device', key: input.clientKey });
     const userId = this.ids.userId();
-    await this.devices.register({ userId, platform: input.platform, createdAt: this.clock.now() });
+    await this.devices.create({ userId, platform: input.platform, createdAt: this.clock.now() });
     const { token } = await this.tokens.issue(userId);
     return { userId, token };
   }

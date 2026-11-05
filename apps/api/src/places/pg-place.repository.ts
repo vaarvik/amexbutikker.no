@@ -96,7 +96,7 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
     });
   }
 
-  public async nearby(query: NearbyQuery): Promise<NearbyPlaceHit[]> {
+  public async listNearby(query: NearbyQuery): Promise<NearbyPlaceHit[]> {
     const center = this.point(query.center);
     const { rows } = await sql`
       SELECT ${PLACE_COLUMNS}, ST_Distance(p.geom, ${center}) AS distance_m
@@ -182,7 +182,7 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
     return { placeId: id as PlaceId, outcome: 'unchanged' };
   }
 
-  public async attachBrregOrgnr(placeId: PlaceId, orgnr: string): Promise<void> {
+  public async saveBrregOrgnr(placeId: PlaceId, orgnr: string): Promise<void> {
     const result = await sql`
       UPDATE places SET brreg_orgnr = ${orgnr} WHERE id = ${placeId} AND kind = 'physical'
     `.execute(this.db);

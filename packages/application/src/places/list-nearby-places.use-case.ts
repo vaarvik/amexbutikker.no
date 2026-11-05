@@ -17,8 +17,8 @@ export class ListNearbyPlacesUseCase implements ListNearbyPlaces {
 
   public async execute(input: NearbyQuery): Promise<PlaceListOutput> {
     const query = this.validator.validate(NearbyQuerySchema, input);
-    const hits = await this.places.nearby(query);
-    const snapshots = await this.statuses.findMany(hits.map((hit) => hit.place.id));
+    const hits = await this.places.listNearby(query);
+    const snapshots = await this.statuses.listByPlaces(hits.map((hit) => hit.place.id));
     return {
       results: hits.map((hit) => ({
         place: hit.place,

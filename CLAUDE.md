@@ -120,10 +120,12 @@ Ports and adapters (the layering above), DDD inside it (below), and CQS / CQRS-l
 | --------- | ------------------------------- | ---------------------- |
 | `get…`    | exactly one item                | throws `NotFoundError` |
 | `find…`   | one item or `null`              | `null`                 |
-| `list…`   | an array, possibly empty        | `[]`                   |
+| `list…`   | an array, or a map keyed by id  | `[]` / empty map       |
 | `search…` | ranked hits for free-text input | `[]`                   |
 
-Writes use `create`, `save` (replace), `append` (evidence) and `upsert…` (imports).
+Writes use `create`, `save…` (replace), `append` (evidence) and `upsert…` (imports).
+
+contract-check rule (h) holds every `*Reader` port method to the read verbs and every `*Writer` port method to the write verbs, in any `*.ports.ts`. Other ports (`OverpassClient.fetch`, `OsmAddressLocator.nearest`) name their action freely.
 
 ## Domain-driven design
 
@@ -262,7 +264,7 @@ pnpm test                    # Vitest, all projects; needs Docker (Testcontainer
 pnpm test:unit               # everything except *.integration.test.ts; no Docker needed
 pnpm test:coverage           # all tests plus coverage floors (what CI runs)
 pnpm test:perf               # *.perf.test.ts: 50k seeded places, p95 budget and query plans; needs Docker
-pnpm contract-check          # architecture rules (a)-(g) from tools/contract-check
+pnpm contract-check          # architecture rules (a)-(h) from tools/contract-check
 pnpm db:up                   # Postgres 16 + PostGIS/pg_trgm/unaccent via Docker Compose
 pnpm db:down                 # stop it (data persists in the db-data volume)
 pnpm db:migrate              # build api, migrate DATABASE_URL (from .env) to latest

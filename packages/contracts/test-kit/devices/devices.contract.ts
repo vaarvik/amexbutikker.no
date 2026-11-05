@@ -21,16 +21,16 @@ export function describeDeviceWriterContract(
       const userId = new TestData().userId();
 
       await expect(
-        fixture.current.writer.register({ userId, platform: 'ios', createdAt: T0 }),
+        fixture.current.writer.create({ userId, platform: 'ios', createdAt: T0 }),
       ).resolves.toBeUndefined();
     });
 
     it('throws ConflictError for a user id that is already registered', async () => {
       const userId = new TestData().userId();
-      await fixture.current.writer.register({ userId, platform: 'android', createdAt: T0 });
+      await fixture.current.writer.create({ userId, platform: 'android', createdAt: T0 });
 
       await expect(
-        fixture.current.writer.register({ userId, platform: 'web', createdAt: T0 }),
+        fixture.current.writer.create({ userId, platform: 'web', createdAt: T0 }),
       ).rejects.toBeInstanceOf(ConflictError);
     });
   });

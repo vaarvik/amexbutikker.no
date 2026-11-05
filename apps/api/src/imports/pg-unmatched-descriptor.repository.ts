@@ -21,7 +21,7 @@ export class PgUnmatchedDescriptorRepository
 {
   public constructor(private readonly db: Kysely<Database>) {}
 
-  public async record(descriptor: string, seenOn: Date): Promise<UpsertOutcome> {
+  public async upsert(descriptor: string, seenOn: Date): Promise<UpsertOutcome> {
     const key = descriptor.trim().replace(/\s+/g, ' ').toUpperCase();
     const day = seenOn.toISOString().slice(0, 10);
     const { rows } = await sql`

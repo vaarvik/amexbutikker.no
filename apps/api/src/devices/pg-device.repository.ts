@@ -11,7 +11,7 @@ export class PgDeviceRepository implements DeviceWriter {
     private readonly errors: DatabaseErrorTranslator,
   ) {}
 
-  public async register(device: Device): Promise<void> {
+  public async create(device: Device): Promise<void> {
     try {
       await sql`
         INSERT INTO devices (user_id, platform, created_at) VALUES (${device.userId}, ${device.platform}, ${device.createdAt})

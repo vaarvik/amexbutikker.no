@@ -13,7 +13,7 @@ export class InMemoryUnmatchedDescriptorRepository
 {
   public constructor(private readonly tables: InMemoryTables) {}
 
-  public record(descriptor: string, seenOn: Date): Promise<UpsertOutcome> {
+  public upsert(descriptor: string, seenOn: Date): Promise<UpsertOutcome> {
     const key = descriptor.trim().replace(/\s+/g, ' ').toUpperCase();
     const day = new Date(Math.floor(seenOn.getTime() / DAY_MS) * DAY_MS);
     const existing = this.tables.unmatchedDescriptors.get(key);

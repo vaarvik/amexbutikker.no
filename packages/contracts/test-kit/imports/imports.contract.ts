@@ -49,32 +49,32 @@ export function describeImportRunWriterContract(
     it('records a started run and its report', async () => {
       const runId = new TestData().importRunId();
 
-      await fixture.current.writer.start(runId, 'osm_overpass', T0, false);
+      await fixture.current.writer.create(runId, 'osm_overpass', T0, false);
 
-      await expect(fixture.current.writer.finish(report(runId))).resolves.toBeUndefined();
+      await expect(fixture.current.writer.saveReport(report(runId))).resolves.toBeUndefined();
     });
 
-    it('start throws ConflictError for an existing run id', async () => {
+    it('create throws ConflictError for an existing run id', async () => {
       const runId = new TestData().importRunId();
-      await fixture.current.writer.start(runId, 'osm_overpass', T0, false);
+      await fixture.current.writer.create(runId, 'osm_overpass', T0, false);
 
       await expect(
-        fixture.current.writer.start(runId, 'osm_overpass', T0, false),
+        fixture.current.writer.create(runId, 'osm_overpass', T0, false),
       ).rejects.toBeInstanceOf(ConflictError);
     });
 
-    it('finish throws NotFoundError for a run that never started', async () => {
+    it('saveReport throws NotFoundError for a run that never started', async () => {
       await expect(
-        fixture.current.writer.finish(report(new TestData().importRunId())),
+        fixture.current.writer.saveReport(report(new TestData().importRunId())),
       ).rejects.toBeInstanceOf(NotFoundError);
     });
 
-    it('finish throws ConflictError for a run that already finished', async () => {
+    it('saveReport throws ConflictError for a run that already finished', async () => {
       const runId = new TestData().importRunId();
-      await fixture.current.writer.start(runId, 'osm_overpass', T0, false);
-      await fixture.current.writer.finish(report(runId));
+      await fixture.current.writer.create(runId, 'osm_overpass', T0, false);
+      await fixture.current.writer.saveReport(report(runId));
 
-      await expect(fixture.current.writer.finish(report(runId))).rejects.toBeInstanceOf(
+      await expect(fixture.current.writer.saveReport(report(runId))).rejects.toBeInstanceOf(
         ConflictError,
       );
     });
@@ -97,7 +97,7 @@ export function describeUnmatchedDescriptorContract(
 
     it('records a new descriptor, normalised, with its UTC day', async () => {
       await expect(
-        fixture.current.writer.record(
+        fixture.current.writer.upsert(
           '  Rema 1000   grønland\tOSLO ',
           new Date('2026-10-01T22:30:00Z'),
         ),
@@ -114,11 +114,11 @@ export function describeUnmatchedDescriptorContract(
 
     it('widens the seen range and is idempotent within it', async () => {
       const { writer, reader } = fixture.current;
-      await writer.record('KIWI 123', day('2026-10-05'));
+      await writer.upsert('KIWI 123', day('2026-10-05'));
 
-      await expect(writer.record('kiwi 123', day('2026-10-01'))).resolves.toBe('updated');
-      await expect(writer.record('KIWI 123', day('2026-10-09'))).resolves.toBe('updated');
-      await expect(writer.record('KIWI 123', day('2026-10-05'))).resolves.toBe('unchanged');
+      await expect(writer.upsert('kiwi 123', day('2026-10-01'))).resolves.toBe('updated');
+      await expect(writer.upsert('KIWI 123', day('2026-10-09'))).resolves.toBe('updated');
+      await expect(writer.upsert('KIWI 123', day('2026-10-05'))).resolves.toBe('unchanged');
       await expect(reader.list()).resolves.toEqual([
         { descriptor: 'KIWI 123', firstSeenOn: day('2026-10-01'), lastSeenOn: day('2026-10-09') },
       ]);
@@ -126,9 +126,9 @@ export function describeUnmatchedDescriptorContract(
 
     it('lists the most recently seen first, then by descriptor', async () => {
       const { writer, reader } = fixture.current;
-      await writer.record('B', day('2026-10-01'));
-      await writer.record('C', day('2026-10-03'));
-      await writer.record('A', day('2026-10-01'));
+      await writer.upsert('B', day('2026-10-01'));
+      await writer.upsert('C', day('2026-10-03'));
+      await writer.upsert('A', day('2026-10-01'));
 
       const listed = await reader.list();
 

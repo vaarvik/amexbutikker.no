@@ -78,7 +78,7 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
     return Array.from(text.matchAll(WORD), ([word]) => word);
   }
 
-  public nearby(query: NearbyQuery): Promise<NearbyPlaceHit[]> {
+  public listNearby(query: NearbyQuery): Promise<NearbyPlaceHit[]> {
     const hits: NearbyPlaceHit[] = [];
     for (const place of this.tables.places.values()) {
       if (place.kind !== 'physical') {
@@ -141,7 +141,7 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
     return Promise.resolve({ placeId: existing.id, outcome: 'updated' });
   }
 
-  public attachBrregOrgnr(placeId: PlaceId, orgnr: string): Promise<void> {
+  public saveBrregOrgnr(placeId: PlaceId, orgnr: string): Promise<void> {
     const place = this.tables.places.get(placeId);
     if (place?.kind !== 'physical') {
       return Promise.reject(new NotFoundError('Physical place', placeId));

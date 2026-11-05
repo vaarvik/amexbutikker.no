@@ -45,7 +45,7 @@ function row(overrides: Record<string, string>): Record<string, string> {
 class StubBrregUnderenhetReader implements BrregUnderenhetReader {
   public constructor(public rows: Record<string, string>[] | Error) {}
 
-  public open(): Promise<BrregUnderenhetFile> {
+  public getFile(): Promise<BrregUnderenhetFile> {
     if (this.rows instanceof Error) {
       return Promise.reject(this.rows);
     }

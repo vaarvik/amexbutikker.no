@@ -13,7 +13,7 @@ export interface BrregUnderenhetReader {
    * @throws Error when the file cannot be downloaded or read.
    * @throws the signal's reason when aborted.
    */
-  open(signal?: AbortSignal): Promise<BrregUnderenhetFile>;
+  getFile(signal?: AbortSignal): Promise<BrregUnderenhetFile>;
 }
 
 export type BrregPlaceMatch =

@@ -7,6 +7,7 @@ import { ContractsClassRule } from './rules/contracts-class.rule.js';
 import { ContractsFileNamingRule } from './rules/contracts-file-naming.rule.js';
 import { ForbiddenImportRule } from './rules/forbidden-import.rule.js';
 import { ImporterFolderNamingRule } from './rules/importer-folder-naming.rule.js';
+import { PortMethodVerbRule } from './rules/port-method-verb.rule.js';
 import { WorkspaceProjectLoader } from './workspace-project.loader.js';
 import { RootRelativeWorkspacePaths } from './root-relative-workspace.paths.js';
 import type { ContractChecker, ContractCheckerFactory } from './contract-check.ports.js';
@@ -25,6 +26,7 @@ export class TsMorphContractCheckerFactory implements ContractCheckerFactory {
         new ContractsFileNamingRule(),
         new ClassFileNamingRule(heritage),
         new ImporterFolderNamingRule(),
+        new PortMethodVerbRule(),
       ],
     );
   }

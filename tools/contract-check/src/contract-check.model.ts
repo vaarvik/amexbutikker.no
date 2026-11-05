@@ -5,7 +5,8 @@ export type RuleId =
   | 'contracts-class'
   | 'contracts-file-naming'
   | 'class-file-naming'
-  | 'importer-folder-naming';
+  | 'importer-folder-naming'
+  | 'port-method-verb';
 
 export interface Violation {
   readonly ruleId: RuleId;

@@ -24,14 +24,14 @@ export class RunImportUseCase implements RunImport {
     }
     const runId = this.ids.importRunId();
     const startedAt = this.clock.now();
-    await this.runs.start(runId, input.source, startedAt, input.dryRun);
+    await this.runs.create(runId, input.source, startedAt, input.dryRun);
 
     try {
       const report = await importer.run({ runId, startedAt, dryRun: input.dryRun });
-      await this.runs.finish(report);
+      await this.runs.saveReport(report);
       return report;
     } catch (error) {
-      await this.runs.finish({
+      await this.runs.saveReport({
         runId,
         source: input.source,
         dryRun: input.dryRun,

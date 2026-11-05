@@ -16,7 +16,7 @@ export class PgImportRunRepository implements ImportRunWriter {
     private readonly errors: DatabaseErrorTranslator,
   ) {}
 
-  public async start(
+  public async create(
     runId: ImportRunId,
     source: ImportSource,
     startedAt: Date,
@@ -33,7 +33,7 @@ export class PgImportRunRepository implements ImportRunWriter {
     }
   }
 
-  public async finish(report: ImportRunReport): Promise<void> {
+  public async saveReport(report: ImportRunReport): Promise<void> {
     const result = await sql`
       UPDATE import_runs SET
         finished_at = ${report.finishedAt}, status = ${report.status}, fetched_at = ${report.fetchedAt},
