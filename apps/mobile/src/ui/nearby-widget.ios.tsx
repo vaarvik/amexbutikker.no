@@ -111,9 +111,20 @@ function NearbyWidget(props: NearbyWidgetProps, environment: WidgetEnvironment) 
   );
 }
 
-/** The iOS widget; `nearby-widget.tsx` is the stand-in for other platforms. */
-export const nearbyWidget: ExpoWidget<NearbyWidgetProps> | null = createWidget<NearbyWidgetProps>(
-  'NearbyWidget',
-  NearbyWidget,
-  { here: null, accepted: [], updated: '' },
-);
+/**
+ * The iOS widget; `nearby-widget.tsx` is the stand-in for other platforms. A build without the
+ * widget extension (an older development build) gets no widget instead of a crash.
+ */
+function create(): ExpoWidget<NearbyWidgetProps> | null {
+  try {
+    return createWidget<NearbyWidgetProps>('NearbyWidget', NearbyWidget, {
+      here: null,
+      accepted: [],
+      updated: '',
+    });
+  } catch {
+    return null;
+  }
+}
+
+export const nearbyWidget: ExpoWidget<NearbyWidgetProps> | null = create();
