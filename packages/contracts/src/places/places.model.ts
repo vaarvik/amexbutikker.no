@@ -138,6 +138,44 @@ export const NearbyQuerySchema: z.ZodType<NearbyQuery> = z.object({
   limit: z.int().min(1).max(MAX_RESULT_LIMIT),
 });
 
+export const MAX_AREA_LIMIT = 500;
+/** About 33 km north-south and 17 km east-west at Oslo: a city, not a country. */
+export const MAX_AREA_SPAN_DEG = 0.3;
+
+/** A rectangle in degrees, e.g. the visible map. Does not cross the antimeridian. */
+export interface GeoBounds {
+  readonly south: number;
+  readonly west: number;
+  readonly north: number;
+  readonly east: number;
+}
+
+export const GeoBoundsSchema: z.ZodType<GeoBounds> = z
+  .object({
+    south: z.number().min(-90).max(90),
+    west: z.number().min(-180).max(180),
+    north: z.number().min(-90).max(90),
+    east: z.number().min(-180).max(180),
+  })
+  .refine((b) => b.south < b.north && b.west < b.east, {
+    message: 'south must be below north and west left of east',
+  })
+  .refine((b) => b.north - b.south <= MAX_AREA_SPAN_DEG && b.east - b.west <= MAX_AREA_SPAN_DEG, {
+    message: `at most ${String(MAX_AREA_SPAN_DEG)} degrees each way`,
+  });
+
+/** Physical places inside `bounds`, nearest to its centre first. */
+export interface AreaQuery {
+  readonly bounds: GeoBounds;
+  /** 1..500. */
+  readonly limit: number;
+}
+
+export const AreaQuerySchema: z.ZodType<AreaQuery> = z.object({
+  bounds: GeoBoundsSchema,
+  limit: z.int().min(1).max(MAX_AREA_LIMIT),
+});
+
 /** A place returned by text search. */
 export interface PlaceSearchHit {
   readonly place: Place;

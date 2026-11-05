@@ -230,6 +230,32 @@ describe('HTTP API (in-memory storage)', () => {
 
       expect(response.statusCode).toBe(400);
     });
+
+    it('lists the places in a map area, without distances', async () => {
+      const { authorization } = await registerDevice();
+      const id = await createCafe(authorization);
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/places/in-area?south=59.90&west=10.74&north=59.92&east=10.76',
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        results: [{ place: { id }, distanceM: null }],
+        truncated: false,
+      });
+    });
+
+    it.each([
+      ['too large', 'south=59&west=10&north=60&east=11'],
+      ['upside down', 'south=59.92&west=10.74&north=59.90&east=10.76'],
+      ['not a number', 'south=x&west=10.74&north=59.92&east=10.76'],
+    ])('rejects a map area that is %s', async (_, query) => {
+      const response = await app.inject({ method: 'GET', url: `/v1/places/in-area?${query}` });
+
+      expect(response.statusCode).toBe(400);
+    });
   });
 
   describe('reports', () => {

@@ -2,6 +2,7 @@ import {
   CalculatingPlaceStatusRefresher,
   CreatePlaceUseCase,
   ListNearbyPlacesUseCase,
+  ListPlacesInAreaUseCase,
   GetPlaceDetailsUseCase,
   MatchSharedPlaceUseCase,
   RegisterDeviceUseCase,
@@ -268,6 +269,7 @@ export class CompositionRoot {
         new PlacesController(
           new SearchPlacesUseCase(places, statuses, validator),
           new ListNearbyPlacesUseCase(places, statuses, validator),
+          new ListPlacesInAreaUseCase(places, statuses, validator),
           new GetPlaceDetailsUseCase(
             places,
             chains,
@@ -280,7 +282,7 @@ export class CompositionRoot {
           auth,
           validator,
           dtos,
-          { searchLimit: 20, nearbyLimit: 50, defaultRadiusM: 1000 },
+          { searchLimit: 20, nearbyLimit: 50, areaLimit: 400, defaultRadiusM: 1000 },
         ),
         new ReportsController(
           new SubmitReportUseCase(unitOfWork, refresher, ids, clock, rateLimiter, validator),

@@ -4,6 +4,7 @@ import type {
   GeoPoint,
   NameSimilarity,
   NearbyPlaceHit,
+  AreaQuery,
   NearbyQuery,
   PhysicalPlace,
   Place,
@@ -110,6 +111,21 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
       place: this.toPhysical(row),
       distanceM: distance.parse(row).distance_m,
     }));
+  }
+
+  public async listInArea(query: AreaQuery): Promise<PhysicalPlace[]> {
+    const { south, west, north, east } = query.bounds;
+    const centre = this.point({ lat: (south + north) / 2, lng: (west + east) / 2 });
+    // && on a geography envelope uses the GiST index; <-> orders by distance to the centre.
+    const { rows } = await sql`
+      SELECT ${PLACE_COLUMNS}
+      FROM places p
+      WHERE p.kind = 'physical'
+        AND p.geom && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)::geography
+      ORDER BY p.geom <-> ${centre}
+      LIMIT ${query.limit}
+    `.execute(this.db);
+    return rows.map((row) => this.toPhysical(row));
   }
 
   public async listByPostcode(postcode: string): Promise<PhysicalPlace[]> {

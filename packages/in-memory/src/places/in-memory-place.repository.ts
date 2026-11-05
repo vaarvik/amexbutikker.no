@@ -5,6 +5,7 @@ import type {
   GeoPoint,
   NameSimilarity,
   NearbyPlaceHit,
+  AreaQuery,
   NearbyQuery,
   PhysicalPlace,
   Place,
@@ -91,6 +92,21 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
     }
     hits.sort((a, b) => a.distanceM - b.distanceM);
     return Promise.resolve(hits.slice(0, query.limit));
+  }
+
+  public listInArea(query: AreaQuery): Promise<PhysicalPlace[]> {
+    const { south, west, north, east } = query.bounds;
+    const centre = { lat: (south + north) / 2, lng: (west + east) / 2 };
+    const inside = [...this.tables.places.values()].filter(
+      (place): place is PhysicalPlace =>
+        place.kind === 'physical' &&
+        place.location.lat >= south &&
+        place.location.lat <= north &&
+        place.location.lng >= west &&
+        place.location.lng <= east,
+    );
+    inside.sort((a, b) => this.distance(centre, a.location) - this.distance(centre, b.location));
+    return Promise.resolve(inside.slice(0, query.limit));
   }
 
   public listByPostcode(postcode: string): Promise<PhysicalPlace[]> {

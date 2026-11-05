@@ -1,6 +1,7 @@
 import type {
   Address,
   NearbyPlaceHit,
+  AreaQuery,
   NearbyQuery,
   PhysicalPlace,
   Place,
@@ -34,6 +35,15 @@ export interface PlaceReader {
    * @returns at most `query.limit` hits, nearest first. Online places are never returned.
    */
   listNearby(query: NearbyQuery): Promise<NearbyPlaceHit[]>;
+
+  /**
+   * Physical places inside `query.bounds` (edges included).
+   *
+   * @param query validated with AreaQuerySchema by the caller.
+   * @returns at most `query.limit` places, nearest to the centre of the bounds first, so a
+   *   truncated result keeps the middle of the map. Online places are never returned.
+   */
+  listInArea(query: AreaQuery): Promise<PhysicalPlace[]>;
 
   /**
    * The physical places that belong to a chain, in no particular order.

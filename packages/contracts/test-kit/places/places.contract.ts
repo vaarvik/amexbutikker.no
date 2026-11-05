@@ -269,6 +269,51 @@ export function describePlaceReaderContract(
         ).resolves.toEqual([]);
       });
     });
+
+    describe('listInArea', () => {
+      // About 900 m north-south and 550 m east-west around Oslo S.
+      const bounds = {
+        south: OSLO_S.lat - 0.004,
+        west: OSLO_S.lng - 0.005,
+        north: OSLO_S.lat + 0.004,
+        east: OSLO_S.lng + 0.005,
+      };
+
+      it('returns the physical places inside the bounds, nearest to the centre first', async () => {
+        const data = new TestData();
+        const edge = data.physicalPlace({ location: offset(OSLO_S, 300) });
+        const centre = data.physicalPlace({ location: offset(OSLO_S, 10) });
+        const middle = data.physicalPlace({ location: offset(OSLO_S, 0, 150) });
+        const outside = data.physicalPlace({ location: offset(OSLO_S, 2000) });
+        for (const place of [edge, centre, middle, outside]) {
+          await fixture.current.writer.create(place);
+        }
+        await fixture.current.writer.create(data.onlinePlace());
+
+        const places = await fixture.current.reader.listInArea({ bounds, limit: 10 });
+
+        expect(places.map((place) => place.id)).toEqual([centre.id, middle.id, edge.id]);
+      });
+
+      it('keeps the places nearest the centre when it has to cut', async () => {
+        const data = new TestData();
+        const near = data.physicalPlace({ location: offset(OSLO_S, 20) });
+        await fixture.current.writer.create(data.physicalPlace({ location: offset(OSLO_S, 300) }));
+        await fixture.current.writer.create(near);
+
+        const places = await fixture.current.reader.listInArea({ bounds, limit: 1 });
+
+        expect(places.map((place) => place.id)).toEqual([near.id]);
+      });
+
+      it('returns an empty list for an empty area', async () => {
+        await fixture.current.writer.create(
+          new TestData().physicalPlace({ location: offset(OSLO_S, 5000) }),
+        );
+
+        await expect(fixture.current.reader.listInArea({ bounds, limit: 10 })).resolves.toEqual([]);
+      });
+    });
   });
 }
 

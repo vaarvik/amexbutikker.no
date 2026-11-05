@@ -4,7 +4,9 @@ import {
   NearbyPlacesQueryDtoSchema,
   PlaceDetailsResponseDtoSchema,
   PlaceIdParamsDtoSchema,
+  PlaceAreaResponseDtoSchema,
   PlaceListResponseDtoSchema,
+  PlacesInAreaQueryDtoSchema,
   SearchPlacesQueryDtoSchema,
 } from '@amexbutikker/contracts';
 import type {
@@ -12,6 +14,7 @@ import type {
   GetPlaceDetails,
   InputValidator,
   ListNearbyPlaces,
+  ListPlacesInArea,
   SearchPlaces,
 } from '@amexbutikker/contracts';
 import type { FastifyInstance } from 'fastify';
@@ -24,6 +27,8 @@ import type {
 export interface PlacesControllerConfig {
   readonly searchLimit: number;
   readonly nearbyLimit: number;
+  /** Most places the map gets for one area. */
+  readonly areaLimit: number;
   readonly defaultRadiusM: number;
 }
 
@@ -31,6 +36,7 @@ export class PlacesController implements HttpController {
   public constructor(
     private readonly searchPlaces: SearchPlaces,
     private readonly listNearbyPlaces: ListNearbyPlaces,
+    private readonly listPlacesInArea: ListPlacesInArea,
     private readonly getPlaceDetails: GetPlaceDetails,
     private readonly createPlace: CreatePlace,
     private readonly auth: RequestAuthenticator,
@@ -61,6 +67,18 @@ export class PlacesController implements HttpController {
         limit: this.options.nearbyLimit,
       });
       return PlaceListResponseDtoSchema.parse(this.dtos.placeList(output));
+    });
+
+    app.get('/v1/places/in-area', async (request) => {
+      const bounds = this.validator.validate(PlacesInAreaQueryDtoSchema, request.query);
+      const output = await this.listPlacesInArea.execute({
+        bounds,
+        limit: this.options.areaLimit,
+      });
+      return PlaceAreaResponseDtoSchema.parse({
+        ...this.dtos.placeList(output),
+        truncated: output.truncated,
+      });
     });
 
     app.get('/v1/places/:id', async (request) => {

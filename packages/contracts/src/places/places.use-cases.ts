@@ -2,6 +2,7 @@ import type { Chain } from '../chains/chains.model.js';
 import type { AcceptanceResult, EvidenceKind } from '../evidence/evidence.model.js';
 import type {
   Address,
+  AreaQuery,
   NearbyQuery,
   Place,
   PlaceCategory,
@@ -71,6 +72,17 @@ export interface SearchPlaces {
 export interface ListNearbyPlaces {
   /** @throws ValidationError when the query fails NearbyQuerySchema. */
   execute(input: NearbyQuery): Promise<PlaceListOutput>;
+}
+
+export interface PlaceAreaOutput extends PlaceListOutput {
+  /** True when the area held more places than the limit: the app asks the user to zoom in. */
+  readonly truncated: boolean;
+}
+
+/** The map. Results carry no distance. */
+export interface ListPlacesInArea {
+  /** @throws ValidationError when the query fails AreaQuerySchema. */
+  execute(input: AreaQuery): Promise<PlaceAreaOutput>;
 }
 
 export interface GetPlaceDetailsInput {

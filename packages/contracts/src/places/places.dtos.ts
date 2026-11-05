@@ -3,12 +3,13 @@ import { AcceptanceResultSchema, EvidenceKindSchema } from '../evidence/evidence
 import type { AcceptanceResult, EvidenceKind } from '../evidence/evidence.model.js';
 import {
   AddressSchema,
+  GeoBoundsSchema,
   MAX_NEARBY_RADIUS_M,
   PlaceCategorySchema,
   PlaceKindSchema,
   SEARCH_TEXT_MAX_LENGTH,
 } from './places.model.js';
-import type { Address, PlaceCategory, PlaceKind } from './places.model.js';
+import type { Address, GeoBounds, PlaceCategory, PlaceKind } from './places.model.js';
 import { IsoDateTimeSchema } from '../shared/shared.dtos.js';
 import type { IsoDateTime } from '../shared/shared.dtos.js';
 import { ChainIdSchema, GeoPointSchema, PlaceIdSchema } from '../shared/shared.model.js';
@@ -115,6 +116,37 @@ export const NearbyPlacesQueryDtoSchema: z.ZodType<NearbyPlacesQueryDto> = z.obj
   lat: latitude,
   lng: longitude,
   radiusM: z.coerce.number().positive().max(MAX_NEARBY_RADIUS_M).exactOptional(),
+});
+
+// ---------------------------------------------------------------------------
+// GET /v1/places/in-area?south&west&north&east  ->  PlaceAreaResponseDto
+
+export type PlacesInAreaQueryDto = GeoBounds;
+
+/** Query strings arrive as text; the numbers are then held to the GeoBounds rules. */
+export const PlacesInAreaQueryDtoSchema: z.ZodType<PlacesInAreaQueryDto> = z
+  .object({
+    south: z.coerce.number(),
+    west: z.coerce.number(),
+    north: z.coerce.number(),
+    east: z.coerce.number(),
+  })
+  .superRefine((bounds, ctx) => {
+    const parsed = GeoBoundsSchema.safeParse(bounds);
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        ctx.addIssue({ code: 'custom', message: issue.message, path: issue.path });
+      }
+    }
+  });
+
+export interface PlaceAreaResponseDto extends PlaceListResponseDto {
+  readonly truncated: boolean;
+}
+
+export const PlaceAreaResponseDtoSchema: z.ZodType<PlaceAreaResponseDto> = z.object({
+  results: z.array(PlaceSummaryDtoSchema),
+  truncated: z.boolean(),
 });
 
 // ---------------------------------------------------------------------------

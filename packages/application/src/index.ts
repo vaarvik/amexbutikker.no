@@ -2,6 +2,7 @@ export * from './devices/register-device.use-case.js';
 export * from './imports/run-import.use-case.js';
 export * from './places/create-place.use-case.js';
 export * from './places/list-nearby-places.use-case.js';
+export * from './places/list-places-in-area.use-case.js';
 export * from './places/get-place-details.use-case.js';
 export * from './places/search-places.use-case.js';
 export * from './reports/remove-my-report.use-case.js';
