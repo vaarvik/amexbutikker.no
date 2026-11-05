@@ -39,6 +39,10 @@ class StubPlacesApi implements PlacesApiClient {
     return Promise.reject(new Error('not used'));
   }
 
+  public listInArea(): Promise<never> {
+    return Promise.reject(new Error('not used'));
+  }
+
   public getDetails(): Promise<PlaceDetailsResponseDto> {
     return Promise.reject(new Error('not used'));
   }

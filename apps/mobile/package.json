@@ -15,6 +15,7 @@
   "dependencies": {
     "@amexbutikker/contracts": "workspace:*",
     "@expo/ui": "~58.0.27",
+    "@maplibre/maplibre-react-native": "^11.5.1",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~58.0.23",
     "expo-constants": "~58.0.15",
@@ -49,6 +50,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/geojson": "^7946.0.16",
     "@types/react": "~19.3.0",
     "typescript": "~6.0.3"
   }

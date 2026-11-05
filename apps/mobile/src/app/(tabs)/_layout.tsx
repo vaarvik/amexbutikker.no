@@ -8,7 +8,7 @@ function TabIcon(props: { readonly name: SymbolViewProps['name']; readonly color
   return <SymbolView name={props.name} size={24} tintColor={props.color} />;
 }
 
-/** The bottom tabs. A map tab joins them when the map exists. */
+/** The bottom tabs: places, map, settings. */
 export default function TabsLayout() {
   const palette = usePalette();
   return (
@@ -33,6 +33,16 @@ export default function TabsLayout() {
               name={{ ios: 'mappin.and.ellipse', android: 'place', web: 'place' }}
               color={color}
             />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Kart',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <TabIcon name={{ ios: 'map', android: 'map', web: 'map' }} color={color} />
           ),
         }}
       />

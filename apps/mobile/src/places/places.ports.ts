@@ -3,6 +3,8 @@ import type {
   CreatePlaceResponseDto,
   MatchSharedResponseDto,
   NearbyPlacesQueryDto,
+  PlaceAreaResponseDto,
+  PlacesInAreaQueryDto,
   PlaceDetailsResponseDto,
   PlaceId,
   PlaceListResponseDto,
@@ -16,6 +18,8 @@ import type { NearbySnapshot, NearbyState } from './places.model';
 export interface PlacesApiClient {
   search(query: SearchPlacesQueryDto): Promise<PlaceListResponseDto>;
   listNearby(query: NearbyPlacesQueryDto): Promise<PlaceListResponseDto>;
+  /** Places in a map area; `truncated` when the area holds more than the API returns. */
+  listInArea(query: PlacesInAreaQueryDto): Promise<PlaceAreaResponseDto>;
   /** Includes `myReport` once the device has registered. */
   getDetails(placeId: PlaceId): Promise<PlaceDetailsResponseDto>;
   create(input: CreatePlaceRequestDto): Promise<CreatePlaceResponseDto>;

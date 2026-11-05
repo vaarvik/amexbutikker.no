@@ -1,6 +1,7 @@
 import {
   CreatePlaceResponseDtoSchema,
   MatchSharedResponseDtoSchema,
+  PlaceAreaResponseDtoSchema,
   PlaceDetailsResponseDtoSchema,
   PlaceListResponseDtoSchema,
   StatusChangeResponseDtoSchema,
@@ -10,6 +11,8 @@ import type {
   CreatePlaceResponseDto,
   MatchSharedResponseDto,
   NearbyPlacesQueryDto,
+  PlaceAreaResponseDto,
+  PlacesInAreaQueryDto,
   PlaceDetailsResponseDto,
   PlaceId,
   PlaceListResponseDto,
@@ -41,6 +44,13 @@ export class FetchPlacesApiClient implements PlacesApiClient {
     return this.transport.request(
       { method: 'GET', path: '/v1/places/nearby', query: { ...query } },
       PlaceListResponseDtoSchema,
+    );
+  }
+
+  public listInArea(query: PlacesInAreaQueryDto): Promise<PlaceAreaResponseDto> {
+    return this.transport.request(
+      { method: 'GET', path: '/v1/places/in-area', query: { ...query } },
+      PlaceAreaResponseDtoSchema,
     );
   }
 

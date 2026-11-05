@@ -58,6 +58,19 @@ describe('FetchPlacesApiClient', () => {
     expect(session.registrations).toBe(0);
   });
 
+  it('lists the places in a map area without a token', async () => {
+    transport.answer({ results: [summary()], truncated: true });
+    const bounds = { south: 59.9, west: 10.7, north: 59.92, east: 10.76 };
+
+    await expect(client.listInArea(bounds)).resolves.toEqual({
+      results: [summary()],
+      truncated: true,
+    });
+    expect(transport.requests).toEqual([
+      { method: 'GET', path: '/v1/places/in-area', query: bounds },
+    ]);
+  });
+
   it('gets details with the token once the device has one, without registering', async () => {
     transport.answer(details(), details());
 
