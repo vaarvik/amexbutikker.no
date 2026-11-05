@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import type { HttpController, HttpErrorMapper, HttpServer } from './shared.ports.js';
@@ -7,6 +8,8 @@ export interface FastifyHttpServerConfig {
   readonly bodyLimit: number;
   /** Trust X-Forwarded-* from a proxy or tunnel in front of the API. */
   readonly trustProxy: boolean;
+  /** Exact browser origins allowed by CORS; empty sends no CORS headers at all. */
+  readonly corsOrigins: readonly string[];
 }
 
 export class FastifyHttpServer implements HttpServer {
@@ -50,6 +53,14 @@ export class FastifyHttpServer implements HttpServer {
         error: { code: 'not_found', message: `No route for ${request.method} ${request.url}.` },
       }),
     );
+    if (this.options.corsOrigins.length > 0) {
+      void app.register(cors, {
+        origin: [...this.options.corsOrigins],
+        methods: ['GET', 'POST', 'DELETE'],
+        allowedHeaders: ['accept', 'content-type', 'authorization'],
+        maxAge: 600,
+      });
+    }
     for (const controller of this.controllers) {
       controller.register(app);
     }

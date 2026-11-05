@@ -32,7 +32,8 @@ export class RootRelativeWorkspacePaths implements WorkspacePaths {
   }
 
   public isCompositionRoot(filePath: string): boolean {
-    return path.basename(filePath) === 'composition-root.ts';
+    // The mobile composition root is split per platform: composition-root.platform(.web).ts.
+    return /^composition-root(\.[a-z]+)*\.ts$/.test(path.basename(filePath));
   }
 
   public isTestKit(filePath: string): boolean {

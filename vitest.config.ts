@@ -37,6 +37,7 @@ export default defineConfig({
       exclude: [
         '**/index.ts',
         '**/composition-root.ts',
+        '**/composition-root.*.ts',
         '**/server.ts',
         '**/migrate.ts',
         '**/cli.ts',

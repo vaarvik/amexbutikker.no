@@ -12,6 +12,7 @@
     "@amexbutikker/contracts": "workspace:*",
     "@amexbutikker/domain": "workspace:*",
     "@amexbutikker/in-memory": "workspace:*",
+    "@fastify/cors": "^11.4.1",
     "csv-parse": "^7.0.3",
     "fastify": "^5.12.8",
     "kysely": "^0.29.8",

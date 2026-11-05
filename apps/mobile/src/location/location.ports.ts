@@ -19,3 +19,18 @@ export interface ExpoLocationModule {
   }): Promise<ExpoLocationObject | null>;
   getCurrentPositionAsync(options: { readonly accuracy: number }): Promise<ExpoLocationObject>;
 }
+
+/** The part of the browser's `navigator.geolocation` the app uses. */
+export interface BrowserGeolocation {
+  getCurrentPosition(
+    onSuccess: (position: {
+      readonly coords: { readonly latitude: number; readonly longitude: number };
+    }) => void,
+    onError: (error: unknown) => void,
+    options: {
+      readonly maximumAge: number;
+      readonly timeout: number;
+      readonly enableHighAccuracy: boolean;
+    },
+  ): void;
+}

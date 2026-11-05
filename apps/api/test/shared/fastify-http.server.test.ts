@@ -29,6 +29,7 @@ function serverWith(errors: string[]): FastifyHttpServer {
   return new FastifyHttpServer([new FailingController()], new DomainHttpErrorMapper(), logger, {
     bodyLimit: 1024,
     trustProxy: false,
+    corsOrigins: [],
   });
 }
 

@@ -194,7 +194,8 @@ function AddPlaceLink() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
+  // Full width on phones; a centred column on desktop browsers.
+  screen: { flex: 1, width: '100%', maxWidth: 720, alignSelf: 'center' },
   searchBar: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
   input: {
     fontSize: 18,

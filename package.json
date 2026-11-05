@@ -20,7 +20,12 @@
     "db:down": "docker compose down",
     "db:migrate": "pnpm --filter @amexbutikker/api db:migrate",
     "db:migrate:down": "pnpm --filter @amexbutikker/api db:migrate down",
-    "import": "tsc -b apps/api && node --env-file-if-exists=.env apps/api/dist/src/cli.js import"
+    "import": "tsc -b apps/api && node --env-file-if-exists=.env apps/api/dist/src/cli.js import",
+    "api": "tsc -b apps/api && node --env-file-if-exists=.env apps/api/dist/src/server.js",
+    "mobile": "pnpm --filter @amexbutikker/mobile start",
+    "web:export": "pnpm --filter @amexbutikker/mobile web:export",
+    "web:serve": "pnpm --filter @amexbutikker/mobile web:serve",
+    "tunnel": "bash infra/tunnel.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

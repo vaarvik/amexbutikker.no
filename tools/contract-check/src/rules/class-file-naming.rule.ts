@@ -94,6 +94,7 @@ export class ClassFileNamingRule implements Rule {
       !this.scopes.some((scope) => scope.test(relativePath)) ||
       paths.isTest(filePath) ||
       paths.isTestKit(filePath) ||
+      paths.isCompositionRoot(filePath) ||
       this.exemptFiles.has(fileName)
     ) {
       return [];

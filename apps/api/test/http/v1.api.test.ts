@@ -14,6 +14,7 @@ const config: ApiConfig = {
   port: 0,
   logLevel: 'silent',
   trustProxy: false,
+  corsOrigins: ['http://localhost:8081'],
   rateLimits: DEFAULT_RATE_LIMITS,
   imports: DEFAULT_IMPORTS,
 };
@@ -375,5 +376,33 @@ describe('HTTP API (in-memory storage)', () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toMatchObject({ error: { code: 'not_found' } });
+  });
+
+  describe('CORS', () => {
+    it('answers a preflight from an allowed origin', async () => {
+      const response = await app.inject({
+        method: 'OPTIONS',
+        url: '/v1/places/search',
+        headers: {
+          origin: 'http://localhost:8081',
+          'access-control-request-method': 'POST',
+          'access-control-request-headers': 'authorization,content-type',
+        },
+      });
+
+      expect(response.statusCode).toBe(204);
+      expect(response.headers['access-control-allow-origin']).toBe('http://localhost:8081');
+      expect(response.headers['access-control-allow-headers']).toContain('authorization');
+    });
+
+    it('sends no CORS headers to any other origin', async () => {
+      const response = await app.inject({
+        method: 'GET',
+        url: '/v1/places/search?q=kafe',
+        headers: { origin: 'https://evil.example' },
+      });
+
+      expect(response.headers['access-control-allow-origin']).toBeUndefined();
+    });
   });
 });

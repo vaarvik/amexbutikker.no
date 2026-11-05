@@ -175,6 +175,7 @@ beforeAll(async () => {
     port: 0,
     logLevel: 'silent',
     trustProxy: false,
+    corsOrigins: [],
     rateLimits: DEFAULT_RATE_LIMITS,
     imports: DEFAULT_IMPORTS,
   });

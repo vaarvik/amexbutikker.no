@@ -104,6 +104,11 @@ export interface ApiConfig {
   readonly port: number;
   readonly logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace' | 'silent';
   readonly trustProxy: boolean;
+  /**
+   * Browser origins allowed to call the API (the web app, a tunnel URL). Exact origins only;
+   * empty disables CORS, so browsers on other origins are refused.
+   */
+  readonly corsOrigins: readonly string[];
   readonly rateLimits: Readonly<Record<string, z.infer<typeof RateLimitRuleSchema>>>;
   readonly imports: ImportsConfig;
 }
@@ -148,6 +153,29 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
     trustProxy: z.stringbool().default(false),
+    corsOrigins: z
+      .string()
+      .default('')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((origin) => origin.trim())
+          .filter((origin) => origin !== ''),
+      )
+      .pipe(
+        z.array(
+          z
+            .string()
+            .refine(
+              (origin) =>
+                !origin.includes('*') &&
+                URL.canParse(origin) &&
+                /^https?:$/.test(new URL(origin).protocol) &&
+                new URL(origin).origin === origin,
+              'CORS_ORIGINS takes exact origins: http(s)://host[:port], no path, no wildcard',
+            ),
+        ),
+      ),
     rateLimits: z.record(z.string(), RateLimitRuleSchema).default(DEFAULT_RATE_LIMITS),
     imports: z
       .object({
@@ -263,7 +291,7 @@ export class CompositionRoot {
       ],
       new DomainHttpErrorMapper(),
       pino({ level: config.logLevel }),
-      { bodyLimit: 16 * 1024, trustProxy: config.trustProxy },
+      { bodyLimit: 16 * 1024, trustProxy: config.trustProxy, corsOrigins: config.corsOrigins },
     );
 
     const importUnitOfWork = new TransactionalImportUnitOfWork(unitOfWork);
@@ -347,6 +375,7 @@ export class CompositionRoot {
         port: env.PORT,
         logLevel: env.LOG_LEVEL,
         trustProxy: env.TRUST_PROXY,
+        corsOrigins: env.CORS_ORIGINS,
         imports: {
           overpassUrl: env.OVERPASS_URL,
           overpassAreaId: env.OVERPASS_AREA_ID,
