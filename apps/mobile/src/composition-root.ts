@@ -14,6 +14,11 @@ import type { KeyValueStorage } from './shared/shared.ports';
 import { SystemClock } from './shared/system.clock';
 import { NorwegianStatusPresenter } from './status/norwegian-status.presenter';
 import type { StatusPresenter } from './status/status.ports';
+import { DwellVisitPromptDecider } from './visits/dwell-visit-prompt.decider';
+import { GeofenceVisitService } from './visits/geofence-visit.service';
+import { KeyValueVisitStateStorage } from './visits/key-value-visit-state.storage';
+import { NearestVisitRegionSelector } from './visits/nearest-visit-region.selector';
+import type { RegionMonitor, VisitNotifier, VisitService } from './visits/visits.ports';
 
 /** What the screens get through `useServices()`. */
 export interface AppServices {
@@ -22,6 +27,8 @@ export interface AppServices {
   readonly location: LocationProvider;
   readonly session: DeviceSession;
   readonly presenter: StatusPresenter;
+  /** Visit detection; null on the web. */
+  readonly visits: VisitService | null;
   /** False on the web: native-only features (share intake, visit detection) are hidden there. */
   readonly native: boolean;
 }
@@ -32,16 +39,24 @@ export interface PlatformAdapters {
   /** Where the device token is kept: SecureStore on phones, localStorage on the web. */
   readonly tokenStorage: KeyValueStorage;
   readonly location: LocationProvider;
+  /** OS geofencing and local notifications; null on the web. */
+  readonly regionMonitor: RegionMonitor | null;
+  readonly visitNotifier: VisitNotifier | null;
   readonly native: boolean;
 }
 
 export interface MobileConfig {
   /** API base URL without a trailing slash. */
   readonly apiUrl: string;
+  /** How long the phone must be inside a place before leaving it triggers a question. */
+  readonly visitMinDwellMs: number;
 }
 
 /** The API on this machine; phones on the LAN need EXPO_PUBLIC_API_URL set to its LAN address. */
 const DEFAULT_API_URL = 'http://localhost:3000';
+const DEFAULT_VISIT_MIN_DWELL_S = 180;
+const MINUTE_MS = 60_000;
+const DAY_MS = 24 * 60 * MINUTE_MS;
 
 /** The only place in the app that constructs services. */
 export class CompositionRoot implements AppServices {
@@ -50,6 +65,7 @@ export class CompositionRoot implements AppServices {
   public readonly location: LocationProvider;
   public readonly session: DeviceSession;
   public readonly presenter: StatusPresenter;
+  public readonly visits: VisitService | null;
   public readonly native: boolean;
 
   public constructor(config: MobileConfig, adapters: PlatformAdapters) {
@@ -68,14 +84,32 @@ export class CompositionRoot implements AppServices {
     );
     this.places = new FetchPlacesApiClient(transport, this.session);
     this.location = adapters.location;
+    const clock = new SystemClock();
     this.nearby = new CachingNearbyService(
       this.places,
       new KeyValueNearbyCache(AsyncStorage, { key: 'nearby-snapshot-v1' }),
       this.location,
-      new SystemClock(),
+      clock,
       { radiusM: 1500 },
     );
     this.presenter = new NorwegianStatusPresenter();
+    this.visits =
+      adapters.regionMonitor === null || adapters.visitNotifier === null
+        ? null
+        : new GeofenceVisitService(
+            adapters.regionMonitor,
+            adapters.visitNotifier,
+            new NearestVisitRegionSelector({ maxRegions: 18, radiusM: 75 }),
+            new DwellVisitPromptDecider({
+              minDwellMs: config.visitMinDwellMs,
+              askCooldownMs: 30 * DAY_MS,
+              minGapBetweenAsksMs: 10 * MINUTE_MS,
+              maxAsksPerDay: 3,
+              announceCooldownMs: DAY_MS,
+            }),
+            new KeyValueVisitStateStorage(AsyncStorage, { key: 'visit-state-v1' }),
+            clock,
+          );
   }
 
   public static fromEnv(): CompositionRoot {
@@ -83,6 +117,12 @@ export class CompositionRoot implements AppServices {
       {
         // Expo inlines EXPO_PUBLIC_* at build time; it must be read as this exact expression.
         apiUrl: CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_API_URL) ?? DEFAULT_API_URL,
+        // Lower it (e.g. 20) to try visit detection in the simulator without waiting minutes.
+        visitMinDwellMs:
+          Number(
+            CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_VISIT_MIN_DWELL_SECONDS) ??
+              DEFAULT_VISIT_MIN_DWELL_S,
+          ) * 1000,
       },
       new CurrentPlatform(),
     );

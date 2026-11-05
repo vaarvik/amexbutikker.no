@@ -3,8 +3,11 @@ import { ShareIntentProvider } from 'expo-share-intent';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { CompositionRoot } from '../composition-root';
+// Registers the background visit task; must load with the bundle.
+import '../composition-root.tasks';
 import { ServicesProvider } from '../ui/services';
 import { ShareIntentRouter } from '../ui/share-intent-router';
+import { VisitNotificationRouter } from '../ui/visit-notification-router';
 import { usePalette } from '../ui/theme';
 
 export default function RootLayout() {
@@ -16,7 +19,12 @@ export default function RootLayout() {
   return (
     <ShareIntentProvider>
       <ServicesProvider services={services}>
-        {services.native ? <ShareIntentRouter /> : null}
+        {services.native ? (
+          <>
+            <ShareIntentRouter />
+            <VisitNotificationRouter />
+          </>
+        ) : null}
         <StatusBar style="auto" />
         <Stack
           screenOptions={{
@@ -31,6 +39,7 @@ export default function RootLayout() {
           <Stack.Screen name="place/[id]" options={{ title: '' }} />
           <Stack.Screen name="add" options={{ title: 'Legg til sted', presentation: 'modal' }} />
           <Stack.Screen name="shared" options={{ title: 'Delt sted' }} />
+          <Stack.Screen name="visits" options={{ title: 'Besøk' }} />
         </Stack>
       </ServicesProvider>
     </ShareIntentProvider>

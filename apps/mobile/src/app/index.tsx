@@ -25,7 +25,7 @@ type SearchResult =
   | { readonly query: string; readonly message: string };
 
 export default function Home() {
-  const { nearby, places, presenter } = useServices();
+  const { nearby, places, presenter, visits } = useServices();
   const palette = usePalette();
   const [query, setQuery] = useState('');
   const [nearbyState, setNearbyState] = useState<NearbyState>({ kind: 'loading' });
@@ -45,6 +45,15 @@ export default function Home() {
       setFocusCount((n) => n + 1);
     }, []),
   );
+
+  // A fresh list from the network re-selects the places visit detection watches.
+  const freshResults =
+    nearbyState.kind === 'ready' && !nearbyState.fromCache ? nearbyState.snapshot.results : null;
+  useEffect(() => {
+    if (freshResults !== null) {
+      void visits?.refresh(freshResults).catch(() => undefined);
+    }
+  }, [freshResults, visits]);
 
   const center = 'snapshot' in nearbyState ? nearbyState.snapshot?.center : undefined;
   const lat = center?.lat;
@@ -227,6 +236,8 @@ const styles = StyleSheet.create({
   column: { width: '100%', maxWidth: 720, alignSelf: 'center' },
   hero: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
   header: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  bell: { padding: 6 },
   title: { fontSize: 34, fontWeight: '700', letterSpacing: 0.3 },
   inputWrap: {
     flexDirection: 'row',

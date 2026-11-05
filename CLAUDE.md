@@ -47,7 +47,7 @@ apps/mobile/src/composition-root.ts
 <package>/test/<feature>/              tests, mirroring src (see Testing)
 ```
 
-Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`.
+Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`. The app also has `visits` (visit detection, phone only; docs/adr/0001-visit-detection.md).
 
 - Folders are one level deep. Relationships between features are expressed by imports, not by nesting.
 - Nest X under Y only if X cannot exist without Y and nothing else uses X.
@@ -81,7 +81,7 @@ Everywhere else (rule (f)): one exported class per file, Error subclasses aside.
 
 The class name must end in a known role:
 
-`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`, `session`, `cache`, `storage`, `transport`, `presenter`.
+`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`, `session`, `cache`, `storage`, `transport`, `presenter`, `monitor`, `notifier`.
 
 To add a role, add it to `ClassFileNamingRule` and this list in the same change.
 
@@ -89,7 +89,7 @@ A file without a class is `<folder>.ports.ts` (interfaces) or `<folder>.model.ts
 
 Exempt from rule (f):
 
-- entry points: `index.ts`, `cli.ts`, `server.ts`, `migrate.ts`, `composition-root.ts`
+- entry points: `index.ts`, `cli.ts`, `server.ts`, `migrate.ts`, `composition-root.ts` (and the mobile `composition-root.<part>.ts` files)
 - tests and the test kit
 - `packages/contracts/src`, which rule (e) covers
 
