@@ -329,8 +329,9 @@ A home screen and lock screen widget that answers "can I pay with Amex here?" wi
 
 ## Phase 11: Map tab (done)
 
-Built with OpenFreeMap (no key) instead of MapTiler/Stadia. Open: a "only places with an answer" filter,
-so a truncated area never hides answered places, and a perf test for /v1/places/in-area.
+Built with OpenFreeMap (no key) instead of MapTiler/Stadia. The "Bare steder med svar" toggle filters on the
+server before the cut. Search and Nær deg have chips (Tar Amex, categories, several at once). Open: a perf
+test for /v1/places/in-area.
 
 ```
 A Kart tab showing places as pins coloured by status (with the status symbol, never colour alone).
@@ -359,6 +360,48 @@ A Kart tab showing places as pins coloured by status (with the status symbol, ne
 
 Ja / Nei need users' own answers worth `confirmedWeight` (default 1.0); lists, chain claims and a single
 user give Trolig ja / Trolig nei. Sources are stored, never shown.
+
+---
+
+## Phase 13: Answer from Apple Pay (on hold)
+
+```
+An iOS Shortcuts "Transaction" automation (iOS 17+) on the user's Amex in Wallet hands merchant, amount and
+card to a shortcut, which opens amexbutikker://paid?merchant=…[&amount=…].
+- The app matches the merchant to places within ~150 m: one clear match is saved at once with Angre; several
+  open the "Hvor betalte du?" list; none is kept as an unmatched descriptor.
+- Source `wallet`, weighted like visit_report (one payment gives Trolig ja) until a declined tap is tested:
+  the trigger fires on the tap and may fire on a declined payment.
+- The amount never leaves the phone (Phase 14 uses it).
+- Settings: "Svar automatisk når du betaler", with the shared iCloud shortcut link and a short guide.
+  The owner creates and shares the shortcut once; it cannot be published from code.
+- Works without it; the shortcut is a bonus.
+```
+
+---
+
+## Phase 14: Spending and milestones (on the phone only)
+
+A personal tab: how much the user has spent on the card and how far they are from a bonus milestone.
+Amounts never leave the phone; the server keeps no amounts (unchanged rule).
+
+```
+14a. Model and tab
+- `spending` feature in apps/mobile/src: Purchase { id, date, amountNok, merchant?, placeId?, source:
+  manual | wallet | statement | total }, Milestone { id, title, target NOK, period, reward text,
+  programmeId? }. Period: calendar year, or a window from a start date (e.g. "9 months from card start").
+- Ports: PurchaseStorage, MilestoneStorage (key-value on the phone), MilestoneProgressCalculator
+  (spent in period, remaining, days left, kroner per month needed to make it, on pace or not).
+- Tab "Bonus": one card per milestone with a progress bar, "x kr igjen", "y kr i måneden for å nå det
+  innen <dato>", and a done state. "Legg til kjøp" (amount, date, optional place) and "Oppdater total"
+  (type the total from the Amex app; stored as a `total` entry that resets the count from its date).
+14b. Preset programmes
+- data/card-programmes.yaml: card name, milestones (target, period kind, reward), sourceUrl, fetchedAt.
+  Shown with "Sjekk vilkårene hos kortutsteder" and the fetch date; terms change, presets are hints.
+- "Velg kort" adds its milestones; custom milestones alongside. Presets only from sources the owner checks.
+14c. Wallet amounts: Phase 13's link also takes the amount and stores a `wallet` purchase.
+14d. Statement import: CSV/PDF export from the Amex site, parsed on the phone; needs an anonymised sample.
+```
 
 ---
 
