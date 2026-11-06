@@ -1,4 +1,4 @@
-import type { Clock } from '@amexbutikker/contracts';
+import type { Clock, PlaceFilterQueryDto } from '@amexbutikker/contracts';
 import type { LocationProvider } from '../location/location.ports';
 import type { NearbySnapshot, NearbyState } from './places.model';
 import type { NearbyCache, NearbyService, PlacesApiClient } from './places.ports';
@@ -20,8 +20,12 @@ export class CachingNearbyService implements NearbyService {
     private readonly config: CachingNearbyServiceConfig,
   ) {}
 
-  public async load(onState: (state: NearbyState) => void): Promise<void> {
-    const cached = await this.cache.find().catch(() => null);
+  public async load(
+    filter: PlaceFilterQueryDto,
+    onState: (state: NearbyState) => void,
+  ): Promise<void> {
+    const filtered = filter.acceptsOnly === true || filter.categories !== undefined;
+    const cached = filtered ? null : await this.cache.find().catch(() => null);
     onState(
       cached === null
         ? { kind: 'loading' }
@@ -38,6 +42,7 @@ export class CachingNearbyService implements NearbyService {
         lat: center.lat,
         lng: center.lng,
         radiusM: this.config.radiusM,
+        ...filter,
       });
       const snapshot: NearbySnapshot = {
         center,
@@ -45,7 +50,7 @@ export class CachingNearbyService implements NearbyService {
         results,
       };
       onState({ kind: 'ready', snapshot, fromCache: false, refreshing: false });
-      await this.cache.save(snapshot).catch(() => undefined);
+      if (!filtered) await this.cache.save(snapshot).catch(() => undefined);
     } catch (error) {
       onState({ kind: 'failed', error, snapshot: cached });
     }

@@ -5,6 +5,7 @@ import {
   AddressSchema,
   GeoBoundsSchema,
   MAX_NEARBY_RADIUS_M,
+  PLACE_CATEGORIES,
   PlaceCategorySchema,
   PlaceKindSchema,
   SEARCH_TEXT_MAX_LENGTH,
@@ -80,9 +81,28 @@ const latitude = z.coerce.number().min(-90).max(90);
 const longitude = z.coerce.number().min(-180).max(180);
 
 // ---------------------------------------------------------------------------
-// GET /v1/places/search?q&lat&lng&kind  ->  PlaceListResponseDto
+// Filters shared by search and nearby: &acceptsOnly=true&categories=restaurant,fast_food
 
-export interface SearchPlacesQueryDto {
+export interface PlaceFilterQueryDto {
+  /** Only Ja and Trolig ja. Off when absent. */
+  readonly acceptsOnly?: boolean;
+  /** Comma-separated in the query string; absent means every category. */
+  readonly categories?: readonly PlaceCategory[];
+}
+
+const placeFilterQueryShape = {
+  acceptsOnly: z.stringbool().exactOptional(),
+  categories: z
+    .string()
+    .transform((value) => value.split(','))
+    .pipe(z.array(z.enum(PLACE_CATEGORIES)).min(1))
+    .exactOptional(),
+};
+
+// ---------------------------------------------------------------------------
+// GET /v1/places/search?q&lat&lng&kind[&acceptsOnly&categories]  ->  PlaceListResponseDto
+
+export interface SearchPlacesQueryDto extends PlaceFilterQueryDto {
   readonly q: string;
   /** lat and lng are given together or not at all. */
   readonly lat?: number;
@@ -96,6 +116,7 @@ export const SearchPlacesQueryDtoSchema: z.ZodType<SearchPlacesQueryDto> = z
     lat: latitude.exactOptional(),
     lng: longitude.exactOptional(),
     kind: PlaceKindSchema.exactOptional(),
+    ...placeFilterQueryShape,
   })
   .refine((query) => (query.lat === undefined) === (query.lng === undefined), {
     message: 'lat and lng must be given together',
@@ -103,9 +124,9 @@ export const SearchPlacesQueryDtoSchema: z.ZodType<SearchPlacesQueryDto> = z
   });
 
 // ---------------------------------------------------------------------------
-// GET /v1/places/nearby?lat&lng&radiusM  ->  PlaceListResponseDto
+// GET /v1/places/nearby?lat&lng&radiusM[&acceptsOnly&categories]  ->  PlaceListResponseDto
 
-export interface NearbyPlacesQueryDto {
+export interface NearbyPlacesQueryDto extends PlaceFilterQueryDto {
   readonly lat: number;
   readonly lng: number;
   /** Defaults to 1000 when omitted. */
@@ -116,6 +137,7 @@ export const NearbyPlacesQueryDtoSchema: z.ZodType<NearbyPlacesQueryDto> = z.obj
   lat: latitude,
   lng: longitude,
   radiusM: z.coerce.number().positive().max(MAX_NEARBY_RADIUS_M).exactOptional(),
+  ...placeFilterQueryShape,
 });
 
 // ---------------------------------------------------------------------------

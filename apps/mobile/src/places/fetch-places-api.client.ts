@@ -23,7 +23,7 @@ import type {
 import type { z } from 'zod';
 import type { DeviceSession } from '../devices/devices.ports';
 import { ApiError } from '../shared/fetch-json.transport';
-import type { JsonRequest } from '../shared/shared.model';
+import type { JsonRequest, QueryParams } from '../shared/shared.model';
 import type { JsonTransport } from '../shared/shared.ports';
 import type { PlacesApiClient } from './places.ports';
 
@@ -35,16 +35,29 @@ export class FetchPlacesApiClient implements PlacesApiClient {
 
   public search(query: SearchPlacesQueryDto): Promise<PlaceListResponseDto> {
     return this.transport.request(
-      { method: 'GET', path: '/v1/places/search', query: { ...query } },
+      { method: 'GET', path: '/v1/places/search', query: this.params(query) },
       PlaceListResponseDtoSchema,
     );
   }
 
   public listNearby(query: NearbyPlacesQueryDto): Promise<PlaceListResponseDto> {
     return this.transport.request(
-      { method: 'GET', path: '/v1/places/nearby', query: { ...query } },
+      { method: 'GET', path: '/v1/places/nearby', query: this.params(query) },
       PlaceListResponseDtoSchema,
     );
+  }
+
+  /** Query params with the filter in its wire form: `acceptsOnly=true`, `categories=a,b`. */
+  private params({
+    acceptsOnly,
+    categories,
+    ...rest
+  }: SearchPlacesQueryDto | NearbyPlacesQueryDto): QueryParams {
+    return {
+      ...rest,
+      ...(acceptsOnly === true ? { acceptsOnly: 'true' } : {}),
+      ...(categories === undefined ? {} : { categories: categories.join(',') }),
+    };
   }
 
   public listInArea(query: PlacesInAreaQueryDto): Promise<PlaceAreaResponseDto> {

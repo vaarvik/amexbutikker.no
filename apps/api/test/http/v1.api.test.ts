@@ -247,6 +247,33 @@ describe('HTTP API (in-memory storage)', () => {
       });
     });
 
+    it('filters search and nearby by category and by "accepts"', async () => {
+      const { authorization } = await registerDevice();
+      await createCafe(authorization);
+
+      const cafes = await app.inject({
+        method: 'GET',
+        url: '/v1/places/nearby?lat=59.91&lng=10.75&radiusM=5000&categories=cafe,bar',
+      });
+      const shops = await app.inject({
+        method: 'GET',
+        url: '/v1/places/nearby?lat=59.91&lng=10.75&radiusM=5000&categories=shop',
+      });
+      const accepting = await app.inject({
+        method: 'GET',
+        url: '/v1/places/search?q=kafe&acceptsOnly=true',
+      });
+      const wrong = await app.inject({
+        method: 'GET',
+        url: '/v1/places/search?q=kafe&categories=spaceship',
+      });
+
+      expect(cafes.json<{ results: unknown[] }>().results).toHaveLength(1);
+      expect(shops.json()).toEqual({ results: [] });
+      expect(accepting.json()).toEqual({ results: [] });
+      expect(wrong.statusCode).toBe(400);
+    });
+
     it('can leave out the places nobody has answered for', async () => {
       const { authorization } = await registerDevice();
       await createCafe(authorization);

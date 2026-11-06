@@ -6,6 +6,7 @@ import type {
   NameSimilarity,
   NearbyPlaceHit,
   AreaQuery,
+  PlaceFilter,
   NearbyQuery,
   PhysicalPlace,
   Place,
@@ -42,7 +43,10 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
     const words = this.words(text);
     const hits: PlaceSearchHit[] = [];
     for (const place of this.tables.places.values()) {
-      if (query.kind !== undefined && place.kind !== query.kind) {
+      if (
+        (query.kind !== undefined && place.kind !== query.kind) ||
+        !this.passes(place, query.filter)
+      ) {
         continue;
       }
       const name = this.names.normalize(place.name);
@@ -65,6 +69,17 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
     return Promise.resolve(hits.slice(0, query.limit));
   }
 
+  private passes(place: Place, filter: PlaceFilter | undefined): boolean {
+    if (filter?.categories !== undefined && !filter.categories.includes(place.category)) {
+      return false;
+    }
+    if (filter?.acceptsOnly === true) {
+      const status = this.tables.statuses.get(place.id)?.status.status;
+      return status === 'accepted' || status === 'likely_accepted';
+    }
+    return true;
+  }
+
   /** A query word matches a name that contains it, or a name word with a close spelling. */
   private matchesWord(word: string, name: string): boolean {
     return (
@@ -82,7 +97,7 @@ export class InMemoryPlaceRepository implements PlaceReader, PlaceWriter {
   public listNearby(query: NearbyQuery): Promise<NearbyPlaceHit[]> {
     const hits: NearbyPlaceHit[] = [];
     for (const place of this.tables.places.values()) {
-      if (place.kind !== 'physical') {
+      if (place.kind !== 'physical' || !this.passes(place, query.filter)) {
         continue;
       }
       const distanceM = this.distance(query.center, place.location);

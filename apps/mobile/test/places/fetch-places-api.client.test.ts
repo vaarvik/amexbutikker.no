@@ -71,6 +71,26 @@ describe('FetchPlacesApiClient', () => {
     ]);
   });
 
+  it('sends filters in their query string form', async () => {
+    transport.answer({ results: [] }, { results: [] });
+
+    await client.search({ q: 'kafé', acceptsOnly: true, categories: ['cafe', 'bar'] });
+    await client.listNearby({ lat: 59.9, lng: 10.7, categories: ['shop'] });
+
+    expect(transport.requests).toEqual([
+      {
+        method: 'GET',
+        path: '/v1/places/search',
+        query: { q: 'kafé', acceptsOnly: 'true', categories: 'cafe,bar' },
+      },
+      {
+        method: 'GET',
+        path: '/v1/places/nearby',
+        query: { lat: 59.9, lng: 10.7, categories: 'shop' },
+      },
+    ]);
+  });
+
   it('asks for answered places only when told to', async () => {
     transport.answer({ results: [], truncated: false });
     const bounds = { south: 59.9, west: 10.7, north: 59.92, east: 10.76 };

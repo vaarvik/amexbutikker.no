@@ -5,6 +5,7 @@ import type {
   NameSimilarity,
   NearbyPlaceHit,
   AreaQuery,
+  PlaceFilter,
   NearbyQuery,
   PhysicalPlace,
   Place,
@@ -87,6 +88,7 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
       FROM places p
       WHERE ${sql.join(matches, sql` AND `)}
         AND (${query.kind ?? null}::text IS NULL OR p.kind = ${query.kind ?? null})
+        ${this.filtered(query.filter)}
       ORDER BY score DESC, distance_m ASC NULLS LAST, p.name ASC
       LIMIT ${query.limit}
     `.execute(this.db);
@@ -103,6 +105,7 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
       SELECT ${PLACE_COLUMNS}, ST_Distance(p.geom, ${center}) AS distance_m
       FROM places p
       WHERE p.kind = 'physical' AND ST_DWithin(p.geom, ${center}, ${query.radiusM})
+        ${this.filtered(query.filter)}
       ORDER BY p.geom <-> ${center}
       LIMIT ${query.limit}
     `.execute(this.db);
@@ -111,6 +114,22 @@ export class PgPlaceRepository implements PlaceReader, PlaceWriter {
       place: this.toPhysical(row),
       distanceM: distance.parse(row).distance_m,
     }));
+  }
+
+  /** `AND …` conditions for a filter; empty when there is none. */
+  private filtered(filter: PlaceFilter | undefined) {
+    const conditions = [
+      ...(filter?.acceptsOnly === true
+        ? [
+            sql`EXISTS (SELECT 1 FROM place_status s WHERE s.place_id = p.id
+              AND s.status IN ('accepted', 'likely_accepted'))`,
+          ]
+        : []),
+      ...(filter?.categories === undefined
+        ? []
+        : [sql`p.category IN (${sql.join(filter.categories)})`]),
+    ];
+    return conditions.length === 0 ? sql`` : sql`AND ${sql.join(conditions, sql` AND `)}`;
   }
 
   public async listInArea(query: AreaQuery): Promise<PhysicalPlace[]> {

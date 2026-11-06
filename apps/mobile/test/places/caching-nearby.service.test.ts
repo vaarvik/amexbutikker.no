@@ -4,6 +4,7 @@ import type {
   GeoPoint,
   MatchSharedResponseDto,
   NearbyPlacesQueryDto,
+  PlaceFilterQueryDto,
   PlaceDetailsResponseDto,
   PlaceListResponseDto,
   StatusChangeResponseDto,
@@ -93,9 +94,12 @@ class StubLocation implements LocationProvider {
   }
 }
 
-async function states(service: CachingNearbyService): Promise<NearbyState[]> {
+async function states(
+  service: CachingNearbyService,
+  filter: PlaceFilterQueryDto = {},
+): Promise<NearbyState[]> {
   const seen: NearbyState[] = [];
-  await service.load((state) => seen.push(state));
+  await service.load(filter, (state) => seen.push(state));
   return seen;
 }
 
@@ -152,5 +156,20 @@ describe('CachingNearbyService', () => {
     const seen = await states(service(new StubCache(null, true), new StubLocation(here)));
 
     expect(seen.map((state) => state.kind)).toEqual(['loading', 'ready']);
+  });
+
+  it('with a filter: skips the cache both ways and passes the filter on', async () => {
+    const cache = new StubCache(cached);
+
+    const seen = await states(service(cache, new StubLocation(here)), {
+      acceptsOnly: true,
+      categories: ['cafe'],
+    });
+
+    expect(seen.map((state) => state.kind)).toEqual(['loading', 'ready']);
+    expect(api.queries).toEqual([
+      { lat: 59.91, lng: 10.75, radiusM: 1500, acceptsOnly: true, categories: ['cafe'] },
+    ]);
+    expect(cache.saved).toEqual([]);
   });
 });

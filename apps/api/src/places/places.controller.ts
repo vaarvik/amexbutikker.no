@@ -15,6 +15,8 @@ import type {
   InputValidator,
   ListNearbyPlaces,
   ListPlacesInArea,
+  PlaceFilter,
+  PlaceFilterQueryDto,
   SearchPlaces,
 } from '@amexbutikker/contracts';
 import type { FastifyInstance } from 'fastify';
@@ -55,6 +57,7 @@ export class PlacesController implements HttpController {
           ? { near: { lat: query.lat, lng: query.lng } }
           : {}),
         ...(query.kind !== undefined ? { kind: query.kind } : {}),
+        ...this.filter(query),
       });
       return PlaceListResponseDtoSchema.parse(this.dtos.placeList(output));
     });
@@ -65,6 +68,7 @@ export class PlacesController implements HttpController {
         center: { lat: query.lat, lng: query.lng },
         radiusM: query.radiusM ?? this.options.defaultRadiusM,
         limit: this.options.nearbyLimit,
+        ...this.filter(query),
       });
       return PlaceListResponseDtoSchema.parse(this.dtos.placeList(output));
     });
@@ -115,5 +119,14 @@ export class PlacesController implements HttpController {
         .status(201)
         .send(CreatePlaceResponseDtoSchema.parse({ place: this.dtos.place(place) }));
     });
+  }
+
+  /** The query's filter, or nothing when it narrows nothing. */
+  private filter(query: PlaceFilterQueryDto): { readonly filter?: PlaceFilter } {
+    const filter: PlaceFilter = {
+      ...(query.acceptsOnly === true ? { acceptsOnly: true } : {}),
+      ...(query.categories === undefined ? {} : { categories: query.categories }),
+    };
+    return Object.keys(filter).length === 0 ? {} : { filter };
   }
 }

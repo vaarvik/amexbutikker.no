@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ConflictError, NotFoundError } from '../../src/index.js';
 import type {
+  AcceptanceStatus,
   ChainWriter,
+  PlaceId,
   PlaceReader,
   PlaceSourceRecord,
   PlaceStatusWriter,
@@ -225,6 +227,89 @@ export function describePlaceReaderContract(
 
       it('returns an empty list when no place has the postcode', async () => {
         await expect(fixture.current.reader.listByPostcode('9999')).resolves.toEqual([]);
+      });
+    });
+
+    /** A snapshot with the given status, for filter tests. */
+    async function saveStatus(
+      data: TestData,
+      placeId: PlaceId,
+      status: AcceptanceStatus,
+    ): Promise<void> {
+      await fixture.current.statuses.save(
+        data.statusSnapshot(placeId, {
+          status: { status, confidence: 0.5, basis: null, verified: false, lastEvidenceAt: null },
+        }),
+      );
+    }
+
+    describe('filters', () => {
+      it('keeps only places that accept, confirmed or likely, in search and nearby', async () => {
+        const data = new TestData();
+        const yes = data.physicalPlace({ name: 'Kafé Ja', location: offset(OSLO_S, 10) });
+        const likely = data.physicalPlace({ name: 'Kafé Trolig', location: offset(OSLO_S, 20) });
+        const no = data.physicalPlace({ name: 'Kafé Nei', location: offset(OSLO_S, 30) });
+        const likelyNo = data.physicalPlace({ name: 'Kafé Kanskje', location: offset(OSLO_S, 40) });
+        const unchecked = data.physicalPlace({ name: 'Kafé Ukjent', location: offset(OSLO_S, 50) });
+        for (const place of [yes, likely, no, likelyNo, unchecked]) {
+          await fixture.current.writer.create(place);
+        }
+        await saveStatus(data, yes.id, 'accepted');
+        await saveStatus(data, likely.id, 'likely_accepted');
+        await saveStatus(data, no.id, 'rejected');
+        await saveStatus(data, likelyNo.id, 'likely_rejected');
+
+        const nearby = await fixture.current.reader.listNearby({
+          center: OSLO_S,
+          radiusM: 1000,
+          limit: 2,
+          filter: { acceptsOnly: true },
+        });
+        const hits = await fixture.current.reader.search({
+          text: 'kafe',
+          limit: 10,
+          filter: { acceptsOnly: true },
+        });
+
+        expect(nearby.map((hit) => hit.place.id)).toEqual([yes.id, likely.id]);
+        expect(hits.map((hit) => hit.place.id).sort()).toEqual([yes.id, likely.id].sort());
+      });
+
+      it('keeps only the given categories, applied before the limit', async () => {
+        const data = new TestData();
+        const shop = data.physicalPlace({
+          name: 'Torget Butikk',
+          category: 'shop',
+          location: offset(OSLO_S, 10),
+        });
+        const bar = data.physicalPlace({
+          name: 'Torget Bar',
+          category: 'bar',
+          location: offset(OSLO_S, 500),
+        });
+        const pub = data.physicalPlace({
+          name: 'Torget Pub',
+          category: 'pub',
+          location: offset(OSLO_S, 600),
+        });
+        for (const place of [shop, bar, pub]) {
+          await fixture.current.writer.create(place);
+        }
+
+        const nearby = await fixture.current.reader.listNearby({
+          center: OSLO_S,
+          radiusM: 1000,
+          limit: 1,
+          filter: { categories: ['bar', 'pub'] },
+        });
+        const hits = await fixture.current.reader.search({
+          text: 'torget',
+          limit: 10,
+          filter: { categories: ['shop'] },
+        });
+
+        expect(nearby.map((hit) => hit.place.id)).toEqual([bar.id]);
+        expect(hits.map((hit) => hit.place.id)).toEqual([shop.id]);
       });
     });
 

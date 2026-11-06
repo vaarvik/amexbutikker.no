@@ -106,12 +106,26 @@ export const SEARCH_TEXT_MAX_LENGTH = 100;
 export const MAX_RESULT_LIMIT = 50;
 export const MAX_NEARBY_RADIUS_M = 5000;
 
+/** Narrows a list before its limit applies, so a filtered list is never a cut-short page. */
+export interface PlaceFilter {
+  /** Only places whose status is `accepted` or `likely_accepted`. */
+  readonly acceptsOnly?: boolean;
+  /** Only places in one of these categories; absent means every category. */
+  readonly categories?: readonly PlaceCategory[];
+}
+
+export const PlaceFilterSchema: z.ZodType<PlaceFilter> = z.object({
+  acceptsOnly: z.boolean().exactOptional(),
+  categories: z.array(PlaceCategorySchema).min(1).exactOptional(),
+});
+
 /** Free-text place search. Ranked by name similarity, boosted by proximity when `near` is set. */
 export interface PlaceSearchQuery {
   /** Search text, 1..100 characters after trimming. Matched accent- and case-insensitively. */
   readonly text: string;
   readonly near?: GeoPoint;
   readonly kind?: PlaceKind;
+  readonly filter?: PlaceFilter;
   /** 1..50. */
   readonly limit: number;
 }
@@ -120,6 +134,7 @@ export const PlaceSearchQuerySchema: z.ZodType<PlaceSearchQuery> = z.object({
   text: z.string().trim().min(1).max(SEARCH_TEXT_MAX_LENGTH),
   near: GeoPointSchema.exactOptional(),
   kind: PlaceKindSchema.exactOptional(),
+  filter: PlaceFilterSchema.exactOptional(),
   limit: z.int().min(1).max(MAX_RESULT_LIMIT),
 });
 
@@ -128,6 +143,7 @@ export interface NearbyQuery {
   readonly center: GeoPoint;
   /** 1..5000 metres. */
   readonly radiusM: number;
+  readonly filter?: PlaceFilter;
   /** 1..50. */
   readonly limit: number;
 }
@@ -135,6 +151,7 @@ export interface NearbyQuery {
 export const NearbyQuerySchema: z.ZodType<NearbyQuery> = z.object({
   center: GeoPointSchema,
   radiusM: z.number().positive().max(MAX_NEARBY_RADIUS_M),
+  filter: PlaceFilterSchema.exactOptional(),
   limit: z.int().min(1).max(MAX_RESULT_LIMIT),
 });
 

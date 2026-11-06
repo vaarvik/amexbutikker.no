@@ -3,6 +3,7 @@ import type {
   CreatePlaceResponseDto,
   MatchSharedResponseDto,
   NearbyPlacesQueryDto,
+  PlaceFilterQueryDto,
   PlaceAreaResponseDto,
   PlacesInAreaQueryDto,
   PlaceDetailsResponseDto,
@@ -38,6 +39,9 @@ export interface NearbyCache {
 
 /** Loads the "Nær deg" list: the cached list at once, then a fresh one. */
 export interface NearbyService {
-  /** Calls `onState` with each state in order and resolves after the last one. */
-  load(onState: (state: NearbyState) => void): Promise<void>;
+  /**
+   * Calls `onState` with each state in order and resolves after the last one. Only the
+   * unfiltered list is cached; a filtered one is always fetched.
+   */
+  load(filter: PlaceFilterQueryDto, onState: (state: NearbyState) => void): Promise<void>;
 }

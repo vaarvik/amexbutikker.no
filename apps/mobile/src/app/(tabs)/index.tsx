@@ -1,6 +1,6 @@
 import type { PlaceSummaryDto } from '@amexbutikker/contracts';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -13,6 +13,13 @@ import {
 import { SymbolView } from 'expo-symbols';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NearbyState } from '../../places/places.model';
+import {
+  NO_FILTER,
+  PlaceFilterChips,
+  isFiltered,
+  toFilterQuery,
+} from '../../ui/place-filter-chips';
+import type { PlaceFilterChoice } from '../../ui/place-filter-chips';
 import { PlaceRow } from '../../ui/place-row';
 import { useServices } from '../../ui/services';
 import { usePalette } from '../../ui/theme';
@@ -31,13 +38,20 @@ export default function Home() {
   const [nearbyState, setNearbyState] = useState<NearbyState>({ kind: 'loading' });
   const [search, setSearch] = useState<SearchResult | null>(null);
   const latestSearch = useRef(0);
+  const latestNearby = useRef(0);
   const insets = useSafeAreaInsets();
+  const [choice, setChoice] = useState<PlaceFilterChoice>(NO_FILTER);
+  const filtered = isFiltered(choice);
+  const filter = useMemo(() => toFilterQuery(choice), [choice]);
 
-  // Runs on first show and every time the user comes back (e.g. after answering on a place
-  // screen), so the list and search results show the new answer.
+  // Runs on first show, every time the user comes back (e.g. after answering on a place
+  // screen) and when the filter changes. Only the newest load may update the list.
   const reload = useCallback(() => {
-    void nearby.load(setNearbyState);
-  }, [nearby]);
+    const id = ++latestNearby.current;
+    void nearby.load(filter, (state) => {
+      if (id === latestNearby.current) setNearbyState(state);
+    });
+  }, [nearby, filter]);
   useFocusEffect(reload);
   const [focusCount, setFocusCount] = useState(0);
   useFocusEffect(
@@ -46,9 +60,11 @@ export default function Home() {
     }, []),
   );
 
-  // A fresh list from the network re-selects the watched places and refreshes the widget.
+  // A fresh, unfiltered list re-selects the watched places and refreshes the widget.
   const freshResults =
-    nearbyState.kind === 'ready' && !nearbyState.fromCache ? nearbyState.snapshot.results : null;
+    nearbyState.kind === 'ready' && !nearbyState.fromCache && !filtered
+      ? nearbyState.snapshot.results
+      : null;
   useEffect(() => {
     if (freshResults !== null) {
       void visits?.refresh(freshResults).catch(() => undefined);
@@ -66,25 +82,32 @@ export default function Home() {
       return;
     }
     const id = ++latestSearch.current;
+    const key = `${text}|${JSON.stringify(filter)}`;
     const timer = setTimeout(() => {
       places
-        .search({ q: text, ...(lat === undefined || lng === undefined ? {} : { lat, lng }) })
+        .search({
+          q: text,
+          ...(lat === undefined || lng === undefined ? {} : { lat, lng }),
+          ...filter,
+        })
         .then(({ results }) => {
-          if (id === latestSearch.current) setSearch({ query: text, results });
+          if (id === latestSearch.current) setSearch({ query: key, results });
         })
         .catch((error: unknown) => {
           if (id === latestSearch.current)
-            setSearch({ query: text, message: presenter.error(error) });
+            setSearch({ query: key, message: presenter.error(error) });
         });
     }, SEARCH_DELAY_MS);
     return () => {
       clearTimeout(timer);
     };
-  }, [text, lat, lng, places, presenter, focusCount]);
+  }, [text, lat, lng, filter, places, presenter, focusCount]);
 
   const muted = { color: palette.muted };
   const searching = text !== '';
-  const pending = searching && search?.query !== text;
+  // A search is identified by its text and filter, so changing a chip shows the spinner too.
+  const searchKey = `${text}|${JSON.stringify(filter)}`;
+  const pending = searching && search?.query !== searchKey;
   const results = search !== null && 'results' in search ? search.results : [];
   const nearbyResults = 'snapshot' in nearbyState ? (nearbyState.snapshot?.results ?? []) : [];
 
@@ -114,6 +137,9 @@ export default function Home() {
             />
           </View>
         </View>
+        <View style={[styles.column, styles.chips]}>
+          <PlaceFilterChips choice={choice} onChange={setChoice} />
+        </View>
       </View>
 
       {searching ? (
@@ -137,7 +163,11 @@ export default function Home() {
               <Text style={[styles.message, muted]}>{search.message}</Text>
             ) : (
               <View>
-                <Text style={[styles.message, muted]}>Ingen treff for «{text}».</Text>
+                <Text style={[styles.message, muted]}>
+                  {filtered
+                    ? `Ingen treff for «${text}» med dette filteret.`
+                    : `Ingen treff for «${text}».`}
+                </Text>
                 <AddPlaceLink />
               </View>
             )
@@ -166,11 +196,13 @@ export default function Home() {
               ) : null}
             </View>
           }
-          ListEmptyComponent={<NearbyMessage state={nearbyState} onRetry={reload} />}
+          ListEmptyComponent={
+            <NearbyMessage state={nearbyState} filtered={filtered} onRetry={reload} />
+          }
           ListFooterComponent={
             nearbyState.kind === 'failed' || nearbyState.kind === 'no-location' ? (
               nearbyState.snapshot === null ? undefined : (
-                <NearbyMessage state={nearbyState} onRetry={reload} />
+                <NearbyMessage state={nearbyState} filtered={filtered} onRetry={reload} />
               )
             ) : (
               <AddPlaceLink />
@@ -182,7 +214,11 @@ export default function Home() {
   );
 }
 
-function NearbyMessage(props: { readonly state: NearbyState; readonly onRetry: () => void }) {
+function NearbyMessage(props: {
+  readonly state: NearbyState;
+  readonly filtered: boolean;
+  readonly onRetry: () => void;
+}) {
   const { presenter } = useServices();
   const palette = usePalette();
   const muted = { color: palette.muted };
@@ -195,7 +231,13 @@ function NearbyMessage(props: { readonly state: NearbyState; readonly onRetry: (
         </View>
       );
     case 'ready':
-      return <Text style={[styles.message, muted]}>Ingen kjente steder i nærheten.</Text>;
+      return (
+        <Text style={[styles.message, muted]}>
+          {props.filtered
+            ? 'Ingen steder i nærheten passer filteret.'
+            : 'Ingen kjente steder i nærheten.'}
+        </Text>
+      );
     case 'no-location':
       return (
         <Text style={[styles.message, muted]}>
@@ -235,7 +277,8 @@ const styles = StyleSheet.create({
   // Full width on phones; a centred column on desktop browsers.
   column: { width: '100%', maxWidth: 720, alignSelf: 'center' },
   hero: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
-  header: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
+  header: { paddingHorizontal: 20, paddingBottom: 12, gap: 12 },
+  chips: { paddingBottom: 18 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bell: { padding: 6 },
   title: { fontSize: 34, fontWeight: '700', letterSpacing: 0.3 },
