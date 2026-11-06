@@ -3,13 +3,14 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { usePalette } from './theme';
 
-/** What the chips have chosen: "Tar Amex" on or off, and at most one category group. */
+/** What the chips have chosen: "Tar Amex" on or off, and any number of category groups. */
 export interface PlaceFilterChoice {
   readonly acceptsOnly: boolean;
-  readonly group: CategoryGroupKey | null;
+  /** Empty means every category. */
+  readonly groups: readonly CategoryGroupKey[];
 }
 
-export const NO_FILTER: PlaceFilterChoice = { acceptsOnly: false, group: null };
+export const NO_FILTER: PlaceFilterChoice = { acceptsOnly: false, groups: [] };
 
 type CategoryGroupKey = 'food' | 'cafe' | 'bar' | 'shop' | 'hotel';
 
@@ -28,18 +29,20 @@ const GROUPS: readonly {
 
 /** The API filter for a choice; `{}` when nothing is chosen. */
 export function toFilterQuery(choice: PlaceFilterChoice): PlaceFilterQueryDto {
-  const categories = GROUPS.find((group) => group.key === choice.group)?.categories;
+  const categories = GROUPS.filter((group) => choice.groups.includes(group.key)).flatMap(
+    (group) => group.categories,
+  );
   return {
     ...(choice.acceptsOnly ? { acceptsOnly: true } : {}),
-    ...(categories === undefined ? {} : { categories }),
+    ...(categories.length === 0 ? {} : { categories }),
   };
 }
 
 export function isFiltered(choice: PlaceFilterChoice): boolean {
-  return choice.acceptsOnly || choice.group !== null;
+  return choice.acceptsOnly || choice.groups.length > 0;
 }
 
-/** A row of chips on the navy header: "Tar Amex", then one category at a time. */
+/** A row of chips on the navy header: "Tar Amex", then categories; several can be on at once. */
 export function PlaceFilterChips(props: {
   readonly choice: PlaceFilterChoice;
   readonly onChange: (choice: PlaceFilterChoice) => void;
@@ -64,9 +67,14 @@ export function PlaceFilterChips(props: {
         <Chip
           key={group.key}
           label={group.label}
-          selected={choice.group === group.key}
+          selected={choice.groups.includes(group.key)}
           onPress={() => {
-            onChange({ ...choice, group: choice.group === group.key ? null : group.key });
+            onChange({
+              ...choice,
+              groups: choice.groups.includes(group.key)
+                ? choice.groups.filter((key) => key !== group.key)
+                : [...choice.groups, group.key],
+            });
           }}
         />
       ))}
