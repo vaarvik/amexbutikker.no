@@ -8,7 +8,7 @@ function TabIcon(props: { readonly name: SymbolViewProps['name']; readonly color
   return <SymbolView name={props.name} size={24} tintColor={props.color} />;
 }
 
-/** The bottom tabs: places, map, settings. */
+/** The bottom tabs: places, map, bonus, settings. */
 export default function TabsLayout() {
   const palette = usePalette();
   return (
@@ -43,6 +43,16 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarIcon: ({ color }) => (
             <TabIcon name={{ ios: 'map', android: 'map', web: 'map' }} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="bonus"
+        options={{
+          title: 'Bonus',
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <TabIcon name={{ ios: 'gift', android: 'redeem', web: 'redeem' }} color={color} />
           ),
         }}
       />

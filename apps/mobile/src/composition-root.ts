@@ -12,6 +12,13 @@ import type { NearbyService, PlacesApiClient } from './places/places.ports';
 import { FetchJsonTransport } from './shared/fetch-json.transport';
 import type { KeyValueStorage } from './shared/shared.ports';
 import { SystemClock } from './shared/system.clock';
+import { ClockLocalDateProvider } from './spending/clock-local-date.provider';
+import { KeyValueSpendingStorage } from './spending/key-value-spending.storage';
+import { NorwegianSpendingPresenter } from './spending/norwegian-spending.presenter';
+import { PeriodMilestoneProgressCalculator } from './spending/period-milestone-progress.calculator';
+import { RandomIdGenerator } from './spending/random-id.generator';
+import type { SpendingPresenter, SpendingService } from './spending/spending.ports';
+import { StoredSpendingService } from './spending/stored-spending.service';
 import { NorwegianStatusPresenter } from './status/norwegian-status.presenter';
 import type { StatusPresenter } from './status/status.ports';
 import { STATUS_COLORS } from './ui/theme';
@@ -36,6 +43,9 @@ export interface AppServices {
   readonly visits: VisitService | null;
   /** The home screen widget; does nothing where there is none. */
   readonly widgets: NearbyWidgetService;
+  /** The Bonus tab: spending and milestones, stored on the phone only. */
+  readonly spending: SpendingService;
+  readonly spendingPresenter: SpendingPresenter;
   /** False on the web: native-only features (share intake, visit detection) are hidden there. */
   readonly native: boolean;
 }
@@ -76,6 +86,8 @@ export class CompositionRoot implements AppServices {
   public readonly presenter: StatusPresenter;
   public readonly visits: VisitService | null;
   public readonly widgets: NearbyWidgetService;
+  public readonly spending: SpendingService;
+  public readonly spendingPresenter: SpendingPresenter;
   public readonly native: boolean;
 
   public constructor(config: MobileConfig, adapters: PlatformAdapters) {
@@ -100,6 +112,14 @@ export class CompositionRoot implements AppServices {
       radiusM: 1500,
     });
     this.presenter = new NorwegianStatusPresenter();
+    // Amounts never leave the phone: this storage is local and nothing here talks to the API.
+    this.spending = new StoredSpendingService(
+      new KeyValueSpendingStorage(AsyncStorage, { key: 'spending-v1' }),
+      new PeriodMilestoneProgressCalculator(),
+      new ClockLocalDateProvider(clock),
+      new RandomIdGenerator(),
+    );
+    this.spendingPresenter = new NorwegianSpendingPresenter();
     this.widgets = new SnapshotNearbyWidgetService(
       new StatusNearbyWidgetPropsMapper(this.presenter, {
         hereWithinM: 60,

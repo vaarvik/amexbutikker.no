@@ -380,10 +380,15 @@ card to a shortcut, which opens amexbutikker://paid?merchant=…[&amount=…].
 
 ---
 
-## Phase 14: Spending and milestones (on the phone only)
+## Phase 14: Spending and milestones (on the phone only; 14a and 14b done)
 
 A personal tab: how much the user has spent on the card and how far they are from a bonus milestone.
 Amounts never leave the phone; the server keeps no amounts (unchanged rule).
+
+Built: the Bonus tab, Legg til kjøp, Oppdater total, Nytt mål, Velg kort, in `apps/mobile/src/spending/`.
+Presets: SAS EuroBonus Amex Premium (150 000 kr per calendar year, 2-for-1) and a welcome/referral bonus
+(90 000 kr within 9 months). Both are from third-party sites, fetched 2026-11-06; the owner should check
+them against the issuer's terms before release. Elite is left out: no source agreed on its threshold.
 
 ```
 14a. Model and tab

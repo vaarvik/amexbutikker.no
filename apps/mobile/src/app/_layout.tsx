@@ -40,6 +40,22 @@ export default function RootLayout() {
           <Stack.Screen name="add" options={{ title: 'Legg til sted', presentation: 'modal' }} />
           <Stack.Screen name="shared" options={{ title: 'Delt sted' }} />
           <Stack.Screen
+            name="spending/purchase"
+            options={{ title: 'Legg til kjøp', presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="spending/total"
+            options={{ title: 'Oppdater total', presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="spending/milestone"
+            options={{ title: 'Nytt mål', presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="spending/programmes"
+            options={{ title: 'Velg kort', presentation: 'modal' }}
+          />
+          <Stack.Screen
             name="visit"
             options={{ title: 'Hvor betalte du?', presentation: 'modal' }}
           />
