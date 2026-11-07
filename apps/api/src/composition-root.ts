@@ -57,6 +57,7 @@ import {
   InMemoryUnitOfWork,
 } from '@amexbutikker/in-memory';
 import { PgChainRepository } from './chains/pg-chain.repository.js';
+import { HealthController } from './shared/health.controller.js';
 import { DevicesController } from './devices/devices.controller.js';
 import { HmacDeviceTokenService } from './devices/hmac-device-token.service.js';
 import { PgDeviceRepository } from './devices/pg-device.repository.js';
@@ -304,6 +305,7 @@ export class CompositionRoot {
           validator,
           dtos,
         ),
+        new HealthController(),
         new DevicesController(
           new RegisterDeviceUseCase(devices, tokens, ids, clock, rateLimiter),
           validator,

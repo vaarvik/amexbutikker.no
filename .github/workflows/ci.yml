@@ -34,3 +34,18 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:perf
+
+  image:
+    # The API container builds and answers its health check (no database: in-memory storage).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t amexbutikker-api .
+      - name: Health check
+        run: |
+          docker run -d --name api -p 3000:3000 \
+            -e STORAGE=memory -e DATABASE_URL=postgres://unused@localhost/unused \
+            -e DEVICE_TOKEN_SECRET="$(openssl rand -base64 48)" amexbutikker-api
+          for i in $(seq 1 30); do curl -sf localhost:3000/health && exit 0; sleep 1; done
+          docker logs api
+          exit 1

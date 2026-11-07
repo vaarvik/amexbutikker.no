@@ -1,0 +1,59 @@
+# Render blueprint: the API, its Postgres (PostGIS) and the nightly status refresh, in Frankfurt.
+# New → Blueprint in the Render dashboard, pick this repository. See docs/hosting.md.
+envVarGroups:
+  - name: amexbutikker-api
+    envVars:
+      - key: STORAGE
+        value: postgres
+      - key: LOG_LEVEL
+        value: info
+      # Render's proxy sets X-Forwarded-For; the rate limits key on the client address.
+      - key: TRUST_PROXY
+        value: 'true'
+      # Generated once, shared by the web service and the cron job.
+      - key: DEVICE_TOKEN_SECRET
+        generateValue: true
+
+services:
+  - type: web
+    name: amexbutikker-api
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    healthCheckPath: /health
+    # Migrations run on every deploy before the server starts; they are idempotent.
+    dockerCommand: sh -c "node dist/src/migrate.js && node dist/src/server.js"
+    envVars:
+      - fromGroup: amexbutikker-api
+      - key: DATABASE_URL
+        fromDatabase:
+          name: amexbutikker-db
+          property: connectionString
+      # Exact origins of a hosted web app, comma-separated. Empty: no browser access.
+      - key: CORS_ORIGINS
+        sync: false
+
+  - type: cron
+    name: amexbutikker-refresh-statuses
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    # 03:00 UTC, every night: lets old evidence decay (docs/PROMPTS.md, open items).
+    schedule: '0 3 * * *'
+    dockerCommand: node dist/src/cli.js refresh-statuses
+    envVars:
+      - fromGroup: amexbutikker-api
+      - key: DATABASE_URL
+        fromDatabase:
+          name: amexbutikker-db
+          property: connectionString
+
+databases:
+  - name: amexbutikker-db
+    region: frankfurt
+    plan: basic-256mb
+    postgresMajorVersion: '16'
+    databaseName: amexbutikker
+    user: amexbutikker
+    # Only Render services can connect. Add your own address to run imports from your machine.
+    ipAllowList: []

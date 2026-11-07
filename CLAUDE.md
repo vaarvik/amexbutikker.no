@@ -280,7 +280,7 @@ pnpm web:export              # static web build in apps/mobile/dist; pnpm web:se
 pnpm tunnel                  # API + web build through Cloudflare quick tunnels, prints both URLs
 ```
 
-Phones, web and EAS builds: `docs/testing-on-phones.md`.
+Phones, web and EAS builds: `docs/testing-on-phones.md`. Hosting (container, Render blueprint, nightly refresh): `docs/hosting.md`.
 
 Conventions:
 

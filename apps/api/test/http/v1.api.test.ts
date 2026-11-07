@@ -82,6 +82,13 @@ describe('HTTP API (in-memory storage)', () => {
     });
   });
 
+  it('answers the health check without a token', async () => {
+    const response = await app.inject({ method: 'GET', url: '/health' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ status: 'ok' });
+  });
+
   describe('POST /v1/places', () => {
     it('requires a device token', async () => {
       const response = await app.inject({ method: 'POST', url: '/v1/places', payload: {} });

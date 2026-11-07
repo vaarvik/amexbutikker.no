@@ -412,7 +412,8 @@ them against the issuer's terms before release. Elite is left out: no source agr
 
 ## Open items
 
-- Schedule `pnpm refresh-statuses` nightly (cron or the host's scheduler) once the API is hosted.
+- Hosting is prepared (Dockerfile, render.yaml, docs/hosting.md, nightly refresh as a cron job); the owner
+  creates the Render account and deploys the blueprint.
 
 - Real share payloads for data/fixtures/shared/ (the current six are synthetic).
 - A stable public API address before any preview build for testers.

@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+**/.expo
+.git
+.github
+.env
+.env*.local
+coverage
+data/cache
+data/statements
+apps/mobile
+docs
