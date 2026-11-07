@@ -410,10 +410,35 @@ them against the issuer's terms before release. Elite is left out: no source agr
 
 ---
 
-## Open items
+## Phase 15: Hosting at home (in progress)
 
-- Hosting is prepared (Dockerfile, render.yaml, docs/hosting.md, nightly refresh as a cron job); the owner
-  creates the Render account and deploys the blueprint.
+```
+One container (Dockerfile) serves the web app at / and the API at /v1, on amex.johann.no, as an app in the
+home simple-k8s next to the media services. CI publishes ghcr.io/vaarvik/amexbutikker (amd64 + arm64).
+The owner adds the app, its Postgres (PostGIS, pg_trgm, unaccent) and the nightly refresh job in simple-k8s.
+render.yaml stays as a hosted alternative.
+```
+
+---
+
+## Phase 16: Trust without accounts
+
+Reading is open to everyone; answering needs no account. Today: an anonymous device id (Keychain, survives
+backups and Quick Start), one counted answer per device and place, rate limits, Ja/Nei only from two answers
+or a purchase, decay. The gap is many fake devices.
+
+```
+- iOS: App Attest. RegisterDevice takes an attestation; the API checks it with Apple and marks the device
+  attested. Unattested devices may still answer, with less weight (a weight entry, not a calculator change).
+- Web: Cloudflare Turnstile on RegisterDevice (or on each answer), verified by the API.
+- Later, only if wanted: iCloud key-value sync for the Bonus tab (no server, no account), and an optional
+  Keycloak login (Google, Apple, e-mail) that links the anonymous user, for one identity on phone and web.
+  A login with Google needs Sign in with Apple in the iOS app too.
+```
+
+---
+
+## Open items
 
 - Real share payloads for data/fixtures/shared/ (the current six are synthetic).
 - A stable public API address before any preview build for testers.

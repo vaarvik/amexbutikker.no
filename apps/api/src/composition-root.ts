@@ -58,6 +58,7 @@ import {
 } from '@amexbutikker/in-memory';
 import { PgChainRepository } from './chains/pg-chain.repository.js';
 import { HealthController } from './shared/health.controller.js';
+import { StaticWebController } from './shared/static-web.controller.js';
 import { DevicesController } from './devices/devices.controller.js';
 import { HmacDeviceTokenService } from './devices/hmac-device-token.service.js';
 import { PgDeviceRepository } from './devices/pg-device.repository.js';
@@ -122,6 +123,8 @@ export interface ApiConfig {
   readonly corsOrigins: readonly string[];
   readonly rateLimits: Readonly<Record<string, z.infer<typeof RateLimitRuleSchema>>>;
   readonly imports: ImportsConfig;
+  /** The web app's static export to serve at `/`; unset serves the API only. */
+  readonly webRoot?: string;
 }
 
 export interface ImportsConfig {
@@ -164,6 +167,7 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
       .default('info'),
     trustProxy: z.stringbool().default(false),
+    webRoot: z.string().min(1).exactOptional(),
     corsOrigins: z
       .string()
       .default('')
@@ -306,6 +310,9 @@ export class CompositionRoot {
           dtos,
         ),
         new HealthController(),
+        ...(config.webRoot === undefined
+          ? []
+          : [new StaticWebController({ root: config.webRoot })]),
         new DevicesController(
           new RegisterDeviceUseCase(devices, tokens, ids, clock, rateLimiter),
           validator,
@@ -419,6 +426,7 @@ export class CompositionRoot {
         port: env.PORT,
         logLevel: env.LOG_LEVEL,
         trustProxy: env.TRUST_PROXY,
+        webRoot: env.WEB_ROOT,
         corsOrigins: env.CORS_ORIGINS,
         imports: {
           overpassUrl: env.OVERPASS_URL,

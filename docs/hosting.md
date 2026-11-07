@@ -7,9 +7,24 @@ container and offers Postgres with PostGIS, pg_trgm and unaccent works the same 
 ## Home: simple-k8s (the plan)
 
 amexbutikker runs as one more app in the home simple-k8s instance next to the media services on
-johann.no, at `amex.johann.no`. The container is the `Dockerfile` in this repo; the app's image,
-database, URL and the nightly `refresh-statuses` job are set in simple-k8s. Details follow once
-the app is set up there.
+johann.no. One container serves both the web app (`/`) and the API (`/v1`) at `amex.johann.no`.
+
+CI publishes the image on every push to main: `ghcr.io/vaarvik/amexbutikker:main` and `:sha-<commit>`,
+for amd64 and arm64. GHCR packages start private: make it public, or give simple-k8s a pull secret.
+
+| Setting in simple-k8s | Value                                                                         |
+| --------------------- | ----------------------------------------------------------------------------- |
+| Image                 | `ghcr.io/vaarvik/amexbutikker:main` (or a `sha-…` tag to pin a release)       |
+| Port                  | `3000`; health check `GET /health`                                            |
+| URL                   | `amex.johann.no`                                                              |
+| Command               | `sh -c "node dist/src/migrate.js && node dist/src/server.js"`                 |
+| Database              | Postgres 16 with the PostGIS, pg_trgm and unaccent extensions available       |
+| Environment           | `DATABASE_URL`, `DEVICE_TOKEN_SECRET` (secret, 32+ chars), `TRUST_PROXY=true` |
+| Nightly job           | same image, `node dist/src/cli.js refresh-statuses`                           |
+| Copies                | 1 (rate limits are per process)                                               |
+
+`CORS_ORIGINS` stays empty: the web app and the API share the origin. The web app inside the image is
+built with `EXPO_PUBLIC_API_URL=/`, so it calls the API on whatever host serves it.
 
 ## Elsewhere: Render
 
