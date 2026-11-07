@@ -1,5 +1,6 @@
 import type {
   Address,
+  ExistingPlace,
   NearbyPlaceHit,
   AreaQuery,
   NearbyQuery,
@@ -106,4 +107,14 @@ export interface PlaceWriter {
    * @throws NotFoundError when the place does not exist or is online.
    */
   saveBrregOrgnr(placeId: PlaceId, orgnr: string): Promise<void>;
+}
+
+/** Decides whether a place a user is adding is one we already have. Pure. */
+export interface PlaceDuplicateMatcher {
+  /**
+   * @param place the new place, not stored yet.
+   * @param existing stored places near it (physical) or with a similar name (online).
+   * @returns the stored place it most likely is, or null when it looks new.
+   */
+  findDuplicate(place: Place, existing: readonly ExistingPlace[]): Place | null;
 }

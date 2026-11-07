@@ -7,3 +7,4 @@ export * from './status/fixed-evidence-weight.policy.js';
 export * from './status/status.model.js';
 export * from './status/latest-evidence.summarizer.js';
 export * from './status/proportion-chain-hint.calculator.js';
+export * from './places/name-distance-place-duplicate.matcher.js';

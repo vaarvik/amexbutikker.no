@@ -221,3 +221,10 @@ export const NearbyPlaceHitSchema: z.ZodType<NearbyPlaceHit> = z.object({
   place: PhysicalPlaceSchema,
   distanceM: z.number().nonnegative(),
 });
+
+/** A place already stored, as the duplicate check sees it: with its distance when known. */
+export interface ExistingPlace {
+  readonly place: Place;
+  /** Metres from the new place; null for online places. */
+  readonly distanceM: number | null;
+}

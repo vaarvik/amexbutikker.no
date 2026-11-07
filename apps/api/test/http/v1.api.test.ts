@@ -104,6 +104,37 @@ describe('HTTP API (in-memory storage)', () => {
       expect(response.statusCode).toBe(401);
     });
 
+    it('answers 409 with the stored place for a duplicate, and creates it when told to', async () => {
+      const { authorization } = await registerDevice();
+      const id = await createCafe(authorization);
+      const payload = {
+        kind: 'physical',
+        name: 'Kafe Asen',
+        category: 'cafe',
+        address: { street: null, postcode: null, city: 'Oslo' },
+        location: OSLO_S,
+      };
+
+      const refused = await app.inject({
+        method: 'POST',
+        url: '/v1/places',
+        headers: { authorization },
+        payload,
+      });
+      const forced = await app.inject({
+        method: 'POST',
+        url: '/v1/places',
+        headers: { authorization },
+        payload: { ...payload, allowDuplicate: true },
+      });
+
+      expect(refused.statusCode).toBe(409);
+      expect(refused.json()).toMatchObject({
+        error: { code: 'duplicate_place', existingPlaceId: id },
+      });
+      expect(forced.statusCode).toBe(201);
+    });
+
     it('creates an online place', async () => {
       const { authorization } = await registerDevice();
 

@@ -11,6 +11,7 @@ export * from './imports/imports.model.js';
 export * from './imports/imports.ports.js';
 export * from './imports/imports.use-cases.js';
 export * from './places/places.dtos.js';
+export * from './places/places.errors.js';
 export * from './places/places.model.js';
 export * from './places/places.ports.js';
 export * from './places/places.use-cases.js';

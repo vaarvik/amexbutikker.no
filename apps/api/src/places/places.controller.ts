@@ -104,7 +104,13 @@ export class PlacesController implements HttpController {
       const body = this.validator.validate(CreatePlaceRequestDtoSchema, request.body);
       const place = await this.createPlace.execute(
         body.kind === 'online'
-          ? { kind: 'online', userId, name: body.name, website: body.website }
+          ? {
+              kind: 'online',
+              userId,
+              name: body.name,
+              website: body.website,
+              ...(body.allowDuplicate === true ? { allowDuplicate: true } : {}),
+            }
           : {
               kind: 'physical',
               userId,
@@ -113,6 +119,7 @@ export class PlacesController implements HttpController {
               address: body.address,
               location: body.location,
               website: body.website ?? null,
+              ...(body.allowDuplicate === true ? { allowDuplicate: true } : {}),
             },
       );
       return reply

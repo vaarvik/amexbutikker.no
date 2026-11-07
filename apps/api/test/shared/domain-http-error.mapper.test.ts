@@ -1,11 +1,13 @@
 import {
   ConflictError,
   DomainError,
+  DuplicatePlaceError,
   NotFoundError,
   RateLimitedError,
   UnauthenticatedError,
   ValidationError,
 } from '@amexbutikker/contracts';
+import { TestData } from '@amexbutikker/contracts/test-kit';
 import { describe, expect, it } from 'vitest';
 import { DomainHttpErrorMapper } from '../../src/shared/domain-http-error.mapper.js';
 
@@ -59,4 +61,13 @@ describe('DomainHttpErrorMapper', () => {
       });
     },
   );
+
+  it('maps a duplicate place to 409 with the id of the stored place', () => {
+    const existing = new TestData().physicalPlace();
+
+    expect(mapper.toResponse(new DuplicatePlaceError(existing))).toMatchObject({
+      statusCode: 409,
+      body: { error: { code: 'duplicate_place', existingPlaceId: existing.id } },
+    });
+  });
 });

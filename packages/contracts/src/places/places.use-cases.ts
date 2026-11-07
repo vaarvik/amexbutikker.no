@@ -106,20 +106,24 @@ export type CreatePlaceInput =
       readonly address: Address;
       readonly location: GeoPoint;
       readonly website: string | null;
+      /** The user confirmed it is not the existing place we suggested. Skips the duplicate check. */
+      readonly allowDuplicate?: boolean;
     }
   | {
       readonly kind: 'online';
       readonly userId: UserId;
       readonly name: string;
       readonly website: string;
+      readonly allowDuplicate?: boolean;
     };
 
 /** A user adds a place that is missing. */
 export interface CreatePlace {
   /**
    * @returns the created place.
-   * Duplicate detection (same website, same name nearby) is not done yet; see open questions.
    *
+   * @throws DuplicatePlaceError when it looks like a stored place (similar name nearby, or the same
+   *   website for an online place) and `allowDuplicate` is not set.
    * @throws ValidationError when the input is invalid.
    * @throws RateLimitedError when the user creates too many places.
    */

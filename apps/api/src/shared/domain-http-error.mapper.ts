@@ -1,6 +1,7 @@
 import {
   ConflictError,
   DomainError,
+  DuplicatePlaceError,
   NotFoundError,
   RateLimitedError,
   UnauthenticatedError,
@@ -23,6 +24,9 @@ export class DomainHttpErrorMapper implements HttpErrorMapper {
     }
     if (error instanceof NotFoundError) {
       return this.response(404, error);
+    }
+    if (error instanceof DuplicatePlaceError) {
+      return this.response(409, error, { existingPlaceId: error.existing.id });
     }
     if (error instanceof ConflictError) {
       return this.response(409, error);

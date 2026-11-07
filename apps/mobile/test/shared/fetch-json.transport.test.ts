@@ -70,6 +70,17 @@ describe('FetchJsonTransport', () => {
     );
   });
 
+  it('passes on the stored place of a duplicate_place error', async () => {
+    const fetch: Fetch = () =>
+      Promise.resolve(
+        json(409, { error: { code: 'duplicate_place', message: 'Exists', existingPlaceId: 'p1' } }),
+      );
+
+    await expect(transport(fetch).request({ method: 'GET', path: '/x' }, Body)).rejects.toEqual(
+      new ApiError('duplicate_place', 409, 'Exists', null, 'p1'),
+    );
+  });
+
   it('reports an error response without an error body as invalid_response', async () => {
     const fetch: Fetch = () => Promise.resolve(new Response('Bad gateway', { status: 502 }));
 

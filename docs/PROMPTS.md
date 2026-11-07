@@ -416,4 +416,3 @@ them against the issuer's terms before release. Elite is left out: no source agr
 
 - Real share payloads for data/fixtures/shared/ (the current six are synthetic).
 - A stable public API address before any preview build for testers.
-- CreatePlace has no duplicate detection.

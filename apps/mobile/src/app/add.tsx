@@ -1,9 +1,10 @@
 import { CreatePlaceRequestDtoSchema, PLACE_CATEGORIES } from '@amexbutikker/contracts';
-import type { GeoPoint, PlaceCategory } from '@amexbutikker/contracts';
+import type { GeoPoint, PlaceCategory, PlaceId } from '@amexbutikker/contracts';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ApiError } from '../shared/fetch-json.transport';
 import { useServices } from '../ui/services';
 import { usePalette } from '../ui/theme';
 
@@ -27,6 +28,8 @@ export default function AddPlace() {
   const [position, setPosition] = useState<LocationState>('locating');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  // Set when the API says we already have this place; the user opens it or adds theirs anyway.
+  const [duplicate, setDuplicate] = useState<{ id: PlaceId; name: string } | null>(null);
 
   useEffect(() => {
     void location.findCurrent().then((point) => {
@@ -40,7 +43,7 @@ export default function AddPlace() {
       ? website.trim()
       : `https://${website.trim()}`;
 
-  const submit = () => {
+  const submit = (allowDuplicate = false) => {
     if (kind === 'physical' && typeof position !== 'object') {
       setError(
         'Vi trenger posisjonen din for å legge til et fysisk sted. Stå ved stedet og slå på posisjon.',
@@ -63,6 +66,7 @@ export default function AddPlace() {
             ...(site === '' ? {} : { website: site }),
           },
     );
+    setDuplicate(null);
     if (!input.success) {
       setError(
         kind === 'online'
@@ -74,11 +78,17 @@ export default function AddPlace() {
     setSending(true);
     setError(null);
     places
-      .create(input.data)
+      .create(allowDuplicate ? { ...input.data, allowDuplicate: true } : input.data)
       .then(({ place }) => {
         router.replace({ pathname: '/place/[id]', params: { id: place.id } });
       })
-      .catch((failure: unknown) => {
+      .catch(async (failure: unknown) => {
+        if (failure instanceof ApiError && failure.existingPlaceId !== null) {
+          const id = failure.existingPlaceId as PlaceId;
+          const existing = await places.getDetails(id).catch(() => null);
+          setDuplicate({ id, name: existing?.place.name ?? 'Stedet' });
+          return;
+        }
         setError(presenter.error(failure));
       })
       .finally(() => {
@@ -103,7 +113,15 @@ export default function AddPlace() {
       />
 
       <Field label="Navn">
-        <TextInput value={name} onChangeText={setName} style={inputStyle} autoFocus />
+        <TextInput
+          value={name}
+          onChangeText={(text) => {
+            setName(text);
+            setDuplicate(null);
+          }}
+          style={inputStyle}
+          autoFocus
+        />
       </Field>
 
       {kind === 'physical' ? (
@@ -161,19 +179,61 @@ export default function AddPlace() {
 
       {error === null ? null : <Text style={[styles.error, { color: palette.text }]}>{error}</Text>}
 
-      <Pressable
-        disabled={sending}
-        onPress={submit}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.submit,
-          { backgroundColor: palette.accent, opacity: pressed || sending ? 0.7 : 1 },
-        ]}
-      >
-        <Text style={[styles.submitText, { color: palette.onAccent }]}>
-          {sending ? 'Lagrer …' : 'Legg til'}
-        </Text>
-      </Pressable>
+      {duplicate === null ? null : (
+        <View
+          style={[styles.duplicate, { backgroundColor: palette.card }]}
+          accessibilityLiveRegion="polite"
+        >
+          <Text style={[styles.duplicateText, { color: palette.text }]}>
+            Vi har allerede «{duplicate.name}» like ved. Er det samme sted?
+          </Text>
+          <Pressable
+            onPress={() => {
+              router.replace({ pathname: '/place/[id]', params: { id: duplicate.id } });
+            }}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.submit,
+              { backgroundColor: palette.accent, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <Text style={[styles.submitText, { color: palette.onAccent }]}>
+              Ja, åpne «{duplicate.name}»
+            </Text>
+          </Pressable>
+          <Pressable
+            disabled={sending}
+            onPress={() => {
+              submit(true);
+            }}
+            accessibilityRole="button"
+            hitSlop={8}
+            style={styles.anyway}
+          >
+            <Text style={[styles.anywayText, { color: palette.accent }]}>
+              Nei, det er et annet sted. Legg til likevel
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      {duplicate === null ? (
+        <Pressable
+          disabled={sending}
+          onPress={() => {
+            submit();
+          }}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.submit,
+            { backgroundColor: palette.accent, opacity: pressed || sending ? 0.7 : 1 },
+          ]}
+        >
+          <Text style={[styles.submitText, { color: palette.onAccent }]}>
+            {sending ? 'Lagrer …' : 'Legg til'}
+          </Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
@@ -243,6 +303,10 @@ const styles = StyleSheet.create({
   error: { fontSize: 15, fontWeight: '600' },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { borderWidth: 1.5, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  duplicate: { borderRadius: 14, padding: 14, gap: 12 },
+  duplicateText: { fontSize: 16 },
+  anyway: { alignItems: 'center', paddingVertical: 6 },
+  anywayText: { fontSize: 16, fontWeight: '600' },
   submit: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', minHeight: 48 },
   submitText: { fontSize: 17, fontWeight: '700' },
 });

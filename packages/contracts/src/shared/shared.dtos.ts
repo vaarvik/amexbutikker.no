@@ -17,6 +17,8 @@ export interface ErrorResponseDto {
       readonly message: string;
     }[];
     readonly retryAfterSeconds?: number;
+    /** With `duplicate_place`: the place the new one looks like. */
+    readonly existingPlaceId?: string;
   };
 }
 
@@ -28,5 +30,6 @@ export const ErrorResponseDtoSchema: z.ZodType<ErrorResponseDto> = z.object({
       .array(z.object({ path: z.array(z.union([z.string(), z.number()])), message: z.string() }))
       .exactOptional(),
     retryAfterSeconds: z.number().nonnegative().exactOptional(),
+    existingPlaceId: z.string().exactOptional(),
   }),
 });

@@ -10,6 +10,8 @@ export class ApiError extends Error {
     public readonly status: number | null,
     message: string,
     public readonly retryAfterSeconds: number | null = null,
+    /** With `duplicate_place`: the stored place the new one looks like. */
+    public readonly existingPlaceId: string | null = null,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -41,6 +43,7 @@ export class FetchJsonTransport implements JsonTransport {
             response.status,
             error.data.error.message,
             error.data.error.retryAfterSeconds ?? null,
+            error.data.error.existingPlaceId ?? null,
           )
         : new ApiError('invalid_response', response.status, `HTTP ${String(response.status)}`);
     }

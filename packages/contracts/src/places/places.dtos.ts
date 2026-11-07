@@ -245,11 +245,14 @@ export type CreatePlaceRequestDto =
       readonly address: Address;
       readonly location: GeoPoint;
       readonly website?: string;
+      /** Set after the user said "it is a different place" to a `duplicate_place` answer. */
+      readonly allowDuplicate?: boolean;
     }
   | {
       readonly kind: 'online';
       readonly name: string;
       readonly website: string;
+      readonly allowDuplicate?: boolean;
     };
 
 const placeName = z.string().trim().min(1).max(200);
@@ -264,11 +267,13 @@ export const CreatePlaceRequestDtoSchema: z.ZodType<CreatePlaceRequestDto> = z.d
       address: AddressSchema,
       location: GeoPointSchema,
       website: z.url().exactOptional(),
+      allowDuplicate: z.boolean().exactOptional(),
     }),
     z.object({
       kind: z.literal('online'),
       name: placeName,
       website: z.url(),
+      allowDuplicate: z.boolean().exactOptional(),
     }),
   ],
 );
