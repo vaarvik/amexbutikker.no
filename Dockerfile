@@ -23,6 +23,8 @@ RUN corepack enable
 WORKDIR /repo
 COPY . .
 RUN pnpm install --frozen-lockfile --filter "@amexbutikker/mobile..."
+# Static rendering bundles for Node, which resolves the workspace packages to their compiled dist.
+RUN pnpm exec tsc -b packages/contracts
 # "/" makes the web app call the API on its own origin.
 RUN cd apps/mobile && EXPO_PUBLIC_API_URL=/ pnpm exec expo export --platform web --output-dir /web
 
