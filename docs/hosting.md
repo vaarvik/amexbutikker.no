@@ -1,46 +1,15 @@
 # Hosting
 
-The API runs as one container (`Dockerfile`) with PostgreSQL 16 + PostGIS beside it. The plan is a home
-machine behind a Cloudflare Tunnel (below); `render.yaml` is a hosted alternative. Any host that runs a
+The API runs as one container (`Dockerfile`) with PostgreSQL 16 + PostGIS beside it. The plan is the home
+simple-k8s instance (below); `render.yaml` is a hosted alternative. Any host that runs a
 container and offers Postgres with PostGIS, pg_trgm and unaccent works the same way.
 
-## At home on this Mac (the plan)
+## Home: simple-k8s (the plan)
 
-`infra/home/compose.yaml` runs everything on one machine, separate from the dev database:
-
-| Service   | What it does                                                                         |
-| --------- | ------------------------------------------------------------------------------------ |
-| `web`     | Caddy: serves the web app (`apps/mobile/dist`), sends `/v1` and `/health` to the API |
-| `api`     | The API; runs migrations, then serves                                                |
-| `db`      | Postgres 16 + PostGIS, built natively for Apple silicon (`infra/home/db.Dockerfile`) |
-| `refresh` | `refresh-statuses` once a day                                                        |
-| `backup`  | `pg_dump` once a day into `infra/home/backups/`, keeps 14 days                       |
-| `tunnel`  | Cloudflare Tunnel: `https://amex.johann.no` → `web`. No open ports on the router.    |
-
-Web and API share one origin, so `CORS_ORIGINS` stays empty and the web app calls `/v1` on its own host.
-
-### Once
-
-1. Cloudflare (with `johann.no` on it): **Zero Trust → Networks → Tunnels → Create tunnel**
-   (Cloudflared). Add a public hostname `amex.johann.no` → service `http://web:80`. Copy the token.
-2. `cp infra/home/.env.example infra/home/.env` and fill in the password, the device-token secret
-   and the tunnel token. The file is gitignored.
-3. Keep the machine serving: start Colima at login (`brew services start colima`) and stop the Mac
-   from sleeping on power (System Settings → Energy, or `sudo pmset -c sleep 0`).
-
-### Each release
-
-```bash
-EXPO_PUBLIC_API_URL=https://amex.johann.no pnpm web:export
-docker compose -f infra/home/compose.yaml up -d --build
-curl -s localhost:3100/health        # {"status":"ok"}
-```
-
-The first time, fill the database: run the imports with
-`DATABASE_URL=postgres://amexbutikker:<password>@localhost:5433/amexbutikker` after temporarily adding
-`ports: ['127.0.0.1:5433:5432']` to `db`, or copy your dev data with `pg_dump` / `pg_restore`.
-
-Restore a backup: `docker compose -f infra/home/compose.yaml exec -T db pg_restore -U amexbutikker -d amexbutikker --clean < infra/home/backups/<file>.dump`.
+amexbutikker runs as one more app in the home simple-k8s instance next to the media services on
+johann.no, at `amex.johann.no`. The container is the `Dockerfile` in this repo; the app's image,
+database, URL and the nightly `refresh-statuses` job are set in simple-k8s. Details follow once
+the app is set up there.
 
 ## Elsewhere: Render
 
