@@ -1,0 +1,23 @@
+# One origin for the web app and the API: https://amex.johann.no serves the app, /v1 and /health go
+# to the API. Same origin, so the browser needs no CORS. TLS is Cloudflare's; this listens on HTTP.
+:80 {
+	encode zstd gzip
+
+	handle /v1/* {
+		reverse_proxy api:3000
+	}
+	handle /health {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv
+		# expo-router's static export writes one HTML file per route; dynamic routes keep their
+		# bracket name, e.g. /place/<id> is place/[id].html.
+		@place path_regexp ^/place/[^/]+$
+		rewrite @place /place/[id].html
+		try_files {path} {path}.html {path}/index.html /index.html
+		file_server
+		header /_expo/* Cache-Control "public, max-age=31536000, immutable"
+	}
+}

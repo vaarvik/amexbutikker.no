@@ -1,0 +1,97 @@
+# The production stack on a home machine: the web app and API behind Caddy, Postgres, nightly
+# status refresh, nightly backup and a Cloudflare Tunnel. Separate from the dev database in the root docker-compose.yml.
+#   cp infra/home/.env.example infra/home/.env   # then fill it in
+#   EXPO_PUBLIC_API_URL=https://amex.johann.no pnpm web:export   # the web app, into apps/mobile/dist
+#   docker compose -f infra/home/compose.yaml up -d --build
+# See docs/hosting.md.
+name: amexbutikker-prod
+
+x-api: &api
+  build:
+    context: ../..
+    dockerfile: Dockerfile
+  image: amexbutikker-api:prod
+  restart: unless-stopped
+  environment:
+    STORAGE: postgres
+    DATABASE_URL: postgres://amexbutikker:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/home/.env}@db:5432/amexbutikker
+    DEVICE_TOKEN_SECRET: ${DEVICE_TOKEN_SECRET:?set DEVICE_TOKEN_SECRET in infra/home/.env}
+    LOG_LEVEL: info
+    # cloudflared sits in front and sets X-Forwarded-For; rate limits key on the client address.
+    TRUST_PROXY: 'true'
+    CORS_ORIGINS: ${CORS_ORIGINS:-}
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    build:
+      context: .
+      dockerfile: db.Dockerfile
+    image: amexbutikker-db:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: amexbutikker
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/home/.env}
+      POSTGRES_DB: amexbutikker
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U amexbutikker -d amexbutikker']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  api:
+    <<: *api
+    # Migrations are idempotent; running them on every start keeps the schema current after an update.
+    command: sh -c "node dist/src/migrate.js && node dist/src/server.js"
+
+  web:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../apps/mobile/dist:/srv:ro
+    # Only this machine can reach it directly (http://localhost:3100); the world goes through the tunnel.
+    ports:
+      - '127.0.0.1:3100:80'
+    depends_on:
+      - api
+
+  refresh:
+    <<: *api
+    # Recalculates statuses older than a day, so old evidence decays. Once a day.
+    command: sh -c "while true; do node dist/src/cli.js refresh-statuses; sleep 86400; done"
+
+  backup:
+    image: amexbutikker-db:16
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/home/.env}
+    # A compressed dump every 24 hours into infra/home/backups; dumps older than 14 days are removed.
+    command: >
+      sh -c 'while true; do
+        pg_dump -h db -U amexbutikker -d amexbutikker -Fc -f /backups/amexbutikker-$$(date +%Y%m%d-%H%M).dump &&
+        find /backups -name "*.dump" -mtime +14 -delete;
+        sleep 86400; done'
+    volumes:
+      - ./backups:/backups
+
+  tunnel:
+    image: cloudflare/cloudflared:2025.10.0
+    restart: unless-stopped
+    # The tunnel and its public hostname (amex.johann.no -> http://web:80) are set up
+    # in the Cloudflare dashboard; the token connects this machine to it.
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN in infra/home/.env}
+    depends_on:
+      - web
+
+volumes:
+  db-data:

@@ -7,3 +7,5 @@ coverage/
 .DS_Store
 **/data/cache/
 data/statements/
+infra/home/.env
+infra/home/backups/
