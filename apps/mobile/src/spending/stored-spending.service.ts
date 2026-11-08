@@ -1,12 +1,5 @@
-import { CARD_PROGRAMMES } from './spending.model';
-import type {
-  CardProgramme,
-  LocalDate,
-  Milestone,
-  MilestonePeriod,
-  Purchase,
-  SpendingState,
-} from './spending.model';
+import type { Card } from '@amexbutikker/contracts';
+import type { LocalDate, Milestone, Purchase, SpendingState } from './spending.model';
 import type {
   IdGenerator,
   LocalDateProvider,
@@ -30,7 +23,6 @@ export class StoredSpendingService implements SpendingService {
     private readonly dates: LocalDateProvider,
     private readonly ids: IdGenerator,
     private readonly years: YearSpendingSummarizer,
-    private readonly catalogue: readonly CardProgramme[] = CARD_PROGRAMMES,
   ) {}
 
   public async overview(): Promise<SpendingOverview> {
@@ -80,41 +72,46 @@ export class StoredSpendingService implements SpendingService {
     }));
   }
 
-  public addProgramme(programmeId: string, start?: LocalDate): Promise<SpendingOverview> {
-    const programme = this.catalogue.find((candidate) => candidate.id === programmeId);
-    if (programme === undefined) {
-      return Promise.reject(new Error(`Unknown card programme ${programmeId}.`));
-    }
-    const milestones: Milestone[] = [];
-    for (const preset of programme.milestones) {
-      let period: MilestonePeriod = { kind: 'calendar_year' };
-      if (preset.period.kind === 'window') {
-        if (start === undefined) {
-          return Promise.reject(new Error(`${programme.name} needs a start date.`));
-        }
-        period = { kind: 'window', start, months: preset.period.months };
-      }
-      milestones.push({
-        id: this.ids.next(),
-        title: preset.title,
-        targetNok: preset.targetNok,
-        period,
-        reward: preset.reward,
-        programmeId: programme.id,
-      });
-    }
-    return this.change((state) => ({ ...state, milestones: [...state.milestones, ...milestones] }));
+  public setCard(card: Card | null): Promise<SpendingOverview> {
+    return this.change((state) => {
+      // Goals of the card chosen before go; the chosen card's own goals stay, with their totals.
+      const previous = state.card?.id === card?.id ? null : (state.card?.id ?? null);
+      const removed = new Set(
+        state.milestones
+          .filter((milestone) => previous !== null && milestone.programmeId === previous)
+          .map((milestone) => milestone.id),
+      );
+      const kept = state.milestones.filter((milestone) => !removed.has(milestone.id));
+      const added: Milestone[] =
+        card === null || kept.some((milestone) => milestone.programmeId === card.id)
+          ? []
+          : card.goals
+              .filter((goal) => goal.period.kind === 'calendar_year')
+              .map((goal) => ({
+                id: this.ids.next(),
+                title: goal.title,
+                targetNok: goal.targetNok,
+                period: { kind: 'calendar_year' } as const,
+                reward: goal.reward,
+                programmeId: card.id,
+              }));
+      return {
+        card: card === null ? null : { id: card.id, name: card.name, shortName: card.shortName },
+        // The card's goals first: they are what the Bonus tab is about.
+        milestones: [...added, ...kept],
+        entries: state.entries.filter(
+          (entry) => entry.kind !== 'total' || !removed.has(entry.milestoneId),
+        ),
+      };
+    });
   }
 
   public removeMilestone(id: string): Promise<SpendingOverview> {
     return this.change((state) => ({
+      ...state,
       milestones: state.milestones.filter((milestone) => milestone.id !== id),
       entries: state.entries.filter((entry) => entry.kind !== 'total' || entry.milestoneId !== id),
     }));
-  }
-
-  public programmes(): readonly CardProgramme[] {
-    return this.catalogue;
   }
 
   public today(): LocalDate {
@@ -140,6 +137,7 @@ export class StoredSpendingService implements SpendingService {
       // Newest date first; on the same date, the one added last first.
       purchases,
       year: this.years.summarize(purchases, today),
+      card: state.card,
     };
   }
 }

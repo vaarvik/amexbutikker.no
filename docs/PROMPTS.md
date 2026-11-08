@@ -390,12 +390,13 @@ phone. See docs/wallet-shortcut.md.
 A personal tab: how much the user has spent on the card and how far they are from a bonus milestone.
 Amounts never leave the phone; the server keeps no amounts (unchanged rule).
 
-Built: the Bonus tab, Legg til kjøp, Oppdater total, Nytt mål, Velg kort, in `apps/mobile/src/spending/`. The tab
-shows the nearest goal big at the top (or this year's total without one) and spending per month; goals are set
-up in Settings → Bonusmål.
-Presets: SAS EuroBonus Amex Premium (150 000 kr per calendar year, 2-for-1) and a welcome/referral bonus
-(90 000 kr within 9 months). Both are from third-party sites, fetched 2026-11-06; the owner should check
-them against the issuer's terms before release. Elite is left out: no source agreed on its threshold.
+Built: the Bonus tab, Legg til kjøp, Oppdater total, Nytt mål, in `apps/mobile/src/spending/`. The user picks
+their card once (Settings → Kort og mål → Kort); its yearly goals (the companion ticket) are set up and shown big
+at the top of the Bonus tab, with spending per month below. A welcome bonus is a goal the user adds (Legg til
+mål). The cards come from `GET /v1/cards` (`apps/api/src/cards/cards.model.ts`: all eight Amex cards issued in
+Norway; goals for SAS Classic 100 000 kr, Premium 150 000 kr and Elite 150 000 / 300 000 kr per calendar year,
+from kredittkortlisten.no and kortio.no, fetched 2026-11-08), so a change needs an API deploy, not an app
+release. The owner should check the goals against the issuer's terms before release.
 
 ```
 14a. Model and tab
@@ -410,7 +411,7 @@ them against the issuer's terms before release. Elite is left out: no source agr
 14b. Preset programmes
 - data/card-programmes.yaml: card name, milestones (target, period kind, reward), sourceUrl, fetchedAt.
   Shown with "Sjekk vilkårene hos kortutsteder" and the fetch date; terms change, presets are hints.
-- "Velg kort" adds its milestones; custom milestones alongside. Presets only from sources the owner checks.
+- Choosing the card adds its yearly goals; custom milestones alongside. Goals only from sources the owner checks.
 14c. Wallet amounts (done): Phase 13's link also takes the amount and stores a `wallet` purchase; a declined
     payment's purchase is removed again.
 14d. Statement import: CSV/PDF export from the Amex site, parsed on the phone; needs an anonymised sample.

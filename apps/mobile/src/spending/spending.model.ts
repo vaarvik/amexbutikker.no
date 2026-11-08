@@ -88,7 +88,7 @@ export interface Milestone {
   readonly period: MilestonePeriod;
   /** Free text, e.g. "90 000 EuroBonus-poeng". */
   readonly reward: string;
-  /** Set when the milestone came from a preset card programme. */
+  /** The card id when the milestone is one of the chosen card's goals; null for the user's own. */
   readonly programmeId: string | null;
 }
 
@@ -102,17 +102,34 @@ export const MilestoneSchema: z.ZodType<Milestone> = z.object({
 });
 
 /** Everything the Bonus tab stores, as one document. */
+/** The card the user has, as it was when chosen. Its goals are milestones with its id. */
+export interface ChosenCard {
+  readonly id: string;
+  readonly name: string;
+  readonly shortName: string;
+}
+
+export const ChosenCardSchema: z.ZodType<ChosenCard> = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  shortName: z.string().min(1),
+});
+
 export interface SpendingState {
+  /** The card the user has; the Bonus tab always tracks its goals. */
+  readonly card: ChosenCard | null;
   readonly milestones: readonly Milestone[];
   readonly entries: readonly SpendingEntry[];
 }
 
 export const SpendingStateSchema: z.ZodType<SpendingState> = z.object({
+  // Stored before cards were chosen: none.
+  card: ChosenCardSchema.nullable().default(null),
   milestones: z.array(MilestoneSchema),
   entries: z.array(SpendingEntrySchema),
 });
 
-export const EMPTY_SPENDING_STATE: SpendingState = { milestones: [], entries: [] };
+export const EMPTY_SPENDING_STATE: SpendingState = { card: null, milestones: [], entries: [] };
 
 /**
  * Where a milestone stands on a given day.
@@ -138,60 +155,6 @@ export interface MilestoneProgress {
   /** The latest typed total counted, if any. */
   readonly totalAsOf: LocalDate | null;
 }
-
-/** A milestone a card programme offers, before the user adds it. */
-export interface ProgrammeMilestone {
-  readonly title: string;
-  readonly targetNok: number;
-  /** `window` milestones need a start date from the user, usually when the card was opened. */
-  readonly period:
-    { readonly kind: 'calendar_year' } | { readonly kind: 'window'; readonly months: number };
-  readonly reward: string;
-}
-
-/** A card's published spending milestones. Terms change: always shown with source and date. */
-export interface CardProgramme {
-  readonly id: string;
-  readonly name: string;
-  readonly milestones: readonly ProgrammeMilestone[];
-  readonly sourceUrl: string;
-  readonly fetchedAt: LocalDate;
-}
-
-/**
- * Preset programmes. Hints, not terms: each was read from the source on `fetchedAt`, and the app
- * tells the user to check the issuer's terms. Add one only from a source the owner has checked.
- */
-export const CARD_PROGRAMMES: readonly CardProgramme[] = [
-  {
-    id: 'sas-eurobonus-amex-premium',
-    name: 'SAS EuroBonus American Express Premium',
-    milestones: [
-      {
-        title: '2-for-1-kupong',
-        targetNok: 150_000,
-        period: { kind: 'calendar_year' },
-        reward: 'En 2-for-1-kupong for EuroBonus-reiser',
-      },
-    ],
-    sourceUrl: 'https://www.dagenspenger.no/kredittkort/american-express',
-    fetchedAt: '2026-11-06',
-  },
-  {
-    id: 'amex-welcome-bonus',
-    name: 'Velkomst- eller vervebonus (nytt kort)',
-    milestones: [
-      {
-        title: 'Velkomstbonus',
-        targetNok: 90_000,
-        period: { kind: 'window', months: 9 },
-        reward: 'Bonuspoeng etter tilbudet ditt',
-      },
-    ],
-    sourceUrl: 'https://amexguiden.no/kort/kampanjer',
-    fetchedAt: '2026-11-06',
-  },
-];
 
 /** Spending in one month of the current year. */
 export interface MonthSpending {

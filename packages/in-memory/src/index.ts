@@ -1,3 +1,4 @@
+export * from './cards/in-memory-card.reader.js';
 export * from './chains/in-memory-chain.repository.js';
 export * from './devices/in-memory-device.repository.js';
 export * from './evidence/in-memory-evidence.repository.js';

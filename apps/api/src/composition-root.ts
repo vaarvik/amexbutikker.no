@@ -1,5 +1,6 @@
 import {
   AttestDeviceUseCase,
+  ListCardsUseCase,
   CalculatingPlaceStatusRefresher,
   CreatePlaceUseCase,
   ListNearbyPlacesUseCase,
@@ -55,6 +56,7 @@ import { z } from 'zod';
 import {
   EmptyInMemoryTablesFactory,
   InMemoryChainRepository,
+  InMemoryCardReader,
   InMemoryDeviceRepository,
   InMemoryEvidenceRepository,
   InMemoryImportRunRepository,
@@ -67,6 +69,8 @@ import {
 import { PgChainRepository } from './chains/pg-chain.repository.js';
 import { HealthController } from './shared/health.controller.js';
 import { StaticWebController } from './shared/static-web.controller.js';
+import { CardsController } from './cards/cards.controller.js';
+import { CARD_CATALOGUE } from './cards/cards.model.js';
 import { AppleAppAttestValidator } from './devices/apple-app-attest.validator.js';
 import { APPLE_APP_ATTESTATION_ROOT_CA_PEM } from './devices/devices.model.js';
 import { DevicesController } from './devices/devices.controller.js';
@@ -390,6 +394,7 @@ export class CompositionRoot {
           dtos,
         ),
         new HealthController(),
+        new CardsController(new ListCardsUseCase(new InMemoryCardReader(CARD_CATALOGUE))),
         ...(config.webRoot === undefined
           ? []
           : [new StaticWebController({ root: config.webRoot })]),

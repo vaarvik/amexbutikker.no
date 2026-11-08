@@ -1,40 +1,31 @@
-import type { PlaceId } from '@amexbutikker/contracts';
+import type { Card, PlaceId } from '@amexbutikker/contracts';
 import { CalendarYearSpendingSummarizer } from '../../src/spending/calendar-year-spending.summarizer';
 import { describe, expect, it } from 'vitest';
 import { KeyValueSpendingStorage } from '../../src/spending/key-value-spending.storage';
 import { PeriodMilestoneProgressCalculator } from '../../src/spending/period-milestone-progress.calculator';
-import type { CardProgramme } from '../../src/spending/spending.model';
-import { CARD_PROGRAMMES } from '../../src/spending/spending.model';
 import { StoredSpendingService } from '../../src/spending/stored-spending.service';
 import { MapKeyValueStorage } from '../shared/mobile-test.data';
 import { CountingIdGenerator, FixedLocalDateProvider } from './spending-test.data';
 
-const programmes: CardProgramme[] = [
-  {
-    id: 'card',
-    name: 'Kortet',
-    milestones: [
-      { title: 'Årlig', targetNok: 100_000, period: { kind: 'calendar_year' }, reward: 'Kupong' },
-      {
-        title: 'Velkomst',
-        targetNok: 90_000,
-        period: { kind: 'window', months: 9 },
-        reward: 'Poeng',
-      },
-    ],
+function card(id: string, goals: Card['goals']): Card {
+  return {
+    id,
+    name: `Kort ${id}`,
+    shortName: id,
+    goals,
     sourceUrl: 'https://example.no/vilkar',
-    fetchedAt: '2026-11-06',
-  },
-  {
-    id: 'yearly',
-    name: 'Bare årlig',
-    milestones: [
-      { title: 'Årlig', targetNok: 50_000, period: { kind: 'calendar_year' }, reward: 'Kupong' },
-    ],
-    sourceUrl: 'https://example.no/',
-    fetchedAt: '2026-11-06',
-  },
-];
+    fetchedAt: '2026-11-08',
+  };
+}
+
+const PREMIUM = card('premium', [
+  { title: 'Kupong', targetNok: 150_000, period: { kind: 'calendar_year' }, reward: '2-for-1' },
+  // Only yearly goals come with the card; a window needs a start date the user gives.
+  { title: 'Velkomst', targetNok: 90_000, period: { kind: 'window', months: 9 }, reward: '' },
+]);
+const CLASSIC = card('classic', [
+  { title: 'Kupong', targetNok: 100_000, period: { kind: 'calendar_year' }, reward: '2-for-1' },
+]);
 
 function setup() {
   const dates = new FixedLocalDateProvider('2026-11-07');
@@ -45,13 +36,12 @@ function setup() {
     dates,
     new CountingIdGenerator(),
     new CalendarYearSpendingSummarizer(),
-    programmes,
   );
   return { service, storage, dates };
 }
 
 describe('StoredSpendingService', () => {
-  it('starts empty and uses the built-in programmes by default', async () => {
+  it('starts empty, without a card', async () => {
     const { storage } = setup();
     const service = new StoredSpendingService(
       storage,
@@ -65,8 +55,8 @@ describe('StoredSpendingService', () => {
       progress: [],
       purchases: [],
       year: { year: 2026, spentNok: 0, purchaseCount: 0 },
+      card: null,
     });
-    expect(service.programmes()).toBe(CARD_PROGRAMMES);
     expect(service.today()).toBe('2026-11-07');
   });
 
@@ -182,38 +172,73 @@ describe('StoredSpendingService', () => {
     expect((await storage.find()).entries.map((entry) => entry.kind)).toEqual(['purchase']);
   });
 
-  it('adds a programme with its start date on the window milestones', async () => {
+  it('sets up the yearly goals of the chosen card, first', async () => {
     const { service } = setup();
+    await service.addMilestone({
+      title: 'Velkomstbonus',
+      targetNok: 90_000,
+      period: { kind: 'window', start: '2026-02-01', months: 9 },
+      reward: '',
+    });
 
-    const overview = await service.addProgramme('card', '2026-02-07');
+    const overview = await service.setCard(PREMIUM);
 
+    expect(overview.card).toEqual({ id: 'premium', name: 'Kort premium', shortName: 'premium' });
     expect(overview.progress.map((progress) => progress.milestone)).toEqual([
       expect.objectContaining({
-        title: 'Årlig',
+        title: 'Kupong',
+        targetNok: 150_000,
         period: { kind: 'calendar_year' },
-        programmeId: 'card',
+        programmeId: 'premium',
       }),
-      expect.objectContaining({
-        title: 'Velkomst',
-        period: { kind: 'window', start: '2026-02-07', months: 9 },
-        programmeId: 'card',
-      }),
+      expect.objectContaining({ title: 'Velkomstbonus', programmeId: null }),
     ]);
   });
 
-  it('adds a calendar-year programme without a start date', async () => {
+  it('keeps the goals and their totals when the same card is chosen again', async () => {
     const { service } = setup();
+    const first = await service.setCard(PREMIUM);
+    const id = first.progress[0]?.milestone.id ?? '';
+    await service.updateTotal(id, 40_000);
 
-    await expect(service.addProgramme('yearly')).resolves.toMatchObject({
-      progress: [{ milestone: { targetNok: 50_000 } }],
-    });
+    const again = await service.setCard(PREMIUM);
+
+    expect(again.progress).toHaveLength(1);
+    expect(again.progress[0]).toMatchObject({ milestone: { id }, spentNok: 40_000 });
   });
 
-  it('refuses an unknown programme, or a window programme without a start date', async () => {
+  it('swaps the goals and drops their totals when another card is chosen', async () => {
     const { service, storage } = setup();
+    const first = await service.setCard(PREMIUM);
+    await service.updateTotal(first.progress[0]?.milestone.id ?? '', 40_000);
 
-    await expect(service.addProgramme('nope')).rejects.toThrow('Unknown card programme');
-    await expect(service.addProgramme('card')).rejects.toThrow('needs a start date');
-    expect((await storage.find()).milestones).toEqual([]);
+    const overview = await service.setCard(CLASSIC);
+
+    expect(overview.progress.map((progress) => progress.milestone.targetNok)).toEqual([100_000]);
+    expect((await storage.find()).entries).toEqual([]);
+  });
+
+  it('clears the card and its goals for "Annet kort", keeping the user\'s own', async () => {
+    const { service } = setup();
+    await service.setCard(CLASSIC);
+    await service.addMilestone({
+      title: 'Eget',
+      targetNok: 10_000,
+      period: { kind: 'calendar_year' },
+      reward: '',
+    });
+
+    const overview = await service.setCard(null);
+
+    expect(overview.card).toBeNull();
+    expect(overview.progress.map((progress) => progress.milestone.title)).toEqual(['Eget']);
+  });
+
+  it('adds no goals for a card without any', async () => {
+    const { service } = setup();
+
+    const overview = await service.setCard(card('gold', []));
+
+    expect(overview).toMatchObject({ card: { id: 'gold' }, progress: [] });
   });
 });

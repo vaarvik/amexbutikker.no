@@ -1,3 +1,4 @@
+export * from './cards/list-cards.use-case.js';
 export * from './devices/attest-device.use-case.js';
 export * from './devices/issue-attestation-challenge.use-case.js';
 export * from './devices/register-device.use-case.js';

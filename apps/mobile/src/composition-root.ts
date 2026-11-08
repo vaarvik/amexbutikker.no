@@ -1,5 +1,7 @@
-import type { DevicePlatform } from '@amexbutikker/contracts';
+import type { CardReader, DevicePlatform } from '@amexbutikker/contracts';
+import { CachingCardReader } from './spending/caching-card.reader';
 import { CalendarYearSpendingSummarizer } from './spending/calendar-year-spending.summarizer';
+import { FetchCardsApiClient } from './spending/fetch-cards-api.client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CurrentPlatform } from './composition-root.platform';
 import type {
@@ -60,6 +62,9 @@ export interface AppServices {
   /** The Bonus tab: spending and milestones, stored on the phone only. */
   readonly spending: SpendingService;
   readonly spendingPresenter: SpendingPresenter;
+  /** The cards to choose from (Settings → Kort). */
+  /** From the API, or the copy from last time when offline. */
+  readonly cards: CardReader;
   /** Answers from Apple Wallet payments (the `paid` link the Shortcuts automation opens). */
   readonly payments: PaymentService;
   readonly walletLinks: WalletLinkParser;
@@ -113,6 +118,7 @@ export class CompositionRoot implements AppServices {
   public readonly widgets: NearbyWidgetService;
   public readonly spending: SpendingService;
   public readonly spendingPresenter: SpendingPresenter;
+  public readonly cards: CardReader;
   public readonly payments: PaymentService;
   public readonly walletLinks: WalletLinkParser;
   public readonly walletShortcutUrl: string | null;
@@ -154,6 +160,9 @@ export class CompositionRoot implements AppServices {
       new CalendarYearSpendingSummarizer(),
     );
     this.spendingPresenter = new NorwegianSpendingPresenter();
+    this.cards = new CachingCardReader(new FetchCardsApiClient(transport), AsyncStorage, {
+      key: 'cards-v1',
+    });
     // Only the merchant name and the position reach the API; the amount goes to Bonus.
     this.payments = new MatchingPaymentService(
       this.places,

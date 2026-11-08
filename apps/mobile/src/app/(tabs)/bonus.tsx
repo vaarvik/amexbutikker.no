@@ -27,12 +27,16 @@ const MONTH_NAMES = [
 const CHART_HEIGHT = 96;
 
 /**
- * The milestone shown big at the top: the running one that ends first, else the next to start,
- * else the first.
+ * The goal shown big at the top: the card's first goal not yet reached (its companion ticket),
+ * else the running goal that ends first, else the next to start, else the first.
  */
 function leadOf(progress: readonly MilestoneProgress[]): MilestoneProgress | null {
+  const card = progress.find(
+    (item) => item.milestone.programmeId !== null && item.standing === 'active',
+  );
   const byEnd = [...progress].sort((a, b) => a.end.localeCompare(b.end));
   return (
+    card ??
     byEnd.find((item) => item.standing === 'active') ??
     byEnd.find((item) => item.standing === 'upcoming') ??
     progress[0] ??
@@ -164,12 +168,12 @@ function YearHero(props: { readonly year: YearSpending }) {
       </Text>
       <Text style={[styles.heroLine, { color: palette.onHeroMuted }]}>
         {year.purchaseCount === 0
-          ? 'Legg til et kjøp, eller sett et mål, så ser du hvor langt du har kommet.'
+          ? 'Velg kortet ditt, så ser du hvor langt det er til bonusen.'
           : `${String(year.purchaseCount)} kjøp registrert`}
       </Text>
       <Pressable
         onPress={() => {
-          router.navigate('/settings');
+          router.push('/spending/card');
         }}
         accessibilityRole="button"
         style={({ pressed }) => [

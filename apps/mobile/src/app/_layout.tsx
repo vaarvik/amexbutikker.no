@@ -60,8 +60,8 @@ export default function RootLayout() {
             options={{ title: 'Nytt mål', presentation: 'modal' }}
           />
           <Stack.Screen
-            name="spending/programmes"
-            options={{ title: 'Velg kort', presentation: 'modal' }}
+            name="spending/card"
+            options={{ title: 'Kortet ditt', presentation: 'modal' }}
           />
           <Stack.Screen
             name="paid"

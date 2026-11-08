@@ -47,7 +47,7 @@ apps/mobile/src/composition-root.ts
 <package>/test/<feature>/              tests, mirroring src (see Testing)
 ```
 
-Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`. The app also has `visits` (visit detection, phone only; docs/adr/0001-visit-detection.md), `widgets` (the iOS home screen widget, laid out in `src/ui/nearby-widget.ios.tsx`) `spending` (the Bonus tab: card spending and milestones, stored on the phone only; amounts never reach the API) and `payments` (answers from Apple Wallet payments through a Shortcuts automation; docs/wallet-shortcut.md).
+Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`, `cards` (the Amex cards issued in Norway and their spending goals, served to the app). The app also has `visits` (visit detection, phone only; docs/adr/0001-visit-detection.md), `widgets` (the iOS home screen widget, laid out in `src/ui/nearby-widget.ios.tsx`) `spending` (the Bonus tab: card spending and milestones, stored on the phone only; amounts never reach the API) and `payments` (answers from Apple Wallet payments through a Shortcuts automation; docs/wallet-shortcut.md).
 
 - Folders are one level deep. Relationships between features are expressed by imports, not by nesting.
 - Nest X under Y only if X cannot exist without Y and nothing else uses X.

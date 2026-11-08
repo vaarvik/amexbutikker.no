@@ -6,4 +6,5 @@ export * from './evidence/evidence.contract.js';
 export * from './imports/imports.contract.js';
 export * from './places/places.contract.js';
 export * from './status/status.contract.js';
+export * from './cards/cards.contract.js';
 export * from './devices/devices.contract.js';

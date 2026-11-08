@@ -1,6 +1,6 @@
-import type { PlaceId } from '@amexbutikker/contracts';
+import type { Card, PlaceId } from '@amexbutikker/contracts';
 import type {
-  CardProgramme,
+  ChosenCard,
   LocalDate,
   Milestone,
   MilestonePeriod,
@@ -66,6 +66,8 @@ export interface SpendingOverview {
   readonly purchases: readonly Purchase[];
   /** Registered purchases this calendar year. */
   readonly year: YearSpending;
+  /** The card the user has chosen; null until then. */
+  readonly card: ChosenCard | null;
 }
 
 /** Everything the Bonus tab does. Every change returns the new overview. */
@@ -79,15 +81,12 @@ export interface SpendingService {
   removeEntry(id: string): Promise<SpendingOverview>;
   addMilestone(milestone: NewMilestone): Promise<SpendingOverview>;
   /**
-   * Adds every milestone of a preset programme. `start` is required when one of them runs
-   * from a start date.
-   *
-   * @throws Error for an unknown programme or a missing start.
+   * Chooses the user's card (null: none). Its yearly goals are added; goals of a card chosen
+   * before are removed with their typed totals. Choosing the same card again keeps them.
    */
-  addProgramme(programmeId: string, start?: LocalDate): Promise<SpendingOverview>;
+  setCard(card: Card | null): Promise<SpendingOverview>;
   /** Removes the milestone and its typed totals. */
   removeMilestone(id: string): Promise<SpendingOverview>;
-  programmes(): readonly CardProgramme[];
   /** Today on the phone, the default date for a new purchase. */
   today(): LocalDate;
 }
@@ -104,4 +103,9 @@ export interface SpendingPresenter {
   parseDate(text: string): LocalDate | null;
   /** `31.12.2026`, the form `parseDate` reads. */
   dateInput(date: LocalDate): string;
+}
+
+/** `GET /v1/cards`. */
+export interface CardsApiClient {
+  list(): Promise<readonly Card[]>;
 }
