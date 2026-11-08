@@ -6,6 +6,10 @@ import type {
   ChainId,
   Evidence,
   EvidenceId,
+  Household,
+  HouseholdId,
+  HouseholdMembership,
+  HouseholdRecord,
   ImportRunId,
   ImportRunReport,
   ImportSource,
@@ -38,6 +42,11 @@ export interface InMemoryTables {
   readonly importRuns: Map<ImportRunId, InMemoryImportRun>;
   readonly devices: Map<UserId, Device>;
   readonly deviceAttestations: Map<UserId, DeviceAttestation>;
+  readonly households: Map<HouseholdId, Household>;
+  /** One membership per user: the current one, or the last one it left. */
+  readonly householdMembers: Map<UserId, HouseholdMembership>;
+  /** Append-only; `seq` is the position plus one. */
+  readonly householdRecords: HouseholdRecord[];
   /** Keyed by the normalised descriptor. */
   readonly unmatchedDescriptors: Map<string, UnmatchedDescriptor>;
 }

@@ -1,5 +1,12 @@
 import type { z } from 'zod';
-import type { ChainId, EvidenceId, ImportRunId, PlaceId, UserId } from './shared.model.js';
+import type {
+  ChainId,
+  EvidenceId,
+  HouseholdId,
+  ImportRunId,
+  PlaceId,
+  UserId,
+} from './shared.model.js';
 
 /** The current time. Injected so tests can fix it. */
 export interface Clock {
@@ -13,6 +20,7 @@ export interface IdGenerator {
   userId(): UserId;
   evidenceId(): EvidenceId;
   importRunId(): ImportRunId;
+  householdId(): HouseholdId;
 }
 
 export type LogFields = Readonly<Record<string, unknown>>;

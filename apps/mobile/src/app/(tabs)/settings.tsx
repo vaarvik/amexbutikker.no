@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import type { HouseholdStatus } from '../../households/households.model';
 import type { WalletSetupState } from '../../payments/payments.model';
 import { BonusGoalsSettings } from '../../ui/bonus-goals-settings';
 import { useServices } from '../../ui/services';
@@ -8,7 +9,7 @@ import { usePalette } from '../../ui/theme';
 
 /** App settings: bonus goals everywhere; visit questions and answers from Apple Pay in the native app. */
 export default function SettingsScreen() {
-  const { visits, walletSetup } = useServices();
+  const { visits, walletSetup, households } = useServices();
   const palette = usePalette();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
@@ -19,10 +20,13 @@ export default function SettingsScreen() {
     void visits?.isEnabled().then(setEnabled);
   }, [visits]);
 
+  const [household, setHousehold] = useState<HouseholdStatus | null>(null);
+
   useFocusEffect(
     useCallback(() => {
       void walletSetup.find().then(setWalletState);
-    }, [walletSetup]),
+      void households.status().then(setHousehold);
+    }, [walletSetup, households]),
   );
 
   const toggle = (on: boolean) => {
@@ -57,6 +61,24 @@ export default function SettingsScreen() {
       contentContainerStyle={styles.content}
     >
       <BonusGoalsSettings />
+
+      <Text style={[styles.section, styles.gap, muted]}>DELT KORT</Text>
+      <View style={[styles.card, { backgroundColor: palette.card }]}>
+        <Pressable
+          onPress={() => {
+            router.push('/household');
+          }}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Text style={[styles.label, text]}>Del med husstand</Text>
+          <Text style={[styles.value, { color: palette.accent }]}>
+            {household === null || household.kind === 'alone'
+              ? '›'
+              : `${String(household.memberCount)} telefoner ›`}
+          </Text>
+        </Pressable>
+      </View>
 
       {visits === null ? null : (
         <>

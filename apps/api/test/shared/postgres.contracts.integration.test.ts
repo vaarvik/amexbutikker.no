@@ -4,6 +4,8 @@ import {
   describeChainWriterContract,
   describeDeviceReaderContract,
   describeDeviceWriterContract,
+  describeHouseholdReaderContract,
+  describeHouseholdWriterContract,
   describeEvidenceContract,
   describeImportRunWriterContract,
   describePlaceReaderContract,
@@ -17,6 +19,7 @@ import type { Kysely } from 'kysely';
 import { afterAll, beforeAll } from 'vitest';
 import { PgChainRepository } from '../../src/chains/pg-chain.repository.js';
 import { PgDeviceRepository } from '../../src/devices/pg-device.repository.js';
+import { PgHouseholdRepository } from '../../src/households/pg-household.repository.js';
 import { PgEvidenceRepository } from '../../src/evidence/pg-evidence.repository.js';
 import { PgImportRunRepository } from '../../src/imports/pg-import-run.repository.js';
 import { PgUnmatchedDescriptorRepository } from '../../src/imports/pg-unmatched-descriptor.repository.js';
@@ -102,3 +105,16 @@ async function freshDevices() {
 
 describeDeviceWriterContract('PgDeviceRepository', freshDevices);
 describeDeviceReaderContract('PgDeviceRepository', freshDevices);
+
+async function freshHouseholds() {
+  await database.reset();
+  const repository = new PgHouseholdRepository(database.db, errors);
+  return {
+    writer: repository,
+    reader: repository,
+    devices: new PgDeviceRepository(database.db, errors),
+  };
+}
+
+describeHouseholdWriterContract('PgHouseholdRepository', freshHouseholds);
+describeHouseholdReaderContract('PgHouseholdRepository', freshHouseholds);

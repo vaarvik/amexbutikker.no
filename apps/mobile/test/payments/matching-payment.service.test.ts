@@ -8,17 +8,14 @@ import type {
   StatusChangeResponseDto,
   SubmitReportRequestDto,
 } from '@amexbutikker/contracts';
-import { CalendarYearSpendingSummarizer } from '../../src/spending/calendar-year-spending.summarizer';
 import { describe, expect, it } from 'vitest';
 import type { LocationProvider } from '../../src/location/location.ports';
 import { KeyValueHandledPaymentStorage } from '../../src/payments/key-value-handled-payment.storage';
 import { MatchingPaymentService } from '../../src/payments/matching-payment.service';
 import type { PlacesApiClient } from '../../src/places/places.ports';
 import { KeyValueSpendingStorage } from '../../src/spending/key-value-spending.storage';
-import { PeriodMilestoneProgressCalculator } from '../../src/spending/period-milestone-progress.calculator';
-import { StoredSpendingService } from '../../src/spending/stored-spending.service';
 import { MapKeyValueStorage, PLACE_ID, physicalPlace, summary } from '../shared/mobile-test.data';
-import { CountingIdGenerator, FixedLocalDateProvider } from '../spending/spending-test.data';
+import { FixedLocalDateProvider, spendingService } from '../spending/spending-test.data';
 
 const OTHER_ID = '0190a000-0000-7000-8000-000000000002' as PlaceId;
 const HERE: GeoPoint = { lat: 59.915, lng: 10.752 };
@@ -105,12 +102,9 @@ class MovableClock implements Clock {
 function setup(response: MatchPaymentResponseDto | Error, here: GeoPoint | null = HERE) {
   const api = new StubPlacesApi(response);
   const clock = new MovableClock();
-  const spending = new StoredSpendingService(
+  const spending = spendingService(
     new KeyValueSpendingStorage(new MapKeyValueStorage(), { key: 'spending' }),
-    new PeriodMilestoneProgressCalculator(),
     new FixedLocalDateProvider('2026-11-08'),
-    new CountingIdGenerator(),
-    new CalendarYearSpendingSummarizer(),
   );
   const service = new MatchingPaymentService(
     api,

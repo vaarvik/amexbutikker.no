@@ -1,6 +1,7 @@
 export * from './cards/in-memory-card.reader.js';
 export * from './chains/in-memory-chain.repository.js';
 export * from './devices/in-memory-device.repository.js';
+export * from './households/in-memory-household.repository.js';
 export * from './evidence/in-memory-evidence.repository.js';
 export * from './imports/in-memory-import-run.repository.js';
 export * from './places/in-memory-place.repository.js';

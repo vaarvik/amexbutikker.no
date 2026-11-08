@@ -5,6 +5,7 @@ import type {
   Evidence,
   EvidenceId,
   GeoPoint,
+  HouseholdId,
   ImportRunId,
   OnlinePlace,
   PhysicalPlace,
@@ -53,6 +54,10 @@ export class TestData {
 
   public evidenceId(): EvidenceId {
     return this.uuid() as EvidenceId;
+  }
+
+  public householdId(): HouseholdId {
+    return this.uuid() as HouseholdId;
   }
 
   public importRunId(): ImportRunId {

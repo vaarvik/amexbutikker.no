@@ -85,6 +85,27 @@ export interface DevicesTable {
   app_attest_key_id: string | null;
 }
 
+export interface HouseholdsTable {
+  id: string;
+  join_token_hash: string;
+  created_at: Timestamp;
+}
+
+export interface HouseholdMembersTable {
+  user_id: string;
+  household_id: string;
+  joined_at: Timestamp;
+  left_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+}
+
+export interface HouseholdRecordsTable {
+  seq: ColumnType<string, never, never>;
+  household_id: string;
+  author_id: string;
+  sealed: string;
+  created_at: Timestamp;
+}
+
 export interface UnmatchedDescriptorsTable {
   descriptor: string;
   first_seen_on: string;
@@ -99,6 +120,9 @@ export interface Database {
   chain_hints: ChainHintsTable;
   import_runs: ImportRunsTable;
   devices: DevicesTable;
+  households: HouseholdsTable;
+  household_members: HouseholdMembersTable;
+  household_records: HouseholdRecordsTable;
   unmatched_descriptors: UnmatchedDescriptorsTable;
 }
 

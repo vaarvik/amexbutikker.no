@@ -9,6 +9,7 @@ import { M0007TrigramOperatorCostsMigration } from './m0007-trigram-operator-cos
 import { M0008UnmatchedDescriptorsMigration } from './m0008-unmatched-descriptors.migration.js';
 import { M0009LikelyStatusesMigration } from './m0009-likely-statuses.migration.js';
 import { M0010DeviceAttestationMigration } from './m0010-device-attestation.migration.js';
+import { M0011HouseholdsMigration } from './m0011-households.migration.js';
 
 /**
  * Every migration, keyed so that string order is execution order. Add new ones at the end.
@@ -28,6 +29,7 @@ export class AllMigrationsProvider implements MigrationProvider {
       '0008_unmatched_descriptors': new M0008UnmatchedDescriptorsMigration(),
       '0009_likely_statuses': new M0009LikelyStatusesMigration(),
       '0010_device_attestation': new M0010DeviceAttestationMigration(),
+      '0011_households': new M0011HouseholdsMigration(),
     };
     return Promise.resolve(
       Object.fromEntries(

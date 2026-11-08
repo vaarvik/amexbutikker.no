@@ -1,11 +1,10 @@
 import type { Card, PlaceId } from '@amexbutikker/contracts';
-import { CalendarYearSpendingSummarizer } from '../../src/spending/calendar-year-spending.summarizer';
 import { describe, expect, it } from 'vitest';
 import { KeyValueSpendingStorage } from '../../src/spending/key-value-spending.storage';
-import { PeriodMilestoneProgressCalculator } from '../../src/spending/period-milestone-progress.calculator';
-import { StoredSpendingService } from '../../src/spending/stored-spending.service';
 import { MapKeyValueStorage } from '../shared/mobile-test.data';
-import { CountingIdGenerator, FixedLocalDateProvider } from './spending-test.data';
+import type { SpendingChange } from '../../src/spending/spending.model';
+import type { SpendingChangeNotifier } from '../../src/spending/spending.ports';
+import { FixedLocalDateProvider, spendingService } from './spending-test.data';
 
 function card(id: string, goals: Card['goals']): Card {
   return {
@@ -30,26 +29,14 @@ const CLASSIC = card('classic', [
 function setup() {
   const dates = new FixedLocalDateProvider('2026-11-07');
   const storage = new KeyValueSpendingStorage(new MapKeyValueStorage(), { key: 'spending' });
-  const service = new StoredSpendingService(
-    storage,
-    new PeriodMilestoneProgressCalculator(),
-    dates,
-    new CountingIdGenerator(),
-    new CalendarYearSpendingSummarizer(),
-  );
+  const service = spendingService(storage, dates);
   return { service, storage, dates };
 }
 
 describe('StoredSpendingService', () => {
   it('starts empty, without a card', async () => {
     const { storage } = setup();
-    const service = new StoredSpendingService(
-      storage,
-      new PeriodMilestoneProgressCalculator(),
-      new FixedLocalDateProvider('2026-11-07'),
-      new CountingIdGenerator(),
-      new CalendarYearSpendingSummarizer(),
-    );
+    const service = spendingService(storage);
 
     await expect(service.overview()).resolves.toMatchObject({
       progress: [],
@@ -241,4 +228,65 @@ describe('StoredSpendingService', () => {
 
     expect(overview).toMatchObject({ card: { id: 'gold' }, progress: [] });
   });
+
+  it('tells the notifier each change, with an id and time, and merges received ones silently', async () => {
+    const notifier = new RecordingNotifier();
+    const storage = new KeyValueSpendingStorage(new MapKeyValueStorage(), { key: 'spending' });
+    const service = spendingService(storage, undefined, notifier);
+
+    const bought = await service.recordPurchase({ date: '2026-11-07', amountNok: 120 });
+    await service.removeEntry(bought.id);
+    await service.setCard(CLASSIC);
+
+    expect(notifier.received.map((change) => change.kind)).toEqual([
+      'entry_added',
+      'entry_removed',
+      'card_set',
+    ]);
+    expect(notifier.received[0]).toMatchObject({ at: '2026-11-08T12:00:00.000Z' });
+
+    const overview = await service.receive([
+      {
+        id: 'remote-1',
+        at: '2026-11-08T13:00:00.000Z',
+        kind: 'entry_added',
+        entry: {
+          kind: 'purchase',
+          id: 'other-phone',
+          date: '2026-11-06',
+          amountNok: 900,
+          merchant: 'Kafé',
+          placeId: null,
+          source: 'wallet',
+        },
+      },
+    ]);
+
+    expect(overview.purchases.map((purchase) => purchase.id)).toEqual(['other-phone']);
+    expect(notifier.received).toHaveLength(3);
+  });
+
+  it('keeps working when sharing a change fails', async () => {
+    const storage = new KeyValueSpendingStorage(new MapKeyValueStorage(), { key: 'spending' });
+    const service = spendingService(storage, undefined, new FailingNotifier());
+
+    await expect(service.addPurchase({ date: '2026-11-07', amountNok: 50 })).resolves.toMatchObject(
+      { purchases: [{ amountNok: 50 }] },
+    );
+  });
 });
+
+class RecordingNotifier implements SpendingChangeNotifier {
+  public readonly received: SpendingChange[] = [];
+
+  public changed(changes: readonly SpendingChange[]): Promise<void> {
+    this.received.push(...changes);
+    return Promise.resolve();
+  }
+}
+
+class FailingNotifier implements SpendingChangeNotifier {
+  public changed(): Promise<void> {
+    return Promise.reject(new Error('disk'));
+  }
+}

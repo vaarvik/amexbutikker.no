@@ -1,5 +1,16 @@
 import type { Milestone, Purchase, SpentTotal } from '../../src/spending/spending.model';
-import type { IdGenerator, LocalDateProvider } from '../../src/spending/spending.ports';
+import type { Clock } from '@amexbutikker/contracts';
+import { CalendarYearSpendingSummarizer } from '../../src/spending/calendar-year-spending.summarizer';
+import { NullSpendingChangeNotifier } from '../../src/spending/null-spending-change.notifier';
+import { PeriodMilestoneProgressCalculator } from '../../src/spending/period-milestone-progress.calculator';
+import { ReplayingSpendingStateCalculator } from '../../src/spending/replaying-spending-state.calculator';
+import type {
+  IdGenerator,
+  LocalDateProvider,
+  SpendingChangeNotifier,
+  SpendingStorage,
+} from '../../src/spending/spending.ports';
+import { StoredSpendingService } from '../../src/spending/stored-spending.service';
 
 export function milestone(overrides: Partial<Milestone> = {}): Milestone {
   return {
@@ -45,4 +56,30 @@ export class CountingIdGenerator implements IdGenerator {
     this.count += 1;
     return `id-${String(this.count)}`;
   }
+}
+
+export class FixedClock implements Clock {
+  public constructor(public current = new Date('2026-11-08T12:00:00.000Z')) {}
+
+  public now(): Date {
+    return this.current;
+  }
+}
+
+/** A spending service with the real calculators, counting ids and a fixed clock. */
+export function spendingService(
+  storage: SpendingStorage,
+  dates: LocalDateProvider = new FixedLocalDateProvider('2026-11-07'),
+  notifier: SpendingChangeNotifier = new NullSpendingChangeNotifier(),
+): StoredSpendingService {
+  return new StoredSpendingService(
+    storage,
+    new PeriodMilestoneProgressCalculator(),
+    dates,
+    new CountingIdGenerator(),
+    new CalendarYearSpendingSummarizer(),
+    new ReplayingSpendingStateCalculator(),
+    notifier,
+    new FixedClock(),
+  );
 }

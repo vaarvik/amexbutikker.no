@@ -18,6 +18,8 @@ export type UserId = Brand<string, 'UserId'>;
 export type EvidenceId = Brand<string, 'EvidenceId'>;
 /** One run of a source importer. UUID. */
 export type ImportRunId = Brand<string, 'ImportRunId'>;
+/** A household: phones that share Bonus spending. UUID. */
+export type HouseholdId = Brand<string, 'HouseholdId'>;
 
 export const PlaceIdSchema: z.ZodType<PlaceId> = z.uuid().transform((value) => value as PlaceId);
 export const ChainIdSchema: z.ZodType<ChainId> = z.uuid().transform((value) => value as ChainId);
@@ -28,6 +30,9 @@ export const EvidenceIdSchema: z.ZodType<EvidenceId> = z
 export const ImportRunIdSchema: z.ZodType<ImportRunId> = z
   .uuid()
   .transform((value) => value as ImportRunId);
+export const HouseholdIdSchema: z.ZodType<HouseholdId> = z
+  .uuid()
+  .transform((value) => value as HouseholdId);
 
 /** WGS 84 coordinate. */
 export interface GeoPoint {

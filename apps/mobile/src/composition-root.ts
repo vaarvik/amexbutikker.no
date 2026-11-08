@@ -27,7 +27,16 @@ import type {
 } from './payments/payments.ports';
 import { ShortcutWalletLinkParser } from './payments/shortcut-wallet-link.parser';
 import { FetchJsonTransport } from './shared/fetch-json.transport';
-import type { KeyValueStorage } from './shared/shared.ports';
+import type { KeyValueStorage, RandomBytesModule } from './shared/shared.ports';
+import { ModuleRandomBytesProvider } from './shared/module-random-bytes.provider';
+import { FetchHouseholdsApiClient } from './households/fetch-households-api.client';
+import type { HouseholdService } from './households/households.ports';
+import { KeyValueHouseholdStorage } from './households/key-value-household.storage';
+import { SyncingHouseholdService } from './households/syncing-household.service';
+import { UrlHouseholdInviteTranslator } from './households/url-household-invite.translator';
+import { XchachaHouseholdCipher } from './households/xchacha-household.cipher';
+import { ForwardingSpendingChangeNotifier } from './spending/forwarding-spending-change.notifier';
+import { ReplayingSpendingStateCalculator } from './spending/replaying-spending-state.calculator';
 import { SystemClock } from './shared/system.clock';
 import { ClockLocalDateProvider } from './spending/clock-local-date.provider';
 import { KeyValueSpendingStorage } from './spending/key-value-spending.storage';
@@ -74,6 +83,8 @@ export interface AppServices {
   readonly walletLinks: WalletLinkParser;
   /** Whether the Apple Pay automation is set up, so the app can prompt for it once. */
   readonly walletSetup: WalletSetupStorage;
+  /** Shares Bonus with the other phones in a household, sealed with a key the API never sees. */
+  readonly households: HouseholdService;
   /** False on the web: native-only features (share intake, visit detection) are hidden there. */
   readonly native: boolean;
 }
@@ -91,6 +102,8 @@ export interface PlatformAdapters {
   readonly widgetWriter: NearbyWidgetWriter;
   /** Apple App Attest; null where there is none. */
   readonly appAttest: AppAttestModule | null;
+  /** Secure random bytes for household keys and nonces. */
+  readonly randomBytes: RandomBytesModule;
   readonly native: boolean;
 }
 
@@ -125,6 +138,7 @@ export class CompositionRoot implements AppServices {
   public readonly payments: PaymentService;
   public readonly walletLinks: WalletLinkParser;
   public readonly walletSetup: WalletSetupStorage;
+  public readonly households: HouseholdService;
   public readonly native: boolean;
 
   public constructor(config: MobileConfig, adapters: PlatformAdapters) {
@@ -154,14 +168,34 @@ export class CompositionRoot implements AppServices {
       radiusM: 1500,
     });
     this.presenter = new NorwegianStatusPresenter();
-    // Amounts never leave the phone: this storage is local and nothing here talks to the API.
+    // Amounts stay on the phone, except sealed for a household with a key the API never has.
+    const spendingStorage = new KeyValueSpendingStorage(AsyncStorage, { key: 'spending-v1' });
+    const replay = new ReplayingSpendingStateCalculator();
+    const spendingChanges = new ForwardingSpendingChangeNotifier();
     this.spending = new StoredSpendingService(
-      new KeyValueSpendingStorage(AsyncStorage, { key: 'spending-v1' }),
+      spendingStorage,
       new PeriodMilestoneProgressCalculator(),
       new ClockLocalDateProvider(clock),
       new RandomIdGenerator(),
       new CalendarYearSpendingSummarizer(),
+      replay,
+      spendingChanges,
+      clock,
     );
+    const households = new SyncingHouseholdService(
+      new FetchHouseholdsApiClient(transport, this.session),
+      new XchachaHouseholdCipher(new ModuleRandomBytesProvider(adapters.randomBytes)),
+      new UrlHouseholdInviteTranslator(),
+      // The key in the keychain (localStorage on the web); progress next to the spending.
+      new KeyValueHouseholdStorage(adapters.tokenStorage, AsyncStorage, { key: 'household-v1' }),
+      spendingStorage,
+      replay,
+      this.spending,
+      clock,
+      { batchSize: 50 },
+    );
+    spendingChanges.attach(households);
+    this.households = households;
     this.spendingPresenter = new NorwegianSpendingPresenter();
     this.cards = new CachingCardReader(new FetchCardsApiClient(transport), AsyncStorage, {
       key: 'cards-v1',

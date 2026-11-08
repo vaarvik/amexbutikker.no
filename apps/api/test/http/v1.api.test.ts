@@ -602,6 +602,106 @@ describe('HTTP API (in-memory storage)', () => {
       expect(response.headers['access-control-allow-origin']).toBeUndefined();
     });
   });
+
+  describe('households', () => {
+    const joinToken = 'k'.repeat(43);
+
+    it('relays sealed records between two phones and never names the other one', async () => {
+      const owner = await registerDevice();
+      const partner = await registerDevice();
+
+      const created = await app.inject({
+        method: 'POST',
+        url: '/v1/households',
+        headers: { authorization: owner.authorization },
+        payload: { joinToken },
+      });
+      expect(created.statusCode).toBe(201);
+      const { householdId } = created.json<{ householdId: string }>();
+
+      const joined = await app.inject({
+        method: 'POST',
+        url: `/v1/households/${householdId}/members`,
+        headers: { authorization: partner.authorization },
+        payload: { joinToken },
+      });
+      expect(joined.json()).toEqual({ householdId, memberCount: 2 });
+
+      const appended = await app.inject({
+        method: 'POST',
+        url: '/v1/households/me/records',
+        headers: { authorization: owner.authorization },
+        payload: { records: [{ sealed: 'c2VhbGVk' }] },
+      });
+      expect(appended.statusCode).toBe(200);
+
+      const listed = await app.inject({
+        method: 'GET',
+        url: '/v1/households/me/records?after=0',
+        headers: { authorization: partner.authorization },
+      });
+      expect(listed.headers['cache-control']).toBe('no-store');
+      expect(listed.json()).toEqual({
+        records: [{ seq: 1, sealed: 'c2VhbGVk', mine: false }],
+        hasMore: false,
+      });
+      expect(listed.body).not.toContain(owner.userId);
+    });
+
+    it('refuses an amount or other plaintext fields, a wrong token and anonymous callers', async () => {
+      const owner = await registerDevice();
+      const created = await app.inject({
+        method: 'POST',
+        url: '/v1/households',
+        headers: { authorization: owner.authorization },
+        payload: { joinToken },
+      });
+      const { householdId } = created.json<{ householdId: string }>();
+
+      const plaintext = await app.inject({
+        method: 'POST',
+        url: '/v1/households/me/records',
+        headers: { authorization: owner.authorization },
+        payload: { records: [{ sealed: 'c2VhbGVk', amountNok: 49 }] },
+      });
+      expect(plaintext.statusCode).toBe(400);
+
+      const wrong = await app.inject({
+        method: 'POST',
+        url: `/v1/households/${householdId}/members`,
+        headers: { authorization: (await registerDevice()).authorization },
+        payload: { joinToken: 'x'.repeat(43) },
+      });
+      expect(wrong.statusCode).toBe(400);
+
+      const anonymous = await app.inject({ method: 'GET', url: '/v1/households/me' });
+      expect(anonymous.statusCode).toBe(401);
+    });
+
+    it('answers 404 after leaving', async () => {
+      const owner = await registerDevice();
+      await app.inject({
+        method: 'POST',
+        url: '/v1/households',
+        headers: { authorization: owner.authorization },
+        payload: { joinToken },
+      });
+
+      const left = await app.inject({
+        method: 'DELETE',
+        url: '/v1/households/me',
+        headers: { authorization: owner.authorization },
+      });
+      expect(left.statusCode).toBe(204);
+
+      const mine = await app.inject({
+        method: 'GET',
+        url: '/v1/households/me',
+        headers: { authorization: owner.authorization },
+      });
+      expect(mine.statusCode).toBe(404);
+    });
+  });
 });
 
 describe('HTTP API: device attestation (production settings)', () => {

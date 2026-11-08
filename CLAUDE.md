@@ -47,7 +47,7 @@ apps/mobile/src/composition-root.ts
 <package>/test/<feature>/              tests, mirroring src (see Testing)
 ```
 
-Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`, `cards` (the Amex cards issued in Norway and their spending goals, served to the app). The app also has `visits` (visit detection, phone only; docs/adr/0001-visit-detection.md), `widgets` (the iOS home screen widget, laid out in `src/ui/nearby-widget.ios.tsx`) `spending` (the Bonus tab: card spending and milestones, stored on the phone only; amounts never reach the API) and `payments` (answers from Apple Wallet payments through a Shortcuts automation; docs/wallet-shortcut.md).
+Features: `places`, `chains`, `evidence`, `status`, `reports`, `shared-match`, `imports`, `devices`, `cards` (the Amex cards issued in Norway and their spending goals, served to the app), `households` (relays sealed spending records between a household's phones; the server cannot read them, docs/adr/0002-household-sync.md). The app also has `visits` (visit detection, phone only; docs/adr/0001-visit-detection.md), `widgets` (the iOS home screen widget, laid out in `src/ui/nearby-widget.ios.tsx`) `spending` (the Bonus tab: card spending and milestones, stored on the phone; amounts reach the API only sealed for a household, with a key the API never has), `households` (sharing Bonus between the phones of people with one card; docs/adr/0002-household-sync.md) and `payments` (answers from Apple Wallet payments through a Shortcuts automation; docs/wallet-shortcut.md).
 
 - Folders are one level deep. Relationships between features are expressed by imports, not by nesting.
 - Nest X under Y only if X cannot exist without Y and nothing else uses X.
@@ -81,7 +81,7 @@ Everywhere else (rule (f)): one exported class per file, Error subclasses aside.
 
 The class name must end in a known role:
 
-`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`, `session`, `cache`, `storage`, `transport`, `presenter`, `monitor`, `notifier`, `ranker`.
+`use-case`, `unit-of-work`, `repository`, `controller`, `migration`, `provider`, `calculator`, `policy`, `selector`, `summarizer`, `decider`, `similarity`, `validator`, `refresher`, `mapper`, `authenticator`, `server`, `importer`, `parser`, `matcher`, `resolver`, `generator`, `clock`, `logger`, `rate-limiter`, `translator`, `factory`, `service`, `rule`, `checker`, `loader`, `reporter`, `heritage`, `paths`, `reader`, `writer`, `client`, `locator`, `session`, `cache`, `storage`, `transport`, `presenter`, `monitor`, `notifier`, `ranker`, `cipher`, `hasher`.
 
 To add a role, add it to `ClassFileNamingRule` and this list in the same change.
 

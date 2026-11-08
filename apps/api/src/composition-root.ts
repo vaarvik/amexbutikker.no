@@ -1,5 +1,11 @@
 import {
+  AppendHouseholdRecordsUseCase,
   AttestDeviceUseCase,
+  CreateHouseholdUseCase,
+  GetMyHouseholdUseCase,
+  JoinHouseholdUseCase,
+  LeaveHouseholdUseCase,
+  ListHouseholdRecordsUseCase,
   ListCardsUseCase,
   CalculatingPlaceStatusRefresher,
   CreatePlaceUseCase,
@@ -18,6 +24,8 @@ import {
   ZodInputValidator,
 } from '@amexbutikker/application';
 import type {
+  HouseholdReader,
+  HouseholdWriter,
   AppAttestValidator,
   ChainReader,
   DeviceReader,
@@ -58,6 +66,7 @@ import {
   InMemoryChainRepository,
   InMemoryCardReader,
   InMemoryDeviceRepository,
+  InMemoryHouseholdRepository,
   InMemoryEvidenceRepository,
   InMemoryImportRunRepository,
   InMemoryUnmatchedDescriptorRepository,
@@ -74,6 +83,9 @@ import { CARD_CATALOGUE } from './cards/cards.model.js';
 import { AppleAppAttestValidator } from './devices/apple-app-attest.validator.js';
 import { APPLE_APP_ATTESTATION_ROOT_CA_PEM } from './devices/devices.model.js';
 import { DevicesController } from './devices/devices.controller.js';
+import { HouseholdsController } from './households/households.controller.js';
+import { PgHouseholdRepository } from './households/pg-household.repository.js';
+import { Sha256JoinTokenHasher } from './households/sha256-join-token.hasher.js';
 import { HmacAttestationChallengeService } from './devices/hmac-attestation-challenge.service.js';
 import { HttpTurnstileValidator } from './devices/http-turnstile.validator.js';
 import { UnconfiguredAppAttestValidator } from './devices/unconfigured-app-attest.validator.js';
@@ -198,6 +210,9 @@ export const DEFAULT_RATE_LIMITS: ApiConfig['rateLimits'] = {
   create_place: { limit: 10, windowSeconds: 3600 },
   register_device: { limit: 20, windowSeconds: 3600 },
   attest_device: { limit: 10, windowSeconds: 3600 },
+  create_household: { limit: 5, windowSeconds: 86400 },
+  join_household: { limit: 10, windowSeconds: 3600 },
+  append_household_records: { limit: 200, windowSeconds: 3600 },
 };
 
 /** `a, b,` → `['a', 'b']`. */
@@ -278,6 +293,7 @@ interface Storage {
   readonly evidence: EvidenceReader;
   readonly statuses: PlaceStatusReader;
   readonly devices: DeviceReader & DeviceWriter;
+  readonly households: HouseholdReader & HouseholdWriter;
   readonly importRuns: ImportRunWriter;
   readonly unmatchedDescriptors: UnmatchedDescriptorWriter;
   readonly unitOfWork: UnitOfWork;
@@ -330,6 +346,7 @@ export class CompositionRoot {
       evidence,
       statuses,
       devices,
+      households,
       importRuns,
       unmatchedDescriptors,
       unitOfWork,
@@ -341,6 +358,7 @@ export class CompositionRoot {
       clock,
     );
     const dtos = new AllowlistHttpDtoMapper();
+    const joinTokens = new Sha256JoinTokenHasher();
     const placeMatcher = new TrigramGeoPlaceMatcher(places, names, {
       radiusM: 300,
       searchLimit: 20,
@@ -409,6 +427,16 @@ export class CompositionRoot {
             clock,
             rateLimiter,
           ),
+          auth,
+          validator,
+        ),
+        new HouseholdsController(
+          new CreateHouseholdUseCase(households, households, joinTokens, ids, clock, rateLimiter),
+          new JoinHouseholdUseCase(households, households, joinTokens, clock, rateLimiter),
+          new LeaveHouseholdUseCase(households, households, clock),
+          new GetMyHouseholdUseCase(households),
+          new AppendHouseholdRecordsUseCase(households, households, clock, rateLimiter),
+          new ListHouseholdRecordsUseCase(households),
           auth,
           validator,
         ),
@@ -621,6 +649,7 @@ export class CompositionRoot {
     return {
       ...portsFor(db),
       devices: new PgDeviceRepository(db, errors),
+      households: new PgHouseholdRepository(db, errors),
       importRuns: new PgImportRunRepository(db, errors),
       unmatchedDescriptors: new PgUnmatchedDescriptorRepository(db),
       unitOfWork: new PgUnitOfWork(db, portsFor, errors),
@@ -639,6 +668,7 @@ export class CompositionRoot {
     return {
       ...portsFor(tables),
       devices: new InMemoryDeviceRepository(tables),
+      households: new InMemoryHouseholdRepository(tables),
       importRuns: new InMemoryImportRunRepository(tables),
       unmatchedDescriptors: new InMemoryUnmatchedDescriptorRepository(tables),
       unitOfWork: new InMemoryUnitOfWork(tables, portsFor),

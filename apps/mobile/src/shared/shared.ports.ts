@@ -34,3 +34,16 @@ export interface WebStorage {
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
 }
+
+/** Cryptographically secure random bytes. */
+export interface RandomBytesProvider {
+  bytes(count: number): Uint8Array;
+}
+
+/**
+ * The part of expo-crypto the app uses; the composition root passes the module itself on phones
+ * (Hermes has no `crypto.getRandomValues`) and a Web Crypto wrapper on the web.
+ */
+export interface RandomBytesModule {
+  getRandomBytes(count: number): Uint8Array;
+}

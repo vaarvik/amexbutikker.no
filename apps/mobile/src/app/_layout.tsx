@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { CompositionRoot } from '../composition-root';
 // Registers the background visit task; must load with the bundle.
 import '../composition-root.tasks';
+import { HouseholdSync } from '../ui/household-sync';
 import { ServicesProvider } from '../ui/services';
 import { ShareIntentRouter } from '../ui/share-intent-router';
 import { TurnstileGate } from '../ui/turnstile-gate';
@@ -33,6 +34,7 @@ export default function RootLayout() {
           </>
         ) : null}
         <TurnstileGate />
+        <HouseholdSync />
         <StatusBar style="auto" />
         <Stack
           screenOptions={{
@@ -68,6 +70,14 @@ export default function RootLayout() {
             options={{ title: 'Betalt med Amex', presentation: 'modal' }}
             // A new payment while one is shown opens its own screen instead of reusing that one.
             dangerouslySingular={(_name, params) => JSON.stringify(params)}
+          />
+          <Stack.Screen
+            name="household/index"
+            options={{ title: 'Husstand', presentation: 'modal' }}
+          />
+          <Stack.Screen
+            name="household/join"
+            options={{ title: 'Husstand', presentation: 'modal' }}
           />
           <Stack.Screen
             name="wallet-setup"

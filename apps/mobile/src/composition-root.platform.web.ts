@@ -4,7 +4,7 @@ import type { AppAttestModule } from './devices/devices.ports';
 import { BrowserLocationProvider } from './location/browser-location.provider';
 import type { LocationProvider } from './location/location.ports';
 import { LocalStorageKeyValueStorage } from './shared/local-storage-key-value.storage';
-import type { KeyValueStorage } from './shared/shared.ports';
+import type { KeyValueStorage, RandomBytesModule } from './shared/shared.ports';
 import type { RegionMonitor, VisitNotifier } from './visits/visits.ports';
 import { NullNearbyWidgetWriter } from './widgets/null-nearby-widget.writer';
 import type { NearbyWidgetWriter } from './widgets/widgets.ports';
@@ -24,6 +24,9 @@ export class CurrentPlatform implements PlatformAdapters {
   public readonly widgetWriter: NearbyWidgetWriter = new NullNearbyWidgetWriter();
   /** Browsers attest with Turnstile instead (ui/turnstile-gate.web.tsx). */
   public readonly appAttest: AppAttestModule | null = null;
+  public readonly randomBytes: RandomBytesModule = {
+    getRandomBytes: (count) => crypto.getRandomValues(new Uint8Array(count)),
+  };
   /** Native-only features are hidden on the web, not stubbed. */
   public readonly native = false;
 }

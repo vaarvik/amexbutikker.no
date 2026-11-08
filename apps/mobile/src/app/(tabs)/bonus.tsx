@@ -49,10 +49,11 @@ function leadOf(progress: readonly MilestoneProgress[]): MilestoneProgress | nul
  * set up in Settings. Everything here is stored on the phone only.
  */
 export default function BonusScreen() {
-  const { spending } = useServices();
+  const { spending, households } = useServices();
   const palette = usePalette();
   const insets = useSafeAreaInsets();
   const [overview, setOverview] = useState<SpendingOverview | null>(null);
+  const [sharedWith, setSharedWith] = useState<number | null>(null);
   // Removing a purchase takes two taps: the first arms the button, the second removes.
   const [armed, setArmed] = useState<string | null>(null);
 
@@ -60,7 +61,18 @@ export default function BonusScreen() {
     useCallback(() => {
       setArmed(null);
       void spending.overview().then(setOverview);
-    }, [spending]),
+      // Show what is here at once, then what the household's other phones added.
+      void households
+        .sync()
+        .then(async (result) => {
+          if (result.kind === 'synced' && result.received > 0) {
+            setOverview(await spending.overview());
+          }
+          const status = await households.status();
+          setSharedWith(status.kind === 'member' ? status.memberCount : null);
+        })
+        .catch(() => undefined);
+    }, [spending, households]),
   );
 
   const remove = (id: string) => {
@@ -146,7 +158,9 @@ export default function BonusScreen() {
           </Pressable>
         )}
         <Text style={[styles.note, muted]}>
-          Beløpene lagres bare på denne telefonen. Appen sender dem aldri.
+          {sharedWith === null
+            ? 'Beløpene lagres bare på denne telefonen.'
+            : `Delt mellom ${String(sharedWith)} telefoner. Beløpene krypteres på telefonen.`}
         </Text>
       </View>
     </ScrollView>

@@ -11,6 +11,9 @@ export class EmptyInMemoryTablesFactory implements InMemoryTablesFactory {
       importRuns: new Map(),
       devices: new Map(),
       deviceAttestations: new Map(),
+      households: new Map(),
+      householdMembers: new Map(),
+      householdRecords: [],
       unmatchedDescriptors: new Map(),
     };
   }

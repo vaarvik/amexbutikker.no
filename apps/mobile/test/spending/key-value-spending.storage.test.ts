@@ -19,6 +19,7 @@ describe('KeyValueSpendingStorage', () => {
       card: { id: 'premium', name: 'SAS EuroBonus Premium', shortName: 'SAS Premium' },
       milestones: [milestone({ period: { kind: 'window', start: '2026-02-07', months: 9 } })],
       entries: [purchase('2026-03-01', 1_200), total('2026-03-02', 5_000)],
+      removedIds: ['gone'],
     };
 
     await storage.save(state);

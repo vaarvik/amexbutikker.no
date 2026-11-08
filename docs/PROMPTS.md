@@ -415,6 +415,8 @@ release. The owner should check the goals against the issuer's terms before rele
 14c. Wallet amounts (done): Phase 13's link also takes the amount and stores a `wallet` purchase; a declined
     payment's purchase is removed again.
 14d. Statement import: CSV/PDF export from the Amex site, parsed on the phone; needs an anonymised sample.
+14e. Households (built): phones sharing one card share Bonus through sealed records the API relays but
+    cannot read (XChaCha20-Poly1305, key only in the QR invite). docs/adr/0002-household-sync.md.
 ```
 
 ---

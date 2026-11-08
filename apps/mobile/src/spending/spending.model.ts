@@ -101,7 +101,6 @@ export const MilestoneSchema: z.ZodType<Milestone> = z.object({
   programmeId: z.string().nullable(),
 });
 
-/** Everything the Bonus tab stores, as one document. */
 /** The card the user has, as it was when chosen. Its goals are milestones with its id. */
 export interface ChosenCard {
   readonly id: string;
@@ -115,11 +114,17 @@ export const ChosenCardSchema: z.ZodType<ChosenCard> = z.object({
   shortName: z.string().min(1),
 });
 
+/** Everything the Bonus tab stores, as one document. */
 export interface SpendingState {
   /** The card the user has; the Bonus tab always tracks its goals. */
   readonly card: ChosenCard | null;
   readonly milestones: readonly Milestone[];
   readonly entries: readonly SpendingEntry[];
+  /**
+   * Ids of removed entries and milestones. A household replays changes from several phones, so a
+   * removal must stay final even when the addition arrives again or later.
+   */
+  readonly removedIds: readonly string[];
 }
 
 export const SpendingStateSchema: z.ZodType<SpendingState> = z.object({
@@ -127,9 +132,16 @@ export const SpendingStateSchema: z.ZodType<SpendingState> = z.object({
   card: ChosenCardSchema.nullable().default(null),
   milestones: z.array(MilestoneSchema),
   entries: z.array(SpendingEntrySchema),
+  // Stored before households: nothing removed.
+  removedIds: z.array(z.string()).default([]),
 });
 
-export const EMPTY_SPENDING_STATE: SpendingState = { card: null, milestones: [], entries: [] };
+export const EMPTY_SPENDING_STATE: SpendingState = {
+  card: null,
+  milestones: [],
+  entries: [],
+  removedIds: [],
+};
 
 /**
  * Where a milestone stands on a given day.
@@ -171,3 +183,41 @@ export interface YearSpending {
   /** January up to and including the current month. */
   readonly months: readonly MonthSpending[];
 }
+
+/**
+ * One change to spending, as the phones in a household share it (sealed). Replaying the same
+ * changes in the same order gives the same state on every phone; applying one twice does nothing.
+ * - `entry_added` / `entry_removed`: purchases and typed totals, by id; a removal is final.
+ * - `card_set`: the household's card and its goals, replacing the previous card's goals.
+ * - `milestone_added` / `milestone_removed`: the user's own goals, e.g. a welcome bonus.
+ */
+export type SpendingChange = { readonly id: string; readonly at: string } & (
+  | { readonly kind: 'entry_added'; readonly entry: SpendingEntry }
+  | { readonly kind: 'entry_removed'; readonly entryId: string }
+  | {
+      readonly kind: 'card_set';
+      readonly card: ChosenCard | null;
+      readonly milestones: readonly Milestone[];
+    }
+  | { readonly kind: 'milestone_added'; readonly milestone: Milestone }
+  | { readonly kind: 'milestone_removed'; readonly milestoneId: string }
+);
+
+const changeBase = { id: z.string().min(1), at: z.iso.datetime() };
+
+export const SpendingChangeSchema: z.ZodType<SpendingChange> = z.discriminatedUnion('kind', [
+  z.object({ ...changeBase, kind: z.literal('entry_added'), entry: SpendingEntrySchema }),
+  z.object({ ...changeBase, kind: z.literal('entry_removed'), entryId: z.string().min(1) }),
+  z.object({
+    ...changeBase,
+    kind: z.literal('card_set'),
+    card: ChosenCardSchema.nullable(),
+    milestones: z.array(MilestoneSchema),
+  }),
+  z.object({ ...changeBase, kind: z.literal('milestone_added'), milestone: MilestoneSchema }),
+  z.object({
+    ...changeBase,
+    kind: z.literal('milestone_removed'),
+    milestoneId: z.string().min(1),
+  }),
+]);

@@ -6,6 +6,7 @@ import type {
   MilestonePeriod,
   MilestoneProgress,
   Purchase,
+  SpendingChange,
   SpendingEntry,
   SpendingSource,
   SpendingState,
@@ -17,6 +18,27 @@ export interface SpendingStorage {
   /** The empty state when nothing is stored or the stored value is unreadable. */
   find(): Promise<SpendingState>;
   save(state: SpendingState): Promise<void>;
+}
+
+/**
+ * Applies changes to a state. Pure and idempotent: the same changes in the same order give the
+ * same state, and a change applied twice does nothing. The household's phones all use it.
+ */
+export interface SpendingStateCalculator {
+  apply(state: SpendingState, changes: readonly SpendingChange[]): SpendingState;
+  /**
+   * The changes that rebuild `state` from empty, to share what a phone had before joining. Their
+   * ids derive from the items, so the same state gives the same changes.
+   */
+  changesFor(state: SpendingState, at: string): SpendingChange[];
+}
+
+/**
+ * Told about every change made to spending on this phone, to share it. The household service is
+ * one; a phone in no household drops them.
+ */
+export interface SpendingChangeNotifier {
+  changed(changes: readonly SpendingChange[]): Promise<void>;
 }
 
 /** Where one milestone stands on `today`. Pure. */
@@ -87,6 +109,11 @@ export interface SpendingService {
   setCard(card: Card | null): Promise<SpendingOverview>;
   /** Removes the milestone and its typed totals. */
   removeMilestone(id: string): Promise<SpendingOverview>;
+  /**
+   * Merges changes from the other phones in the household. They are not passed on to the
+   * notifier again.
+   */
+  receive(changes: readonly SpendingChange[]): Promise<SpendingOverview>;
   /** Today on the phone, the default date for a new purchase. */
   today(): LocalDate;
 }

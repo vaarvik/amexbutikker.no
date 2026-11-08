@@ -9,7 +9,7 @@ import type { AppAttestModule } from './devices/devices.ports';
 import { ExpoLocationProvider } from './location/expo-location.provider';
 import type { LocationProvider } from './location/location.ports';
 import { SecureStoreKeyValueStorage } from './shared/secure-store-key-value.storage';
-import type { KeyValueStorage } from './shared/shared.ports';
+import type { KeyValueStorage, RandomBytesModule } from './shared/shared.ports';
 import { ExpoGeofenceRegionMonitor } from './visits/expo-geofence-region.monitor';
 import { ExpoVisitNotifier } from './visits/expo-visit.notifier';
 import type { RegionMonitor, VisitNotifier } from './visits/visits.ports';
@@ -48,6 +48,28 @@ export class CurrentPlatform implements PlatformAdapters {
    */
   public readonly appAttest: AppAttestModule | null =
     Platform.OS === 'ios' ? requireOptionalNativeModule<AppAttestModule>('AppAttest') : null;
+  /**
+   * Hermes has no `crypto.getRandomValues`; expo-crypto's native module reads the OS's secure
+   * random source. Loaded optionally so builds made before it still start (households then fail
+   * with an error instead of the whole app).
+   */
+  public readonly randomBytes: RandomBytesModule = CurrentPlatform.randomBytesModule();
   /** Share intake and visit detection exist only in the native app. */
   public readonly native = true;
+
+  private static randomBytesModule(): RandomBytesModule {
+    const native = requireOptionalNativeModule<{ getRandomValues(bytes: Uint8Array): void }>(
+      'ExpoCrypto',
+    );
+    return {
+      getRandomBytes: (count) => {
+        if (native === null) {
+          throw new Error('This build has no secure random source (expo-crypto). Build it again.');
+        }
+        const bytes = new Uint8Array(count);
+        native.getRandomValues(bytes);
+        return bytes;
+      },
+    };
+  }
 }

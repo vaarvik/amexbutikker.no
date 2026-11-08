@@ -3,6 +3,7 @@ import type {
   ChainId,
   Clock,
   EvidenceId,
+  HouseholdId,
   IdGenerator,
   ImportRunId,
   PlaceId,
@@ -40,6 +41,10 @@ export class UuidV7IdGenerator implements IdGenerator {
 
   public importRunId(): ImportRunId {
     return this.next() as ImportRunId;
+  }
+
+  public householdId(): HouseholdId {
+    return this.next() as HouseholdId;
   }
 
   private next(): string {
