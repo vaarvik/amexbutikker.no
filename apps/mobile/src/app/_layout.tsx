@@ -55,7 +55,12 @@ export default function RootLayout() {
             name="spending/programmes"
             options={{ title: 'Velg kort', presentation: 'modal' }}
           />
-          <Stack.Screen name="paid" options={{ title: 'Betaling', presentation: 'modal' }} />
+          <Stack.Screen
+            name="paid"
+            options={{ title: 'Betaling', presentation: 'modal' }}
+            // A new payment while one is shown opens its own screen instead of reusing that one.
+            dangerouslySingular={(_name, params) => JSON.stringify(params)}
+          />
           <Stack.Screen
             name="visit"
             options={{ title: 'Hvor betalte du?', presentation: 'modal' }}

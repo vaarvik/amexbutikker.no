@@ -189,7 +189,12 @@ export default function PaidScreen() {
                 <Text style={muted}>Takk! Svaret ditt er lagret.</Text>
               </View>
             </View>
-            <StatusAnswer status={status.status} />
+            <StatusAnswer
+              status={status.status}
+              {...(status.status === 'likely_accepted'
+                ? { note: 'Ett svar til fra noen, så blir det Ja' }
+                : {})}
+            />
           </View>
           {amountNote === null ? null : <Text style={[styles.note, muted]}>{amountNote}</Text>}
           <View style={styles.actions}>

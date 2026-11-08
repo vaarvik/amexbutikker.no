@@ -51,7 +51,8 @@ const ICONS: Readonly<Record<AcceptanceStatus, SymbolViewProps['name']>> = {
 };
 
 /** The big answer on the place screen; filled, outlined or plain like the badge. */
-export function StatusAnswer(props: { readonly status: AcceptanceStatus }) {
+/** The big answer on a place. `note` replaces the line under it, e.g. right after the user answered. */
+export function StatusAnswer(props: { readonly status: AcceptanceStatus; readonly note?: string }) {
   const view = useServices().presenter.status(props.status);
   const palette = usePalette();
   const color = STATUS_COLORS[props.status];
@@ -71,7 +72,7 @@ export function StatusAnswer(props: { readonly status: AcceptanceStatus }) {
       ]}
       accessible
       accessibilityRole="header"
-      accessibilityLabel={`${view.answer}. ${view.label}`}
+      accessibilityLabel={`${view.answer}. ${props.note ?? view.label}`}
     >
       <View
         style={[
@@ -90,7 +91,7 @@ export function StatusAnswer(props: { readonly status: AcceptanceStatus }) {
         {view.answer}
       </Text>
       <Text style={[styles.answerLabel, { color: filled ? '#FFFFFF' : palette.muted }]}>
-        {view.label}
+        {props.note ?? view.label}
       </Text>
     </View>
   );
