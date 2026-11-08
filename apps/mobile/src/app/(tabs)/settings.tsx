@@ -137,22 +137,39 @@ export default function SettingsScreen() {
           {__DEV__ ? (
             <>
               <Text style={[styles.section, styles.gap, muted]}>TEST (BARE I UTVIKLING)</Text>
-              <Pressable
-                onPress={() => {
-                  router.push({
-                    pathname: '/paid',
-                    params: { merchant: 'Kafé Åsen', amount: 'kr 49,00' },
-                  });
-                }}
-                accessibilityRole="button"
-                style={({ pressed }) => [
-                  styles.card,
-                  styles.row,
-                  { backgroundColor: palette.card, opacity: pressed ? 0.6 : 1 },
-                ]}
-              >
-                <Text style={[styles.label, { color: palette.accent }]}>Send testbetaling</Text>
-              </Pressable>
+              <View style={[styles.card, { backgroundColor: palette.card }]}>
+                <Pressable
+                  onPress={() => {
+                    router.push({
+                      pathname: '/paid',
+                      params: { merchant: 'Kafé Åsen', amount: 'kr 49,00' },
+                    });
+                  }}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <Text style={[styles.label, { color: palette.accent }]}>Send testbetaling</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setWalletState('new');
+                    void walletSetup.save('new');
+                  }}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.row,
+                    {
+                      borderTopColor: palette.border,
+                      borderTopWidth: StyleSheet.hairlineWidth,
+                      opacity: pressed ? 0.6 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.label, { color: palette.accent }]}>
+                    Vis oppsett-kortet på Steder igjen
+                  </Text>
+                </Pressable>
+              </View>
             </>
           ) : null}
         </>
