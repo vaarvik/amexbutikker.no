@@ -74,8 +74,6 @@ export interface AppServices {
   readonly walletLinks: WalletLinkParser;
   /** Whether the Apple Pay automation is set up, so the app can prompt for it once. */
   readonly walletSetup: WalletSetupStorage;
-  /** The shared iCloud link to the shortcut; null until the owner has shared one. */
-  readonly walletShortcutUrl: string | null;
   /** False on the web: native-only features (share intake, visit detection) are hidden there. */
   readonly native: boolean;
 }
@@ -101,7 +99,6 @@ export interface MobileConfig {
   readonly apiUrl: string;
   /** How long the phone must be inside a place before leaving it triggers a question. */
   readonly visitMinDwellMs: number;
-  readonly walletShortcutUrl: string | null;
   readonly turnstileSiteKey: string | null;
 }
 
@@ -128,7 +125,6 @@ export class CompositionRoot implements AppServices {
   public readonly payments: PaymentService;
   public readonly walletLinks: WalletLinkParser;
   public readonly walletSetup: WalletSetupStorage;
-  public readonly walletShortcutUrl: string | null;
   public readonly native: boolean;
 
   public constructor(config: MobileConfig, adapters: PlatformAdapters) {
@@ -181,7 +177,6 @@ export class CompositionRoot implements AppServices {
     );
     this.walletLinks = new ShortcutWalletLinkParser();
     this.walletSetup = new KeyValueWalletSetupStorage(AsyncStorage, { key: 'wallet-setup-v1' });
-    this.walletShortcutUrl = config.walletShortcutUrl;
     this.widgets = new SnapshotNearbyWidgetService(
       new StatusNearbyWidgetPropsMapper(this.presenter, {
         hereWithinM: 60,
@@ -245,7 +240,6 @@ export class CompositionRoot implements AppServices {
             CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_VISIT_MIN_DWELL_SECONDS) ??
               DEFAULT_VISIT_MIN_DWELL_S,
           ) * 1000,
-        walletShortcutUrl: CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_WALLET_SHORTCUT_URL),
         turnstileSiteKey: CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_TURNSTILE_SITE_KEY),
       },
       new CurrentPlatform(),

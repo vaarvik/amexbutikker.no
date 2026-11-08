@@ -82,7 +82,8 @@
           ]
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "./plugins/with-payment-intent.js"
     ],
     "experiments": {
       "typedRoutes": true,

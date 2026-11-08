@@ -28,48 +28,35 @@ answer from anyone gives **Ja**. The trigger fires on the tap, and it may also f
 payment, so a wallet answer counts like a visit, not like a statement transaction. A declined
 payment's purchase is removed from Bonus when the user taps **Kortet ble avvist**.
 
-## Set it up on the phone (by hand)
+## Set it up on the phone
 
-This works today without anything shared. It's also what the Apple Pay setup screen shows while
-`EXPO_PUBLIC_WALLET_SHORTCUT_URL` is empty. The app opens that screen from a prompt on Steder
-(shown until the user taps **Det er satt opp** or a payment link arrives; **Ikke nå** hides it until the app restarts) and from
-Settings → Apple Pay.
+The app ships its own Shortcuts action, **Registrer Amex-betaling** (an App Intent:
+`apps/mobile/plugins/payment-intent/RecordAmexPaymentIntent.swift`, added to the app target by
+`plugins/with-payment-intent.js` on prebuild). It takes **Forhandler** and **Beløp** and opens the
+link above, so no one types a URL. iOS lets only the user create an automation, so that part stays
+by hand. The setup screen (from the prompt on Steder, shown until **Det er satt opp** or a payment
+link arrives, and from Settings → Apple Pay) lists the steps:
 
 1. Snarveier → **Automatisering** → **+** → **Transaksjon**.
-2. Tick the Amex card, leave the other options as they are and choose **Kjør umiddelbart** (run
-   immediately), then **Neste**.
-3. **Ny tom automatisering**, then add these actions:
-   - **URL-kod** (URL Encode) with **Snarvei-inndata → Forhandler**.
-   - **URL-kod** with **Snarvei-inndata → Beløp**.
-   - **Åpne URL-er** with
-     `amexbutikker://paid?merchant=[URL-kodet tekst]&amount=[URL-kodet tekst 2]`, using the two
-     encoded values.
-4. Pay with the card. The app opens on "Betaling".
+2. Tick the Amex card, choose **Kjør umiddelbart**, then **Neste**.
+3. Search for **Registrer Amex-betaling** and pick it. Tap **Forhandler** and choose the trigger's
+   Forhandler, then **Beløp** and choose Beløp.
 
-The app must be installed as a build with the `amexbutikker` scheme (a development build or
-TestFlight). Expo Go uses its own scheme, so the link does not reach it there.
+The action needs a build made after it was added (a new development build or TestFlight). Expo Go
+has neither the action nor the `amexbutikker` scheme.
 
-## Share it as one shortcut (owner, once)
+Check on a phone:
 
-An automation cannot be shared, but a shortcut can. Build a shortcut **Tar de Amex?** with the
-three actions above, taking its input from the automation. Share it via iCloud and put the link in
-`EXPO_PUBLIC_WALLET_SHORTCUT_URL` for the build. The setup screen then shows **Legg til
-snarveien** instead of the steps. Users still create the automation themselves (trigger plus "Kjør snarvei: Tar de
-Amex?"), since iOS asks the user for that.
-
-Before sharing, check on a phone:
-
-- that the shortcut gets the merchant and the amount when the automation passes on its input;
 - what the trigger does on a declined payment (does it fire, and with which amount);
-- how the amount looks in Norwegian and English iOS (`kr 1 299,50`, `NOK 1,299.50`).
+- how the amount arrives as text in Norwegian and English iOS (`kr 1 299,50`, `NOK 1,299.50`).
   `ShortcutWalletLinkParser` reads both.
+
+Each iPhone needs its own automation: the Transaction trigger fires only for payments made with
+the Wallet on that phone. Two people sharing an Amex account (a supplementary card) each set it
+up on their own phone. Once set up, the setup screen shows how to delete it again.
 
 ## Try it without paying
 
 - In a development build: Settings → **Send testbetaling** (only in `__DEV__`).
 - From the Mac, with the simulator running:
   `xcrun simctl openurl booted 'amexbutikker://paid?merchant=Kaf%C3%A9%20%C3%85sen&amount=kr%2049%2C00'`
-
-Each iPhone needs its own automation: the Transaction trigger fires only for payments made with
-the Wallet on that phone. Two people sharing an Amex account (a supplementary card) each set it
-up on their own phone. Once set up, the setup screen shows how to delete it again.

@@ -380,7 +380,7 @@ card to a shortcut, which opens amexbutikker://paid?merchant=…[&amount=…].
 
 Built: `POST /v1/match/payment` (`MatchPaymentUseCase`, `RegexMerchantNameParser`, stricter decider: 0.7 / 0.2),
 `via: 'wallet'` on reports, the `paid` screen, `apps/mobile/src/payments/`, Settings → Apple Pay with the steps.
-Open: the owner builds and shares the shortcut (`EXPO_PUBLIC_WALLET_SHORTCUT_URL`) and tests a declined tap on a
+Open: the app's own Shortcuts action (App Intent) replaced the shared shortcut; test a declined tap on a
 phone. See docs/wallet-shortcut.md.
 
 ---

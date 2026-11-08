@@ -1,29 +1,20 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import {
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { WalletSetupState } from '../payments/payments.model';
 import { useServices } from '../ui/services';
 import { usePalette } from '../ui/theme';
 
-/** The automation built by hand, until a shared shortcut exists. */
+/**
+ * The automation runs the app's own action (the App Intent in plugins/payment-intent), so there is
+ * no link to type. iOS lets only the user create an automation.
+ */
 const STEPS = [
-  'Åpne Snarveier, gå til Automatisering og trykk +.',
-  'Velg Transaksjon, kryss av for Amex-kortet ditt og velg Kjør umiddelbart.',
-  'Legg til URL-kod to ganger: én for Forhandler og én for Beløp fra Snarvei-inndata.',
-  'Legg til Åpne URL-er med lenken under, og sett inn de to kodede verdiene.',
+  'Trykk Åpne Snarveier, gå til Automatisering og trykk +. Velg Transaksjon.',
+  'Velg Amex-kortet ditt og Kjør umiddelbart, og trykk Neste.',
+  'Søk etter «Registrer Amex-betaling» og velg den. Trykk Forhandler og velg Forhandler, så Beløp og velg Beløp.',
 ] as const;
-
-const LINK = 'amexbutikker://paid?merchant=[Forhandler]&amount=[Beløp]';
 
 /** The app cannot remove an automation; the user does it in Snarveier. */
 const REMOVE_STEPS = [
@@ -131,7 +122,7 @@ function Steps(props: { readonly steps: readonly string[]; readonly footer?: Rea
 }
 
 function SetUp() {
-  const { walletSetup, walletShortcutUrl } = useServices();
+  const { walletSetup } = useServices();
   const palette = usePalette();
   const text = { color: palette.text };
   const muted = { color: palette.muted };
@@ -146,40 +137,14 @@ function SetUp() {
       </Text>
       <Text style={[styles.body, muted]}>
         Når du betaler med Amex i Apple Pay, åpner appen seg og lagrer at stedet tar Amex. Beløpet
-        går til Bonus og blir på telefonen. Tar et par minutter i Snarveier.
+        går til Bonus og blir på telefonen. Tar ett minutt i Snarveier.
       </Text>
 
-      {walletShortcutUrl === null ? (
-        <Steps
-          steps={STEPS}
-          footer={
-            <View
-              style={[
-                styles.linkRow,
-                { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
-              ]}
-            >
-              <Text selectable style={[styles.code, text]}>
-                {LINK}
-              </Text>
-              <Pressable
-                onPress={() => {
-                  void Share.share({ message: LINK });
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="Kopier lenken"
-                hitSlop={8}
-              >
-                <Text style={[styles.copy, { color: palette.accent }]}>Kopier</Text>
-              </Pressable>
-            </View>
-          }
-        />
-      ) : null}
+      <Steps steps={STEPS} />
 
       <Pressable
         onPress={() => {
-          void Linking.openURL(walletShortcutUrl ?? 'shortcuts://');
+          void Linking.openURL('shortcuts://');
         }}
         accessibilityRole="button"
         style={({ pressed }) => [
@@ -187,9 +152,7 @@ function SetUp() {
           { backgroundColor: palette.accent, opacity: pressed ? 0.7 : 1 },
         ]}
       >
-        <Text style={[styles.buttonText, { color: palette.onAccent }]}>
-          {walletShortcutUrl === null ? 'Åpne Snarveier' : 'Legg til snarveien'}
-        </Text>
+        <Text style={[styles.buttonText, { color: palette.onAccent }]}>Åpne Snarveier</Text>
       </Pressable>
       <Pressable
         onPress={() => {
@@ -230,13 +193,6 @@ const styles = StyleSheet.create({
   },
   numberText: { fontSize: 14, fontWeight: '700' },
   stepText: { flex: 1, fontSize: 16, lineHeight: 22 },
-  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 },
-  code: {
-    flex: 1,
-    fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
-    fontSize: 12,
-  },
-  copy: { fontSize: 15, fontWeight: '600' },
   button: { borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   outlined: { borderWidth: 1.5 },
   buttonText: { fontSize: 17, fontWeight: '600' },
