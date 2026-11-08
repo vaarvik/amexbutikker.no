@@ -55,7 +55,7 @@ export function WalletSetupPrompt() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 14, padding: 16, gap: 6, marginTop: 20, marginHorizontal: 16 },
+  card: { borderRadius: 14, padding: 16, gap: 6, marginTop: 20, marginHorizontal: 20 },
   title: { fontSize: 17, fontWeight: '700' },
   body: { fontSize: 15, lineHeight: 21 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 8 },

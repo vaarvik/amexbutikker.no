@@ -147,9 +147,7 @@ export default function Home() {
         <FlatList
           data={results}
           keyExtractor={(item) => item.place.id}
-          renderItem={({ item, index }) => (
-            <PlaceRow summary={item} first={index === 0} last={index === results.length - 1} />
-          )}
+          renderItem={({ item }) => <PlaceRow summary={item} />}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           style={styles.column}
@@ -178,13 +176,7 @@ export default function Home() {
         <FlatList
           data={nearbyResults}
           keyExtractor={(item) => item.place.id}
-          renderItem={({ item, index }) => (
-            <PlaceRow
-              summary={item}
-              first={index === 0}
-              last={index === nearbyResults.length - 1}
-            />
-          )}
+          renderItem={({ item }) => <PlaceRow summary={item} />}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           style={styles.column}
@@ -299,7 +291,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 6,
   },

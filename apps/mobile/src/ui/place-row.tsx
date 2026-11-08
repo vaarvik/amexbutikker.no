@@ -6,22 +6,11 @@ import { useServices } from './services';
 import { StatusBadge } from './status-badge';
 import { usePalette } from './theme';
 
-const RADIUS = 12;
-
-/**
- * One place in a grouped list: category icon, name, category and distance, and the answer.
- * `first` and `last` round the group's corners; rows in between share a hairline separator.
- */
-export function PlaceRow(props: {
-  readonly summary: PlaceSummaryDto;
-  readonly first?: boolean;
-  readonly last?: boolean;
-}) {
+/** One place in a list: category icon, name, category and distance, and the answer. Open rows, no card. */
+export function PlaceRow(props: { readonly summary: PlaceSummaryDto }) {
   const { presenter } = useServices();
   const palette = usePalette();
   const { place, status, distanceM } = props.summary;
-  const first = props.first ?? true;
-  const last = props.last ?? true;
   const details = [presenter.category(place.category), presenter.distance(distanceM)]
     .filter((part) => part !== null)
     .join(' · ');
@@ -35,24 +24,11 @@ export function PlaceRow(props: {
       accessibilityLabel={`${place.name}, ${details}, ${presenter.status(status.status).answer}`}
       style={({ pressed }) => [
         styles.row,
-        {
-          backgroundColor: pressed ? palette.surface : palette.card,
-          borderTopLeftRadius: first ? RADIUS : 0,
-          borderTopRightRadius: first ? RADIUS : 0,
-          borderBottomLeftRadius: last ? RADIUS : 0,
-          borderBottomRightRadius: last ? RADIUS : 0,
-        },
+        { backgroundColor: pressed ? palette.surface : 'transparent' },
       ]}
     >
       <CategoryIcon category={place.category} />
-      <View
-        style={[
-          styles.body,
-          last
-            ? null
-            : { borderBottomWidth: StyleSheet.hairlineWidth, borderColor: palette.border },
-        ]}
-      >
+      <View style={styles.body}>
         <View style={styles.text}>
           <Text style={[styles.name, { color: palette.text }]} numberOfLines={1}>
             {place.name}
@@ -71,18 +47,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingLeft: 14,
-    marginHorizontal: 16,
+    gap: 14,
+    paddingHorizontal: 12,
+    marginHorizontal: 8,
+    borderRadius: 14,
   },
   body: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 10,
-    paddingRight: 14,
-    minHeight: 60,
+    paddingVertical: 12,
+    minHeight: 64,
   },
   text: { flex: 1, gap: 2 },
   name: { fontSize: 17, fontWeight: '600' },

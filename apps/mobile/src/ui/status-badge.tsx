@@ -3,43 +3,44 @@ import { SymbolView } from 'expo-symbols';
 import type { SymbolViewProps } from 'expo-symbols';
 import { StyleSheet, Text, View } from 'react-native';
 import { useServices } from './services';
-import { STATUS_COLORS, isLikely, usePalette } from './theme';
+import { STATUS_COLORS, isLikely, usePalette, useStatusColor } from './theme';
 
 /**
- * Symbol plus answer as text, so the status reads without colour. Confirmed answers are filled;
- * likely answers are outlined in the same colour, with the text in the normal text colour so it
- * stays readable in dark mode; "Ikke sjekket" is plain muted text without a symbol.
+ * The answer in a list row: a symbol and the word, no box. Confirmed answers get a filled
+ * symbol and the status colour; likely answers an outlined symbol; "Ikke sjekket" is muted text.
+ * The word carries the meaning, so it reads without colour.
  */
 export function StatusBadge(props: { readonly status: AcceptanceStatus }) {
   const view = useServices().presenter.status(props.status);
   const palette = usePalette();
-  const color = STATUS_COLORS[props.status];
+  const color = useStatusColor(props.status);
   const unknown = props.status === 'unknown';
   const likely = isLikely(props.status);
   return (
-    <View
-      style={[
-        styles.badge,
-        unknown
-          ? styles.plain
-          : likely
-            ? { borderWidth: 1.5, borderColor: color }
-            : { backgroundColor: color },
-      ]}
-      accessible
-      accessibilityLabel={`${view.answer}: ${view.label}`}
-    >
+    <View style={styles.badge} accessible accessibilityLabel={`${view.answer}: ${view.label}`}>
+      {unknown ? null : <SymbolView name={BADGE_ICONS[props.status]} size={17} tintColor={color} />}
       <Text
         style={[
-          unknown ? styles.plainText : styles.text,
-          { color: unknown ? palette.muted : likely ? palette.text : '#FFFFFF' },
+          styles.text,
+          unknown
+            ? { color: palette.muted, fontWeight: '400' }
+            : { color: likely ? palette.text : color },
         ]}
       >
-        {unknown ? view.answer : `${view.symbol} ${view.answer}`}
+        {view.answer}
       </Text>
     </View>
   );
 }
+
+const BADGE_ICONS: Readonly<Record<AcceptanceStatus, SymbolViewProps['name']>> = {
+  accepted: { ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' },
+  likely_accepted: { ios: 'checkmark.circle', android: 'check_circle', web: 'check_circle' },
+  rejected: { ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' },
+  likely_rejected: { ios: 'xmark.circle', android: 'cancel', web: 'cancel' },
+  mixed: { ios: 'plusminus.circle', android: 'exposure', web: 'exposure' },
+  unknown: { ios: 'questionmark.circle', android: 'help', web: 'help' },
+};
 
 const ICONS: Readonly<Record<AcceptanceStatus, SymbolViewProps['name']>> = {
   accepted: { ios: 'checkmark', android: 'check', web: 'check' },
@@ -50,7 +51,6 @@ const ICONS: Readonly<Record<AcceptanceStatus, SymbolViewProps['name']>> = {
   unknown: { ios: 'questionmark', android: 'question_mark', web: 'question_mark' },
 };
 
-/** The big answer on the place screen; filled, outlined or plain like the badge. */
 /** The big answer on a place. `note` replaces the line under it, e.g. right after the user answered. */
 export function StatusAnswer(props: { readonly status: AcceptanceStatus; readonly note?: string }) {
   const view = useServices().presenter.status(props.status);
@@ -98,10 +98,8 @@ export function StatusAnswer(props: { readonly status: AcceptanceStatus; readonl
 }
 
 const styles = StyleSheet.create({
-  badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'center' },
-  plain: { paddingHorizontal: 0 },
-  text: { fontSize: 13, fontWeight: '600' },
-  plainText: { fontSize: 13 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'center' },
+  text: { fontSize: 15, fontWeight: '600' },
   answer: {
     borderRadius: 16,
     borderWidth: 1,

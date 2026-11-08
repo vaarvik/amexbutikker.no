@@ -14,6 +14,21 @@ export const STATUS_COLORS: Readonly<Record<AcceptanceStatus, string>> = {
   unknown: '#4A5560',
 };
 
+/** The same status colours lifted for dark cards, where the light ones fall under 4.5:1. */
+const STATUS_COLORS_DARK: Readonly<Record<AcceptanceStatus, string>> = {
+  accepted: '#5FCB7E',
+  likely_accepted: '#5FCB7E',
+  rejected: '#FF8A80',
+  likely_rejected: '#FF8A80',
+  mixed: '#F2B35B',
+  unknown: '#A9B0BB',
+};
+
+/** Status colour for text and symbols on the current background. */
+export function useStatusColor(status: AcceptanceStatus): string {
+  return (useColorScheme() === 'dark' ? STATUS_COLORS_DARK : STATUS_COLORS)[status];
+}
+
 export interface Palette {
   /** Screen background, behind the cards. */
   readonly background: string;
