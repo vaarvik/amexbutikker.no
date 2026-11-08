@@ -142,32 +142,13 @@ export default function SettingsScreen() {
                   onPress={() => {
                     router.push({
                       pathname: '/paid',
-                      params: { merchant: 'Kafé Åsen', amount: 'kr 49,00' },
+                      params: { merchant: 'Kafé Åsen', amount: 'kr 49,00', test: '1' },
                     });
                   }}
                   accessibilityRole="button"
                   style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}
                 >
                   <Text style={[styles.label, { color: palette.accent }]}>Send testbetaling</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    setWalletState('new');
-                    void walletSetup.save('new');
-                  }}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.row,
-                    {
-                      borderTopColor: palette.border,
-                      borderTopWidth: StyleSheet.hairlineWidth,
-                      opacity: pressed ? 0.6 : 1,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.label, { color: palette.accent }]}>
-                    Vis oppsett-kortet på Steder igjen
-                  </Text>
                 </Pressable>
               </View>
             </>

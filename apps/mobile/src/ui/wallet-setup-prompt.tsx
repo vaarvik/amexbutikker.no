@@ -5,11 +5,15 @@ import type { WalletSetupState } from '../payments/payments.model';
 import { useServices } from './services';
 import { usePalette } from './theme';
 
-/** Asks once, on Steder, to set up answers from Apple Pay, until it is done or dismissed. */
+/**
+ * Asks on Steder to set up answers from Apple Pay until it is set up. "Ikke nå" hides it until
+ * the app starts again (the tab stays mounted, so this state lives as long as the app).
+ */
 export function WalletSetupPrompt() {
   const { walletSetup, native } = useServices();
   const palette = usePalette();
   const [state, setState] = useState<WalletSetupState | null>(null);
+  const [hidden, setHidden] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -17,7 +21,7 @@ export function WalletSetupPrompt() {
     }, [walletSetup]),
   );
 
-  if (!native || Platform.OS !== 'ios' || state !== 'new') {
+  if (!native || Platform.OS !== 'ios' || state !== 'new' || hidden) {
     return null;
   }
   return (
@@ -41,8 +45,7 @@ export function WalletSetupPrompt() {
         </Pressable>
         <Pressable
           onPress={() => {
-            setState('dismissed');
-            void walletSetup.save('dismissed');
+            setHidden(true);
           }}
           accessibilityRole="button"
           hitSlop={8}

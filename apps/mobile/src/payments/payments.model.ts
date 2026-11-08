@@ -49,8 +49,8 @@ export const HandledPaymentSchema: z.ZodType<HandledPayment> = z.object({
 });
 
 /**
- * Whether the Apple Pay automation is set up: `new` until the user finishes or dismisses the
- * prompt; a payment link arriving means it works, so it becomes `done`.
+ * Whether the Apple Pay automation is set up: `new` until the user says it is done or a payment
+ * link arrives, which means it works.
  */
-export const WalletSetupStateSchema = z.enum(['new', 'done', 'dismissed']);
+export const WalletSetupStateSchema = z.enum(['new', 'done']);
 export type WalletSetupState = z.infer<typeof WalletSetupStateSchema>;

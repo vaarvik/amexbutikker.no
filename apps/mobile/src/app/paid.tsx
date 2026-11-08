@@ -54,9 +54,12 @@ export default function PaidScreen() {
     }
     started.current = true;
     // A link from the automation means it is set up, so the app stops prompting for it.
-    void walletSetup.save('done').catch(() => undefined);
+    // The dev-only test payment in Settings says `test=1` and does not count.
+    if (params.test !== '1') {
+      void walletSetup.save('done').catch(() => undefined);
+    }
     void payments.handle(payment).then(setScreen);
-  }, [payment, payments, walletSetup]);
+  }, [payment, payments, walletSetup, params.test]);
 
   const text = { color: palette.text };
   const muted = { color: palette.muted };

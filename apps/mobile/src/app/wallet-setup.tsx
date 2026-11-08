@@ -1,4 +1,6 @@
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Linking,
   Platform,
@@ -9,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import type { WalletSetupState } from '../payments/payments.model';
 import { useServices } from '../ui/services';
 import { usePalette } from '../ui/theme';
 
@@ -22,22 +25,116 @@ const STEPS = [
 
 const LINK = 'amexbutikker://paid?merchant=[Forhandler]&amount=[Beløp]';
 
-/** Sets up the Shortcuts automation that opens the app after every Amex payment in Apple Pay. */
+/** The app cannot remove an automation; the user does it in Snarveier. */
+const REMOVE_STEPS = [
+  'Åpne Snarveier og gå til Automatisering.',
+  'Sveip til venstre på Transaksjon-automatiseringen og trykk Slett.',
+] as const;
+
+function close() {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/');
+  }
+}
+
+/**
+ * Sets up the Shortcuts automation that opens the app after every Amex payment in Apple Pay or,
+ * once it is set up, shows how to remove it.
+ */
 export default function WalletSetupScreen() {
+  const { walletSetup } = useServices();
+  const [state, setState] = useState<WalletSetupState | null>(null);
+
+  useEffect(() => {
+    void walletSetup.find().then(setState);
+  }, [walletSetup]);
+
+  if (state === null) {
+    return null;
+  }
+  return state === 'done' ? <RemoveSetup /> : <SetUp />;
+}
+
+function RemoveSetup() {
+  const { walletSetup } = useServices();
+  const palette = usePalette();
+  const text = { color: palette.text };
+  const muted = { color: palette.muted };
+  return (
+    <ScrollView
+      style={{ backgroundColor: palette.background }}
+      contentContainerStyle={styles.content}
+    >
+      <Text style={[styles.title, text]} accessibilityRole="header">
+        Satt opp
+      </Text>
+      <Text style={[styles.body, muted]}>
+        Appen åpner seg når du betaler med Amex i Apple Pay. Vil du slå det av, sletter du
+        automatiseringen i Snarveier.
+      </Text>
+      <Steps steps={REMOVE_STEPS} />
+      <Pressable
+        onPress={() => {
+          void Linking.openURL('shortcuts://');
+        }}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.button,
+          { backgroundColor: palette.accent, opacity: pressed ? 0.7 : 1 },
+        ]}
+      >
+        <Text style={[styles.buttonText, { color: palette.onAccent }]}>Åpne Snarveier</Text>
+      </Pressable>
+      <Pressable
+        onPress={() => {
+          void walletSetup.save('new').finally(close);
+        }}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.button,
+          styles.outlined,
+          { borderColor: palette.accent, opacity: pressed ? 0.7 : 1 },
+        ]}
+      >
+        <Text style={[styles.buttonText, { color: palette.accent }]}>Den er slettet</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+/** Numbered steps in a card; `footer` goes under the last one. */
+function Steps(props: { readonly steps: readonly string[]; readonly footer?: ReactNode }) {
+  const palette = usePalette();
+  return (
+    <View style={[styles.card, { backgroundColor: palette.card }]}>
+      {props.steps.map((step, index) => (
+        <View
+          key={step}
+          style={[
+            styles.step,
+            index === 0
+              ? null
+              : { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
+          ]}
+        >
+          <View style={[styles.number, { backgroundColor: palette.accentSoft }]}>
+            <Text style={[styles.numberText, { color: palette.accent }]}>{String(index + 1)}</Text>
+          </View>
+          <Text style={[styles.stepText, { color: palette.text }]}>{step}</Text>
+        </View>
+      ))}
+      {props.footer}
+    </View>
+  );
+}
+
+function SetUp() {
   const { walletSetup, walletShortcutUrl } = useServices();
   const palette = usePalette();
   const text = { color: palette.text };
   const muted = { color: palette.muted };
-
-  const finish = (state: 'done' | 'dismissed') => {
-    void walletSetup.save(state).finally(() => {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/');
-      }
-    });
-  };
 
   return (
     <ScrollView
@@ -53,46 +150,31 @@ export default function WalletSetupScreen() {
       </Text>
 
       {walletShortcutUrl === null ? (
-        <View style={[styles.card, { backgroundColor: palette.card }]}>
-          {STEPS.map((step, index) => (
+        <Steps
+          steps={STEPS}
+          footer={
             <View
-              key={step}
               style={[
-                styles.step,
-                index === 0
-                  ? null
-                  : { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
+                styles.linkRow,
+                { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
               ]}
             >
-              <View style={[styles.number, { backgroundColor: palette.accentSoft }]}>
-                <Text style={[styles.numberText, { color: palette.accent }]}>
-                  {String(index + 1)}
-                </Text>
-              </View>
-              <Text style={[styles.stepText, text]}>{step}</Text>
+              <Text selectable style={[styles.code, text]}>
+                {LINK}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  void Share.share({ message: LINK });
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Kopier lenken"
+                hitSlop={8}
+              >
+                <Text style={[styles.copy, { color: palette.accent }]}>Kopier</Text>
+              </Pressable>
             </View>
-          ))}
-          <View
-            style={[
-              styles.linkRow,
-              { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
-            ]}
-          >
-            <Text selectable style={[styles.code, text]}>
-              {LINK}
-            </Text>
-            <Pressable
-              onPress={() => {
-                void Share.share({ message: LINK });
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Kopier lenken"
-              hitSlop={8}
-            >
-              <Text style={[styles.copy, { color: palette.accent }]}>Kopier</Text>
-            </Pressable>
-          </View>
-        </View>
+          }
+        />
       ) : null}
 
       <Pressable
@@ -111,7 +193,7 @@ export default function WalletSetupScreen() {
       </Pressable>
       <Pressable
         onPress={() => {
-          finish('done');
+          void walletSetup.save('done').finally(close);
         }}
         accessibilityRole="button"
         style={({ pressed }) => [
@@ -123,9 +205,7 @@ export default function WalletSetupScreen() {
         <Text style={[styles.buttonText, { color: palette.accent }]}>Det er satt opp</Text>
       </Pressable>
       <Pressable
-        onPress={() => {
-          finish('dismissed');
-        }}
+        onPress={close}
         accessibilityRole="button"
         style={({ pressed }) => [styles.later, { opacity: pressed ? 0.6 : 1 }]}
       >

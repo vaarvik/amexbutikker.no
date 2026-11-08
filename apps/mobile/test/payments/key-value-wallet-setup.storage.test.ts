@@ -24,12 +24,12 @@ describe('KeyValueWalletSetupStorage', () => {
     await expect(storage.find()).resolves.toBe('new');
   });
 
-  it.each(['done', 'dismissed'] as const)('keeps %s', async (state) => {
+  it('keeps done', async () => {
     const storage = new KeyValueWalletSetupStorage(new MapKeyValueStorage(), { key: 'wallet' });
 
-    await storage.save(state);
+    await storage.save('done');
 
-    await expect(storage.find()).resolves.toBe(state);
+    await expect(storage.find()).resolves.toBe('done');
   });
 
   it('is new for an unreadable value', async () => {
