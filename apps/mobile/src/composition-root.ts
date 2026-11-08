@@ -1,8 +1,13 @@
 import type { DevicePlatform } from '@amexbutikker/contracts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CurrentPlatform } from './composition-root.platform';
-import type { DeviceSession } from './devices/devices.ports';
+import type {
+  AppAttestModule,
+  DeviceAttestationService,
+  DeviceSession,
+} from './devices/devices.ports';
 import { FetchDevicesApiClient } from './devices/fetch-devices-api.client';
+import { StoredDeviceAttestationService } from './devices/stored-device-attestation.service';
 import { StoredDeviceSession } from './devices/stored-device.session';
 import type { LocationProvider } from './location/location.ports';
 import { CachingNearbyService } from './places/caching-nearby.service';
@@ -42,6 +47,10 @@ export interface AppServices {
   readonly nearby: NearbyService;
   readonly location: LocationProvider;
   readonly session: DeviceSession;
+  /** Proves the install is real (App Attest, Turnstile), so its answers count in full. */
+  readonly attestation: DeviceAttestationService;
+  /** Cloudflare Turnstile site key for the web app; null turns Turnstile off. */
+  readonly turnstileSiteKey: string | null;
   readonly presenter: StatusPresenter;
   /** Visit detection; null on the web. */
   readonly visits: VisitService | null;
@@ -70,6 +79,8 @@ export interface PlatformAdapters {
   readonly visitNotifier: VisitNotifier | null;
   /** The home screen widget; a Null writer where there is none. */
   readonly widgetWriter: NearbyWidgetWriter;
+  /** Apple App Attest; null where there is none. */
+  readonly appAttest: AppAttestModule | null;
   readonly native: boolean;
 }
 
@@ -79,6 +90,7 @@ export interface MobileConfig {
   /** How long the phone must be inside a place before leaving it triggers a question. */
   readonly visitMinDwellMs: number;
   readonly walletShortcutUrl: string | null;
+  readonly turnstileSiteKey: string | null;
 }
 
 /** The API on this machine; phones on the LAN need EXPO_PUBLIC_API_URL set to its LAN address. */
@@ -93,6 +105,8 @@ export class CompositionRoot implements AppServices {
   public readonly nearby: NearbyService;
   public readonly location: LocationProvider;
   public readonly session: DeviceSession;
+  public readonly attestation: DeviceAttestationService;
+  public readonly turnstileSiteKey: string | null;
   public readonly presenter: StatusPresenter;
   public readonly visits: VisitService | null;
   public readonly widgets: NearbyWidgetService;
@@ -109,14 +123,19 @@ export class CompositionRoot implements AppServices {
       timeoutMs: 8000,
     });
     this.native = adapters.native;
-    this.session = new StoredDeviceSession(
-      new FetchDevicesApiClient(transport),
+    const devicesApi = new FetchDevicesApiClient(transport);
+    this.session = new StoredDeviceSession(devicesApi, adapters.tokenStorage, {
+      platform: adapters.platform,
+      key: 'device-token',
+    });
+    this.attestation = new StoredDeviceAttestationService(
+      this.session,
+      devicesApi,
+      adapters.appAttest,
       adapters.tokenStorage,
-      {
-        platform: adapters.platform,
-        key: 'device-token',
-      },
+      { key: 'device-attested-token' },
     );
+    this.turnstileSiteKey = config.turnstileSiteKey;
     this.places = new FetchPlacesApiClient(transport, this.session);
     this.location = adapters.location;
     const clock = new SystemClock();
@@ -208,6 +227,7 @@ export class CompositionRoot implements AppServices {
               DEFAULT_VISIT_MIN_DWELL_S,
           ) * 1000,
         walletShortcutUrl: CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_WALLET_SHORTCUT_URL),
+        turnstileSiteKey: CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_TURNSTILE_SITE_KEY),
       },
       new CurrentPlatform(),
     );

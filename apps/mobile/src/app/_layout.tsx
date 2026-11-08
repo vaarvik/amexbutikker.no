@@ -7,6 +7,7 @@ import { CompositionRoot } from '../composition-root';
 import '../composition-root.tasks';
 import { ServicesProvider } from '../ui/services';
 import { ShareIntentRouter } from '../ui/share-intent-router';
+import { TurnstileGate } from '../ui/turnstile-gate';
 import { VisitNotificationRouter } from '../ui/visit-notification-router';
 import { usePalette } from '../ui/theme';
 
@@ -31,6 +32,7 @@ export default function RootLayout() {
             <VisitNotificationRouter />
           </>
         ) : null}
+        <TurnstileGate />
         <StatusBar style="auto" />
         <Stack
           screenOptions={{

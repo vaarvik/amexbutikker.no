@@ -23,6 +23,21 @@ for amd64 and arm64. GHCR packages start private: make it public, or give simple
 | Nightly job           | same image, `node dist/src/cli.js refresh-statuses`                           |
 | Copies                | 1 (rate limits are per process)                                               |
 
+Device attestation (Phase 16): without it, every answer counts as `unverified_report` (half a user
+report) and wallet answers get no extra weight. Set these on the app:
+
+| Setting                    | Value                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------- |
+| `APP_ATTEST_APP_IDS`       | `<Team ID>.<bundle id>`, e.g. `ABCDE12345.no.amexbutikker.app` (Apple Developer → Membership) |
+| `APP_ATTEST_DEVELOPMENT`   | `true` only while testing development builds                                                  |
+| `TURNSTILE_SECRET_KEY`     | the secret of a Turnstile widget for `amex.johann.no` (Cloudflare → Turnstile), a secret      |
+| `TURNSTILE_HOSTNAMES`      | `amex.johann.no`                                                                              |
+| `TRUST_UNATTESTED_DEVICES` | leave unset (false). `true` is for local development and the simulator only                   |
+
+The web build needs the widget's public site key: `EXPO_PUBLIC_TURNSTILE_SITE_KEY` (a build
+argument of the image; CI passes the repository variable `TURNSTILE_SITE_KEY`). Cloudflare's test keys (`1x00000000000000000000AA` /
+`1x0000000000000000000000000000000AA`) always pass; use them only locally.
+
 `CORS_ORIGINS` stays empty: the web app and the API share the origin. The web app inside the image is
 built with `EXPO_PUBLIC_API_URL=/`, so it calls the API on whatever host serves it.
 

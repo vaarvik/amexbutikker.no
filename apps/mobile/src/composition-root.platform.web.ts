@@ -1,5 +1,6 @@
 import type { DevicePlatform } from '@amexbutikker/contracts';
 import type { PlatformAdapters } from './composition-root';
+import type { AppAttestModule } from './devices/devices.ports';
 import { BrowserLocationProvider } from './location/browser-location.provider';
 import type { LocationProvider } from './location/location.ports';
 import { LocalStorageKeyValueStorage } from './shared/local-storage-key-value.storage';
@@ -21,6 +22,8 @@ export class CurrentPlatform implements PlatformAdapters {
   public readonly regionMonitor: RegionMonitor | null = null;
   public readonly visitNotifier: VisitNotifier | null = null;
   public readonly widgetWriter: NearbyWidgetWriter = new NullNearbyWidgetWriter();
+  /** Browsers attest with Turnstile instead (ui/turnstile-gate.web.tsx). */
+  public readonly appAttest: AppAttestModule | null = null;
   /** Native-only features are hidden on the web, not stubbed. */
   public readonly native = false;
 }

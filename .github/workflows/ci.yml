@@ -72,6 +72,9 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
+          # Public by design (it is in the page); set the repository variable once the widget exists.
+          build-args: |
+            EXPO_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.TURNSTILE_SITE_KEY }}
           tags: |
             ghcr.io/vaarvik/amexbutikker:main
             ghcr.io/vaarvik/amexbutikker:sha-${{ github.sha }}

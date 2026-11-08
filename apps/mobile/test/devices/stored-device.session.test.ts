@@ -14,6 +14,14 @@ class CountingDevicesApi implements DevicesApiClient {
       token: `token-${String(this.platforms.length)}`,
     });
   }
+
+  public challenge(): Promise<string> {
+    return Promise.reject(new Error('not used'));
+  }
+
+  public attest(): Promise<never> {
+    return Promise.reject(new Error('not used'));
+  }
 }
 
 describe('StoredDeviceSession', () => {

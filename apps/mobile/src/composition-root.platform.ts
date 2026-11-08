@@ -1,9 +1,11 @@
 import type { DevicePlatform } from '@amexbutikker/contracts';
+import { requireOptionalNativeModule } from 'expo';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import type { PlatformAdapters } from './composition-root';
+import type { AppAttestModule } from './devices/devices.ports';
 import { ExpoLocationProvider } from './location/expo-location.provider';
 import type { LocationProvider } from './location/location.ports';
 import { SecureStoreKeyValueStorage } from './shared/secure-store-key-value.storage';
@@ -40,6 +42,12 @@ export class CurrentPlatform implements PlatformAdapters {
   /** iOS has the widget; Metro picks `nearby-widget.ios.tsx` there and the stand-in elsewhere. */
   public readonly widgetWriter: NearbyWidgetWriter =
     nearbyWidget === null ? new NullNearbyWidgetWriter() : new ExpoNearbyWidgetWriter(nearbyWidget);
+  /**
+   * The app's own module (modules/app-attest). Null on Android, in Expo Go and in builds made
+   * before the module existed.
+   */
+  public readonly appAttest: AppAttestModule | null =
+    Platform.OS === 'ios' ? requireOptionalNativeModule<AppAttestModule>('AppAttest') : null;
   /** Share intake and visit detection exist only in the native app. */
   public readonly native = true;
 }

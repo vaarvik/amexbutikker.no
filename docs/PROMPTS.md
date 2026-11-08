@@ -427,7 +427,7 @@ render.yaml stays as a hosted alternative.
 
 ---
 
-## Phase 16: Trust without accounts
+## Phase 16: Trust without accounts (built; needs a dev build, an Apple Team ID and a Turnstile widget)
 
 Reading is open to everyone; answering needs no account. Today: an anonymous device id (Keychain, survives
 backups and Quick Start), one counted answer per device and place, rate limits, Ja/Nei only from two answers
@@ -437,6 +437,14 @@ or a purchase, decay. The gap is many fake devices.
 - iOS: App Attest. RegisterDevice takes an attestation; the API checks it with Apple and marks the device
   attested. Unattested devices may still answer, with less weight (a weight entry, not a calculator change).
 - Web: Cloudflare Turnstile on RegisterDevice (or on each answer), verified by the API.
+Built: `POST /v1/devices/me/challenge` and `/attestation`, `AppleAppAttestValidator` (chain to Apple's root,
+nonce, key id, app id, counter, AAGUID), `HttpTurnstileValidator`, `unverified_report` (weight 0.3) for devices
+that are not attested, whose `via: 'wallet'` is ignored (`AttestationReportEvidencePolicy`). App: the local Expo
+module `modules/app-attest` (Swift, DCAppAttestService) runs once per device token at start; the web runs an
+interaction-only Turnstile widget. Open: a new dev/EAS build for the native module, then a test on a real iPhone
+(the simulator has no App Attest); the owner's Team ID and a Turnstile widget. Assertions per request (App Attest
+`generateAssertion`) are not used: the attestation at registration is the gate.
+
 - Later, only if wanted: iCloud key-value sync for the Bonus tab (no server, no account), and an optional
   Keycloak login (Google, Apple, e-mail) that links the anonymous user, for one identity on phone and web.
   A login with Google needs Sign in with Apple in the iOS app too.

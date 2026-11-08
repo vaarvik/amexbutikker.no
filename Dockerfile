@@ -25,8 +25,11 @@ COPY . .
 RUN pnpm install --frozen-lockfile --filter "@amexbutikker/mobile..."
 # Static rendering bundles for Node, which resolves the workspace packages to their compiled dist.
 RUN pnpm exec tsc -b packages/contracts
+# The Turnstile widget's public site key (Phase 16); empty builds the web app without Turnstile.
+ARG EXPO_PUBLIC_TURNSTILE_SITE_KEY=""
 # "/" makes the web app call the API on its own origin.
-RUN cd apps/mobile && EXPO_PUBLIC_API_URL=/ pnpm exec expo export --platform web --output-dir /web
+RUN cd apps/mobile && EXPO_PUBLIC_API_URL=/ EXPO_PUBLIC_TURNSTILE_SITE_KEY="$EXPO_PUBLIC_TURNSTILE_SITE_KEY" \
+    pnpm exec expo export --platform web --output-dir /web
 
 FROM node:24-slim
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 STORAGE=postgres WEB_ROOT=/app/web
