@@ -23,6 +23,7 @@ import type { PlaceFilterChoice } from '../../ui/place-filter-chips';
 import { PlaceRow } from '../../ui/place-row';
 import { useServices } from '../../ui/services';
 import { usePalette } from '../../ui/theme';
+import { WalletSetupPrompt } from '../../ui/wallet-setup-prompt';
 
 const SEARCH_DELAY_MS = 250;
 
@@ -189,12 +190,15 @@ export default function Home() {
           style={styles.column}
           contentContainerStyle={styles.list}
           ListHeaderComponent={
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, muted]}>NÆR DEG</Text>
-              {nearbyState.kind === 'ready' && nearbyState.refreshing ? (
-                <ActivityIndicator />
-              ) : null}
-            </View>
+            <>
+              <WalletSetupPrompt />
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, muted]}>NÆR DEG</Text>
+                {nearbyState.kind === 'ready' && nearbyState.refreshing ? (
+                  <ActivityIndicator />
+                ) : null}
+              </View>
+            </>
           }
           ListEmptyComponent={
             <NearbyMessage state={nearbyState} filtered={filtered} onRetry={reload} />

@@ -70,6 +70,10 @@ export default function RootLayout() {
             dangerouslySingular={(_name, params) => JSON.stringify(params)}
           />
           <Stack.Screen
+            name="wallet-setup"
+            options={{ title: 'Apple Pay', presentation: 'modal' }}
+          />
+          <Stack.Screen
             name="visit"
             options={{ title: 'Hvor betalte du?', presentation: 'modal' }}
           />

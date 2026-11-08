@@ -1,6 +1,11 @@
 import type { AcceptanceResult, PlaceId, StatusChangeResponseDto } from '@amexbutikker/contracts';
 import type { Purchase } from '../spending/spending.model';
-import type { HandledPayment, PaymentOutcome, WalletPayment } from './payments.model';
+import type {
+  HandledPayment,
+  PaymentOutcome,
+  WalletPayment,
+  WalletSetupState,
+} from './payments.model';
 
 /** Query parameters as expo-router hands them to a screen. */
 export type LinkParams = Readonly<Record<string, string | readonly string[] | undefined>>;
@@ -39,4 +44,11 @@ export interface PaymentService {
   ): Promise<StatusChangeResponseDto>;
   /** Takes back an answer saved without asking ("Angre"). The purchase stays. */
   undo(placeId: PlaceId): Promise<StatusChangeResponseDto>;
+}
+
+/** Whether the Apple Pay automation is set up, on the phone. */
+export interface WalletSetupStorage {
+  /** `new` when nothing is stored or the stored value is unreadable. */
+  find(): Promise<WalletSetupState>;
+  save(state: WalletSetupState): Promise<void>;
 }

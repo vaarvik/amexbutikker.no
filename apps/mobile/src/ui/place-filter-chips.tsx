@@ -1,6 +1,6 @@
 import type { PlaceCategory, PlaceFilterQueryDto } from '@amexbutikker/contracts';
 import { SymbolView } from 'expo-symbols';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePalette } from './theme';
 
 /** What the chips have chosen: "Tar Amex" on or off, and any number of category groups. */
@@ -49,36 +49,60 @@ export function PlaceFilterChips(props: {
 }) {
   const { choice, onChange } = props;
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-      contentContainerStyle={styles.row}
-    >
-      <Chip
-        label="Tar Amex"
-        symbol
-        selected={choice.acceptsOnly}
-        onPress={() => {
-          onChange({ ...choice, acceptsOnly: !choice.acceptsOnly });
-        }}
-      />
-      {GROUPS.map((group) => (
+    <View style={styles.frame}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.row}
+      >
         <Chip
-          key={group.key}
-          label={group.label}
-          selected={choice.groups.includes(group.key)}
+          label="Tar Amex"
+          symbol
+          selected={choice.acceptsOnly}
           onPress={() => {
-            onChange({
-              ...choice,
-              groups: choice.groups.includes(group.key)
-                ? choice.groups.filter((key) => key !== group.key)
-                : [...choice.groups, group.key],
-            });
+            onChange({ ...choice, acceptsOnly: !choice.acceptsOnly });
           }}
         />
+        {GROUPS.map((group) => (
+          <Chip
+            key={group.key}
+            label={group.label}
+            selected={choice.groups.includes(group.key)}
+            onPress={() => {
+              onChange({
+                ...choice,
+                groups: choice.groups.includes(group.key)
+                  ? choice.groups.filter((key) => key !== group.key)
+                  : [...choice.groups, group.key],
+              });
+            }}
+          />
+        ))}
+      </ScrollView>
+      <EdgeFade side="left" />
+      <EdgeFade side="right" />
+    </View>
+  );
+}
+
+/** Steps of hero colour over the scroll edge, so chips fade out instead of being cut off. */
+const FADE_STEPS = [0.95, 0.85, 0.72, 0.58, 0.44, 0.3, 0.18, 0.08];
+
+function EdgeFade(props: { readonly side: 'left' | 'right' }) {
+  const palette = usePalette();
+  return (
+    <View
+      pointerEvents="none"
+      style={[
+        styles.fade,
+        props.side === 'left' ? { left: 0 } : { right: 0, flexDirection: 'row-reverse' },
+      ]}
+    >
+      {FADE_STEPS.map((opacity) => (
+        <View key={opacity} style={[styles.fadeStep, { backgroundColor: palette.hero, opacity }]} />
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -121,7 +145,11 @@ function Chip(props: {
 }
 
 const styles = StyleSheet.create({
-  row: { gap: 8, paddingHorizontal: 20 },
+  // Inset from the screen edge; the chips scroll under a short fade at each side.
+  frame: { marginHorizontal: 12 },
+  row: { gap: 8, paddingHorizontal: 8 },
+  fade: { position: 'absolute', top: 0, bottom: 0, width: 16, flexDirection: 'row' },
+  fadeStep: { flex: 1 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',

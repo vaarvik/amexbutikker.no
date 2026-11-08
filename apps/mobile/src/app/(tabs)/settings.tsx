@@ -1,41 +1,29 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import {
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import type { WalletSetupState } from '../../payments/payments.model';
 import { BonusGoalsSettings } from '../../ui/bonus-goals-settings';
 import { useServices } from '../../ui/services';
 import { usePalette } from '../../ui/theme';
 
-/** The same automation built by hand, until a shared shortcut exists. */
-const MANUAL_STEPS = [
-  'Åpne Snarveier, gå til Automatisering og trykk +.',
-  'Velg Transaksjon, kryss av for Amex-kortet ditt og velg Kjør umiddelbart.',
-  'Legg til URL-kod to ganger: én for Forhandler og én for Beløp fra Snarvei-inndata.',
-  'Legg til Åpne URL-er med lenken under, og sett inn de to kodede verdiene.',
-] as const;
-
-const MANUAL_LINK = 'amexbutikker://paid?merchant=[Forhandler]&amount=[Beløp]';
-
 /** App settings: bonus goals everywhere; visit questions and answers from Apple Pay in the native app. */
 export default function SettingsScreen() {
-  const { visits, walletShortcutUrl } = useServices();
+  const { visits, walletSetup } = useServices();
   const palette = usePalette();
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [stepsShown, setStepsShown] = useState(false);
+  const [walletState, setWalletState] = useState<WalletSetupState | null>(null);
 
   useEffect(() => {
     void visits?.isEnabled().then(setEnabled);
   }, [visits]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void walletSetup.find().then(setWalletState);
+    }, [walletSetup]),
+  );
 
   const toggle = (on: boolean) => {
     if (visits === null) {
@@ -135,34 +123,17 @@ export default function SettingsScreen() {
           <View style={[styles.card, { backgroundColor: palette.card }]}>
             <Pressable
               onPress={() => {
-                if (walletShortcutUrl === null) {
-                  setStepsShown((shown) => !shown);
-                } else {
-                  void Linking.openURL(walletShortcutUrl);
-                }
+                router.push('/wallet-setup');
               }}
               accessibilityRole="button"
-              accessibilityState={{ expanded: stepsShown }}
               style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}
             >
-              <Text style={[styles.label, text]}>Svar automatisk når du betaler</Text>
+              <Text style={[styles.label, text]}>Svar når du betaler</Text>
               <Text style={[styles.value, { color: palette.accent }]}>
-                {walletShortcutUrl === null ? (stepsShown ? 'Skjul' : 'Slik') : 'Legg til ›'}
+                {walletState === 'done' ? 'På ›' : 'Sett opp ›'}
               </Text>
             </Pressable>
           </View>
-          {stepsShown && walletShortcutUrl === null ? (
-            <>
-              {MANUAL_STEPS.map((step, index) => (
-                <Text key={step} style={[styles.note, muted]}>
-                  {`${String(index + 1)}. ${step}`}
-                </Text>
-              ))}
-              <Text selectable style={[styles.note, styles.code, text]}>
-                {MANUAL_LINK}
-              </Text>
-            </>
-          ) : null}
           {__DEV__ ? (
             <>
               <Text style={[styles.section, styles.gap, muted]}>TEST (BARE I UTVIKLING)</Text>
@@ -206,6 +177,5 @@ const styles = StyleSheet.create({
   value: { fontSize: 17 },
   section: { fontSize: 13, paddingHorizontal: 16, marginBottom: -4 },
   gap: { marginTop: 16 },
-  code: { fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }), fontSize: 13 },
   note: { fontSize: 14, lineHeight: 20, paddingHorizontal: 16 },
 });

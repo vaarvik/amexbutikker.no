@@ -19,7 +19,12 @@ import { KeyValueNearbyCache } from './places/key-value-nearby.cache';
 import type { NearbyService, PlacesApiClient } from './places/places.ports';
 import { KeyValueHandledPaymentStorage } from './payments/key-value-handled-payment.storage';
 import { MatchingPaymentService } from './payments/matching-payment.service';
-import type { PaymentService, WalletLinkParser } from './payments/payments.ports';
+import { KeyValueWalletSetupStorage } from './payments/key-value-wallet-setup.storage';
+import type {
+  PaymentService,
+  WalletLinkParser,
+  WalletSetupStorage,
+} from './payments/payments.ports';
 import { ShortcutWalletLinkParser } from './payments/shortcut-wallet-link.parser';
 import { FetchJsonTransport } from './shared/fetch-json.transport';
 import type { KeyValueStorage } from './shared/shared.ports';
@@ -62,12 +67,13 @@ export interface AppServices {
   /** The Bonus tab: spending and milestones, stored on the phone only. */
   readonly spending: SpendingService;
   readonly spendingPresenter: SpendingPresenter;
-  /** The cards to choose from (Settings → Kort). */
-  /** From the API, or the copy from last time when offline. */
+  /** The cards to choose from (Settings → Kort): from the API, or last time's copy offline. */
   readonly cards: CardReader;
   /** Answers from Apple Wallet payments (the `paid` link the Shortcuts automation opens). */
   readonly payments: PaymentService;
   readonly walletLinks: WalletLinkParser;
+  /** Whether the Apple Pay automation is set up, so the app can prompt for it once. */
+  readonly walletSetup: WalletSetupStorage;
   /** The shared iCloud link to the shortcut; null until the owner has shared one. */
   readonly walletShortcutUrl: string | null;
   /** False on the web: native-only features (share intake, visit detection) are hidden there. */
@@ -121,6 +127,7 @@ export class CompositionRoot implements AppServices {
   public readonly cards: CardReader;
   public readonly payments: PaymentService;
   public readonly walletLinks: WalletLinkParser;
+  public readonly walletSetup: WalletSetupStorage;
   public readonly walletShortcutUrl: string | null;
   public readonly native: boolean;
 
@@ -173,6 +180,7 @@ export class CompositionRoot implements AppServices {
       { duplicateWindowMs: 10 * MINUTE_MS },
     );
     this.walletLinks = new ShortcutWalletLinkParser();
+    this.walletSetup = new KeyValueWalletSetupStorage(AsyncStorage, { key: 'wallet-setup-v1' });
     this.walletShortcutUrl = config.walletShortcutUrl;
     this.widgets = new SnapshotNearbyWidgetService(
       new StatusNearbyWidgetPropsMapper(this.presenter, {

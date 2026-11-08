@@ -35,7 +35,7 @@ type RowState = 'idle' | 'sending' | AcceptanceResult | 'failed';
  */
 export default function PaidScreen() {
   const params = useLocalSearchParams();
-  const { payments, walletLinks, spendingPresenter, presenter } = useServices();
+  const { payments, walletLinks, walletSetup, spendingPresenter, presenter } = useServices();
   const palette = usePalette();
   // Read once: the link does not change while the screen is open.
   const [payment] = useState(() => walletLinks.parse(params));
@@ -53,8 +53,10 @@ export default function PaidScreen() {
       return;
     }
     started.current = true;
+    // A link from the automation means it is set up, so the app stops prompting for it.
+    void walletSetup.save('done').catch(() => undefined);
     void payments.handle(payment).then(setScreen);
-  }, [payment, payments]);
+  }, [payment, payments, walletSetup]);
 
   const text = { color: palette.text };
   const muted = { color: palette.muted };
