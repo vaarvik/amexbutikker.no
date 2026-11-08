@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { BonusGoalsSettings } from '../../ui/bonus-goals-settings';
 import { useServices } from '../../ui/services';
 import { usePalette } from '../../ui/theme';
 
@@ -31,7 +32,7 @@ const MANUAL_STEPS = [
 
 const MANUAL_LINK = 'amexbutikker://paid?merchant=[Forhandler]&amount=[Beløp]';
 
-/** App settings: visit questions and answers from Apple Pay, both in the native app only. */
+/** App settings: bonus goals everywhere; visit questions and answers from Apple Pay in the native app. */
 export default function SettingsScreen() {
   const { visits, walletShortcutUrl } = useServices();
   const palette = usePalette();
@@ -43,17 +44,10 @@ export default function SettingsScreen() {
     void visits?.isEnabled().then(setEnabled);
   }, [visits]);
 
-  if (visits === null) {
-    return (
-      <View style={[styles.empty, { backgroundColor: palette.background }]}>
-        <Text style={[styles.note, { color: palette.muted }]}>
-          Ingen innstillinger på nettet ennå.
-        </Text>
-      </View>
-    );
-  }
-
   const toggle = (on: boolean) => {
+    if (visits === null) {
+      return;
+    }
     setBusy(true);
     setMessage(null);
     (on ? visits.enable() : visits.disable().then(() => false))
@@ -81,50 +75,56 @@ export default function SettingsScreen() {
       style={{ backgroundColor: palette.background }}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.section, muted]}>BESØK</Text>
-      <View style={[styles.card, { backgroundColor: palette.card }]}>
-        <View style={styles.row}>
-          <Text style={[styles.label, text]}>Spør meg etter besøk</Text>
-          <Switch
-            value={enabled === true}
-            disabled={enabled === null || busy}
-            onValueChange={toggle}
-            accessibilityLabel="Spør meg etter besøk"
-          />
-        </View>
-      </View>
-      <Text style={[styles.note, muted]}>
-        Når du går ut av en butikk der ingen har svart ennå, spør appen om du fikk betale med Amex.
-        Der Amex funker, får du beskjed når du kommer inn. Høyst tre spørsmål om dagen.
-      </Text>
-      <Text style={[styles.note, muted]}>
-        Posisjonen din lagres bare på telefonen. Bare svaret ditt sendes.
-      </Text>
+      <BonusGoalsSettings />
 
-      {__DEV__ && enabled === true
-        ? (['ask', 'pick'] as const).map((kind) => (
-            <Pressable
-              key={kind}
-              onPress={() => {
-                void visits.sendTest(kind).then((sent) => {
-                  setMessage(sent ? null : 'Ingen steder å spørre om ennå. Åpne Steder først.');
-                });
-              }}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.card,
-                styles.row,
-                { backgroundColor: palette.card, opacity: pressed ? 0.6 : 1 },
-              ]}
-            >
-              <Text style={[styles.label, { color: palette.accent }]}>
-                {kind === 'ask' ? 'Send testvarsel' : 'Send testvarsel med flere steder'}
-              </Text>
-            </Pressable>
-          ))
-        : null}
+      {visits === null ? null : (
+        <>
+          <Text style={[styles.section, styles.gap, muted]}>BESØK</Text>
+          <View style={[styles.card, { backgroundColor: palette.card }]}>
+            <View style={styles.row}>
+              <Text style={[styles.label, text]}>Spør meg etter besøk</Text>
+              <Switch
+                value={enabled === true}
+                disabled={enabled === null || busy}
+                onValueChange={toggle}
+                accessibilityLabel="Spør meg etter besøk"
+              />
+            </View>
+          </View>
+          <Text style={[styles.note, muted]}>
+            Når du går ut av en butikk der ingen har svart ennå, spør appen om du fikk betale med
+            Amex. Der Amex funker, får du beskjed når du kommer inn. Høyst tre spørsmål om dagen.
+          </Text>
+          <Text style={[styles.note, muted]}>
+            Posisjonen din lagres bare på telefonen. Bare svaret ditt sendes.
+          </Text>
 
-      {message === null ? null : <Text style={[styles.note, text]}>{message}</Text>}
+          {__DEV__ && enabled === true
+            ? (['ask', 'pick'] as const).map((kind) => (
+                <Pressable
+                  key={kind}
+                  onPress={() => {
+                    void visits.sendTest(kind).then((sent) => {
+                      setMessage(sent ? null : 'Ingen steder å spørre om ennå. Åpne Steder først.');
+                    });
+                  }}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.card,
+                    styles.row,
+                    { backgroundColor: palette.card, opacity: pressed ? 0.6 : 1 },
+                  ]}
+                >
+                  <Text style={[styles.label, { color: palette.accent }]}>
+                    {kind === 'ask' ? 'Send testvarsel' : 'Send testvarsel med flere steder'}
+                  </Text>
+                </Pressable>
+              ))
+            : null}
+
+          {message === null ? null : <Text style={[styles.note, text]}>{message}</Text>}
+        </>
+      )}
 
       {Platform.OS === 'ios' ? (
         <>

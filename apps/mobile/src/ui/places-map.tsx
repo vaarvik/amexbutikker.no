@@ -47,7 +47,7 @@ export function PlacesMap() {
   const [area, setArea] = useState<AreaState>({ kind: 'idle' });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Hides "Ikke sjekket" on the server, so a busy area never cuts away the answers.
-  const [answeredOnly, setAnsweredOnly] = useState(false);
+  const [answeredOnly, setAnsweredOnly] = useState(true);
 
   // Start where the phone is; the map opens on Oslo until the position is known.
   useEffect(() => {

@@ -278,7 +278,8 @@ const styles = StyleSheet.create({
   column: { width: '100%', maxWidth: 720, alignSelf: 'center' },
   hero: { borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
   header: { paddingHorizontal: 20, paddingBottom: 12, gap: 12 },
-  chips: { paddingBottom: 18 },
+  // At least the hero's corner radius, so a chip scrolled to the edge never meets the curve.
+  chips: { paddingBottom: 28 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bell: { padding: 6 },
   title: { fontSize: 34, fontWeight: '700', letterSpacing: 0.3 },

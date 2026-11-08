@@ -390,7 +390,9 @@ phone. See docs/wallet-shortcut.md.
 A personal tab: how much the user has spent on the card and how far they are from a bonus milestone.
 Amounts never leave the phone; the server keeps no amounts (unchanged rule).
 
-Built: the Bonus tab, Legg til kjøp, Oppdater total, Nytt mål, Velg kort, in `apps/mobile/src/spending/`.
+Built: the Bonus tab, Legg til kjøp, Oppdater total, Nytt mål, Velg kort, in `apps/mobile/src/spending/`. The tab
+shows the nearest goal big at the top (or this year's total without one) and spending per month; goals are set
+up in Settings → Bonusmål.
 Presets: SAS EuroBonus Amex Premium (150 000 kr per calendar year, 2-for-1) and a welcome/referral bonus
 (90 000 kr within 9 months). Both are from third-party sites, fetched 2026-11-06; the owner should check
 them against the issuer's terms before release. Elite is left out: no source agreed on its threshold.

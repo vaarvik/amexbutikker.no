@@ -8,6 +8,7 @@ import type {
   StatusChangeResponseDto,
   SubmitReportRequestDto,
 } from '@amexbutikker/contracts';
+import { CalendarYearSpendingSummarizer } from '../../src/spending/calendar-year-spending.summarizer';
 import { describe, expect, it } from 'vitest';
 import type { LocationProvider } from '../../src/location/location.ports';
 import { KeyValueHandledPaymentStorage } from '../../src/payments/key-value-handled-payment.storage';
@@ -109,6 +110,7 @@ function setup(response: MatchPaymentResponseDto | Error, here: GeoPoint | null 
     new PeriodMilestoneProgressCalculator(),
     new FixedLocalDateProvider('2026-11-08'),
     new CountingIdGenerator(),
+    new CalendarYearSpendingSummarizer(),
   );
   const service = new MatchingPaymentService(
     api,

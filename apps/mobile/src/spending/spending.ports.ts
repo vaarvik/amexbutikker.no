@@ -9,6 +9,7 @@ import type {
   SpendingEntry,
   SpendingSource,
   SpendingState,
+  YearSpending,
 } from './spending.model';
 
 /** The Bonus tab's document on the phone. */
@@ -25,6 +26,11 @@ export interface MilestoneProgressCalculator {
     entries: readonly SpendingEntry[],
     today: LocalDate,
   ): MilestoneProgress;
+}
+
+/** This year's purchases, month by month. Pure. */
+export interface YearSpendingSummarizer {
+  summarize(purchases: readonly Purchase[], today: LocalDate): YearSpending;
 }
 
 /** Today's date on the phone. */
@@ -58,6 +64,8 @@ export interface SpendingOverview {
   readonly progress: readonly MilestoneProgress[];
   /** Newest first. */
   readonly purchases: readonly Purchase[];
+  /** Registered purchases this calendar year. */
+  readonly year: YearSpending;
 }
 
 /** Everything the Bonus tab does. Every change returns the new overview. */

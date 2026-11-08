@@ -192,3 +192,19 @@ export const CARD_PROGRAMMES: readonly CardProgramme[] = [
     fetchedAt: '2026-11-06',
   },
 ];
+
+/** Spending in one month of the current year. */
+export interface MonthSpending {
+  /** 1 = January. */
+  readonly month: number;
+  readonly nok: number;
+}
+
+/** Purchases registered in the app this calendar year, for the Bonus tab's progress. */
+export interface YearSpending {
+  readonly year: number;
+  readonly spentNok: number;
+  readonly purchaseCount: number;
+  /** January up to and including the current month. */
+  readonly months: readonly MonthSpending[];
+}

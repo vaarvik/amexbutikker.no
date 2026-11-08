@@ -34,6 +34,10 @@ export interface Palette {
   readonly onHeroMuted: string;
   /** A soft tint of the accent, for calls to action. */
   readonly accentSoft: string;
+  /** Bars and meters on cards; checked with the dataviz palette validator against `card`. */
+  readonly chart: string;
+  /** Meter fill on the hero band (the same in both modes, like the hero). */
+  readonly heroChart: string;
 }
 
 const LIGHT: Palette = {
@@ -49,6 +53,8 @@ const LIGHT: Palette = {
   onHero: '#FFFFFF',
   onHeroMuted: '#C3C9E6',
   accentSoft: '#E6E8F7',
+  chart: '#3442A8',
+  heroChart: '#7B87EE',
 };
 
 const DARK: Palette = {
@@ -64,6 +70,8 @@ const DARK: Palette = {
   onHero: '#FFFFFF',
   onHeroMuted: '#C3C9E6',
   accentSoft: '#232A4D',
+  chart: '#7B87EE',
+  heroChart: '#7B87EE',
 };
 
 export function usePalette(): Palette {

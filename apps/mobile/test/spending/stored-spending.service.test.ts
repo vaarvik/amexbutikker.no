@@ -1,4 +1,5 @@
 import type { PlaceId } from '@amexbutikker/contracts';
+import { CalendarYearSpendingSummarizer } from '../../src/spending/calendar-year-spending.summarizer';
 import { describe, expect, it } from 'vitest';
 import { KeyValueSpendingStorage } from '../../src/spending/key-value-spending.storage';
 import { PeriodMilestoneProgressCalculator } from '../../src/spending/period-milestone-progress.calculator';
@@ -43,6 +44,7 @@ function setup() {
     new PeriodMilestoneProgressCalculator(),
     dates,
     new CountingIdGenerator(),
+    new CalendarYearSpendingSummarizer(),
     programmes,
   );
   return { service, storage, dates };
@@ -56,9 +58,14 @@ describe('StoredSpendingService', () => {
       new PeriodMilestoneProgressCalculator(),
       new FixedLocalDateProvider('2026-11-07'),
       new CountingIdGenerator(),
+      new CalendarYearSpendingSummarizer(),
     );
 
-    await expect(service.overview()).resolves.toEqual({ progress: [], purchases: [] });
+    await expect(service.overview()).resolves.toMatchObject({
+      progress: [],
+      purchases: [],
+      year: { year: 2026, spentNok: 0, purchaseCount: 0 },
+    });
     expect(service.programmes()).toBe(CARD_PROGRAMMES);
     expect(service.today()).toBe('2026-11-07');
   });
@@ -85,6 +92,18 @@ describe('StoredSpendingService', () => {
       ['2026-03-01', null],
     ]);
     expect((await storage.find()).milestones).toHaveLength(1);
+  });
+
+  it('sums this year for the progress at the top', async () => {
+    const { service } = setup();
+    await service.addPurchase({ date: '2026-10-02', amountNok: 300 });
+    const overview = await service.addPurchase({ date: '2026-11-01', amountNok: 200 });
+
+    expect(overview.year).toMatchObject({ spentNok: 500, purchaseCount: 2 });
+    expect(overview.year.months.slice(-2)).toEqual([
+      { month: 10, nok: 300 },
+      { month: 11, nok: 200 },
+    ]);
   });
 
   it('records a purchase from the wallet and returns it with its id', async () => {

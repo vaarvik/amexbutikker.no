@@ -1,4 +1,5 @@
 import type { DevicePlatform } from '@amexbutikker/contracts';
+import { CalendarYearSpendingSummarizer } from './spending/calendar-year-spending.summarizer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CurrentPlatform } from './composition-root.platform';
 import type {
@@ -150,6 +151,7 @@ export class CompositionRoot implements AppServices {
       new PeriodMilestoneProgressCalculator(),
       new ClockLocalDateProvider(clock),
       new RandomIdGenerator(),
+      new CalendarYearSpendingSummarizer(),
     );
     this.spendingPresenter = new NorwegianSpendingPresenter();
     // Only the merchant name and the position reach the API; the amount goes to Bonus.

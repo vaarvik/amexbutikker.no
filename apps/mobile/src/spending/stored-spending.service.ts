@@ -16,6 +16,7 @@ import type {
   SpendingOverview,
   SpendingService,
   SpendingStorage,
+  YearSpendingSummarizer,
 } from './spending.ports';
 
 /**
@@ -28,6 +29,7 @@ export class StoredSpendingService implements SpendingService {
     private readonly calculator: MilestoneProgressCalculator,
     private readonly dates: LocalDateProvider,
     private readonly ids: IdGenerator,
+    private readonly years: YearSpendingSummarizer,
     private readonly catalogue: readonly CardProgramme[] = CARD_PROGRAMMES,
   ) {}
 
@@ -127,15 +129,17 @@ export class StoredSpendingService implements SpendingService {
 
   private present(state: SpendingState): SpendingOverview {
     const today = this.dates.today();
+    const purchases = state.entries
+      .filter((entry): entry is Purchase => entry.kind === 'purchase')
+      .reverse()
+      .sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1));
     return {
       progress: state.milestones.map((milestone) =>
         this.calculator.calculate(milestone, state.entries, today),
       ),
       // Newest date first; on the same date, the one added last first.
-      purchases: state.entries
-        .filter((entry): entry is Purchase => entry.kind === 'purchase')
-        .reverse()
-        .sort((a, b) => (a.date === b.date ? 0 : a.date < b.date ? 1 : -1)),
+      purchases,
+      year: this.years.summarize(purchases, today),
     };
   }
 }
