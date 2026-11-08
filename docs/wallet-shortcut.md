@@ -32,7 +32,7 @@ payment's purchase is removed from Bonus when the user taps **Kortet ble avvist*
 
 This works today without anything shared. It's also what the Apple Pay setup screen shows while
 `EXPO_PUBLIC_WALLET_SHORTCUT_URL` is empty. The app opens that screen from a prompt on Steder
-(shown until the user taps **Det er satt opp** or **Ikke nå**, or a payment link arrives) and from
+(shown until the user taps **Det er satt opp** or a payment link arrives; **Ikke nå** hides it until the app restarts) and from
 Settings → Apple Pay.
 
 1. Snarveier → **Automatisering** → **+** → **Transaksjon**.
@@ -69,3 +69,7 @@ Before sharing, check on a phone:
 - In a development build: Settings → **Send testbetaling** (only in `__DEV__`).
 - From the Mac, with the simulator running:
   `xcrun simctl openurl booted 'amexbutikker://paid?merchant=Kaf%C3%A9%20%C3%85sen&amount=kr%2049%2C00'`
+
+Each iPhone needs its own automation: the Transaction trigger fires only for payments made with
+the Wallet on that phone. Two people sharing an Amex account (a supplementary card) each set it
+up on their own phone. Once set up, the setup screen shows how to delete it again.
