@@ -9,3 +9,4 @@ export * from './status/latest-evidence.summarizer.js';
 export * from './status/proportion-chain-hint.calculator.js';
 export * from './places/name-distance-place-duplicate.matcher.js';
 export * from './shared-match/regex-merchant-name.parser.js';
+export * from './reports/attestation-report-evidence.policy.js';

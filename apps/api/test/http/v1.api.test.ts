@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   CompositionRoot,
+  DEFAULT_ATTESTATION,
   DEFAULT_IMPORTS,
   DEFAULT_RATE_LIMITS,
 } from '../../src/composition-root.js';
@@ -17,6 +18,8 @@ const config: ApiConfig = {
   corsOrigins: ['http://localhost:8081'],
   rateLimits: DEFAULT_RATE_LIMITS,
   imports: DEFAULT_IMPORTS,
+  // As in local development: most tests are about answers, not attestation (see below).
+  attestation: { ...DEFAULT_ATTESTATION, trustUnattested: true },
 };
 
 const OSLO_S = { lat: 59.9111, lng: 10.7528 };
@@ -597,6 +600,103 @@ describe('HTTP API (in-memory storage)', () => {
       });
 
       expect(response.headers['access-control-allow-origin']).toBeUndefined();
+    });
+  });
+});
+
+describe('HTTP API: device attestation (production settings)', () => {
+  let app: FastifyInstance;
+
+  beforeEach(() => {
+    app = new CompositionRoot({ ...config, attestation: DEFAULT_ATTESTATION }).httpServer.app();
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  async function registerDevice(): Promise<string> {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/devices',
+      payload: { platform: 'web' },
+    });
+    return `Bearer ${response.json<{ token: string }>().token}`;
+  }
+
+  it('issues a challenge to a registered device only', async () => {
+    const authorization = await registerDevice();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/devices/me/challenge',
+      headers: { authorization },
+    });
+    const anonymous = await app.inject({ method: 'POST', url: '/v1/devices/me/challenge' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json<{ challenge: string }>().challenge).toMatch(/^c1\./);
+    expect(anonymous.statusCode).toBe(401);
+  });
+
+  it.each([
+    [{ kind: 'turnstile', token: 'XXXX.DUMMY.TOKEN' }, 'Turnstile is not configured'],
+    [
+      { kind: 'app_attest', keyId: 'a2V5', attestationObject: 'b2Jq', challenge: 'c1.1.a.b' },
+      'attestation challenge was rejected',
+    ],
+  ])('refuses %o when nothing vouches for it', async (payload, message) => {
+    const authorization = await registerDevice();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/devices/me/attestation',
+      headers: { authorization },
+      payload,
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json<{ error: { message: string } }>().error.message).toContain(message);
+  });
+
+  it('refuses a malformed proof', async () => {
+    const authorization = await registerDevice();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/v1/devices/me/attestation',
+      headers: { authorization },
+      payload: { kind: 'app_attest', keyId: 'not base64!', attestationObject: '', challenge: '' },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('counts an answer from an unattested device as unverified, and ignores its wallet claim', async () => {
+    const authorization = await registerDevice();
+    const place = await app.inject({
+      method: 'POST',
+      url: '/v1/places',
+      headers: { authorization },
+      payload: {
+        kind: 'physical',
+        name: 'Kafé Åsen',
+        category: 'cafe',
+        address: { street: 'Karl Johans gate 1', postcode: '0154', city: 'Oslo' },
+        location: OSLO_S,
+      },
+    });
+    const id = place.json<{ place: { id: string } }>().place.id;
+
+    const response = await app.inject({
+      method: 'POST',
+      url: `/v1/places/${id}/reports`,
+      headers: { authorization },
+      payload: { result: 'accepted', via: 'wallet' },
+    });
+
+    expect(response.json()).toMatchObject({
+      status: { status: 'likely_accepted', basis: 'unverified_report', verified: false },
     });
   });
 });

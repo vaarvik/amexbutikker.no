@@ -35,6 +35,7 @@ export class InMemoryUnitOfWork implements UnitOfWork {
       statuses: new Map(tables.statuses),
       importRuns: new Map(tables.importRuns),
       devices: new Map(tables.devices),
+      deviceAttestations: new Map(tables.deviceAttestations),
       unmatchedDescriptors: new Map(tables.unmatchedDescriptors),
     };
   }
@@ -47,6 +48,7 @@ export class InMemoryUnitOfWork implements UnitOfWork {
     this.replace(this.tables.statuses, draft.statuses);
     this.replace(this.tables.importRuns, draft.importRuns);
     this.replace(this.tables.devices, draft.devices);
+    this.replace(this.tables.deviceAttestations, draft.deviceAttestations);
     this.replace(this.tables.unmatchedDescriptors, draft.unmatchedDescriptors);
   }
 

@@ -1,9 +1,11 @@
 import {
+  AttestDeviceUseCase,
   CalculatingPlaceStatusRefresher,
   CreatePlaceUseCase,
   ListNearbyPlacesUseCase,
   ListPlacesInAreaUseCase,
   GetPlaceDetailsUseCase,
+  IssueAttestationChallengeUseCase,
   MatchPaymentUseCase,
   MatchSharedPlaceUseCase,
   RegisterDeviceUseCase,
@@ -15,7 +17,9 @@ import {
   ZodInputValidator,
 } from '@amexbutikker/application';
 import type {
+  AppAttestValidator,
   ChainReader,
+  DeviceReader,
   DeviceWriter,
   EvidenceReader,
   ImportRunWriter,
@@ -25,10 +29,12 @@ import type {
   RefreshStaleStatuses,
   RunImport,
   TransactionalPorts,
+  TurnstileValidator,
   UnitOfWork,
   UnmatchedDescriptorWriter,
 } from '@amexbutikker/contracts';
 import {
+  AttestationReportEvidencePolicy,
   DecayingAcceptanceStatusCalculator,
   FixedEvidenceWeightPolicy,
   LatestEvidenceSummarizer,
@@ -61,7 +67,13 @@ import {
 import { PgChainRepository } from './chains/pg-chain.repository.js';
 import { HealthController } from './shared/health.controller.js';
 import { StaticWebController } from './shared/static-web.controller.js';
+import { AppleAppAttestValidator } from './devices/apple-app-attest.validator.js';
+import { APPLE_APP_ATTESTATION_ROOT_CA_PEM } from './devices/devices.model.js';
 import { DevicesController } from './devices/devices.controller.js';
+import { HmacAttestationChallengeService } from './devices/hmac-attestation-challenge.service.js';
+import { HttpTurnstileValidator } from './devices/http-turnstile.validator.js';
+import { UnconfiguredAppAttestValidator } from './devices/unconfigured-app-attest.validator.js';
+import { UnconfiguredTurnstileValidator } from './devices/unconfigured-turnstile.validator.js';
 import { HmacDeviceTokenService } from './devices/hmac-device-token.service.js';
 import { PgDeviceRepository } from './devices/pg-device.repository.js';
 import { PgEvidenceRepository } from './evidence/pg-evidence.repository.js';
@@ -127,6 +139,24 @@ export interface ApiConfig {
   readonly imports: ImportsConfig;
   /** The web app's static export to serve at `/`; unset serves the API only. */
   readonly webRoot?: string;
+  readonly attestation: AttestationConfig;
+}
+
+/** Phase 16: proving a device is a real install of the app (docs/hosting.md). */
+export interface AttestationConfig {
+  /**
+   * Count answers from devices that are not attested in full. Only for local development and the
+   * simulator, where App Attest does not exist. Default false.
+   */
+  readonly trustUnattested: boolean;
+  /** `<Team ID>.<bundle id>` of each iOS build allowed to attest; empty turns App Attest off. */
+  readonly appAttestAppIds: readonly string[];
+  /** Also accept development builds (the `appattestdevelop` environment). */
+  readonly appAttestDevelopment: boolean;
+  /** Cloudflare Turnstile secret; unset turns Turnstile off. */
+  readonly turnstileSecretKey?: string;
+  /** Hostnames the Turnstile widget may be solved on; empty accepts any. */
+  readonly turnstileHostnames: readonly string[];
 }
 
 export interface ImportsConfig {
@@ -152,11 +182,30 @@ export const DEFAULT_IMPORTS: ImportsConfig = {
   statementPath: 'data/statements/statement.txt',
 };
 
+export const DEFAULT_ATTESTATION: AttestationConfig = {
+  trustUnattested: false,
+  appAttestAppIds: [],
+  appAttestDevelopment: false,
+  turnstileHostnames: [],
+};
+
 export const DEFAULT_RATE_LIMITS: ApiConfig['rateLimits'] = {
   submit_report: { limit: 30, windowSeconds: 3600 },
   create_place: { limit: 10, windowSeconds: 3600 },
   register_device: { limit: 20, windowSeconds: 3600 },
+  attest_device: { limit: 10, windowSeconds: 3600 },
 };
+
+/** `a, b,` → `['a', 'b']`. */
+const commaList = z
+  .string()
+  .default('')
+  .transform((value) =>
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item !== ''),
+  );
 
 export const ApiConfigSchema: z.ZodType<ApiConfig> = z
   .object({
@@ -194,6 +243,15 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
         ),
       ),
     rateLimits: z.record(z.string(), RateLimitRuleSchema).default(DEFAULT_RATE_LIMITS),
+    attestation: z
+      .object({
+        trustUnattested: z.stringbool().default(false),
+        appAttestAppIds: commaList,
+        appAttestDevelopment: z.stringbool().default(false),
+        turnstileSecretKey: z.string().min(1).exactOptional(),
+        turnstileHostnames: commaList,
+      })
+      .prefault({}),
     imports: z
       .object({
         overpassUrl: z.url({ protocol: /^https?$/ }).default(DEFAULT_IMPORTS.overpassUrl),
@@ -215,7 +273,7 @@ interface Storage {
   readonly chains: ChainReader;
   readonly evidence: EvidenceReader;
   readonly statuses: PlaceStatusReader;
-  readonly devices: DeviceWriter;
+  readonly devices: DeviceReader & DeviceWriter;
   readonly importRuns: ImportRunWriter;
   readonly unmatchedDescriptors: UnmatchedDescriptorWriter;
   readonly unitOfWork: UnitOfWork;
@@ -274,6 +332,10 @@ export class CompositionRoot {
     } = this.storage;
 
     const auth = new BearerTokenAuthenticator(tokens);
+    const challenges = new HmacAttestationChallengeService(
+      { secret: config.deviceTokenSecret, ttlSeconds: 300 },
+      clock,
+    );
     const dtos = new AllowlistHttpDtoMapper();
     const placeMatcher = new TrigramGeoPlaceMatcher(places, names, {
       radiusM: 300,
@@ -310,7 +372,18 @@ export class CompositionRoot {
           { searchLimit: 20, nearbyLimit: 50, areaLimit: 400, defaultRadiusM: 1000 },
         ),
         new ReportsController(
-          new SubmitReportUseCase(unitOfWork, refresher, ids, clock, rateLimiter, validator),
+          new SubmitReportUseCase(
+            unitOfWork,
+            refresher,
+            devices,
+            new AttestationReportEvidencePolicy({
+              trustUnattested: config.attestation.trustUnattested,
+            }),
+            ids,
+            clock,
+            rateLimiter,
+            validator,
+          ),
           new RemoveMyReportUseCase(unitOfWork, refresher, selector, ids, clock, rateLimiter),
           auth,
           validator,
@@ -322,6 +395,16 @@ export class CompositionRoot {
           : [new StaticWebController({ root: config.webRoot })]),
         new DevicesController(
           new RegisterDeviceUseCase(devices, tokens, ids, clock, rateLimiter),
+          new IssueAttestationChallengeUseCase(challenges),
+          new AttestDeviceUseCase(
+            devices,
+            challenges,
+            this.appAttestValidator(config.attestation, clock),
+            this.turnstileValidator(config.attestation),
+            clock,
+            rateLimiter,
+          ),
+          auth,
           validator,
         ),
         new SharedMatchController(
@@ -426,6 +509,34 @@ export class CompositionRoot {
     );
   }
 
+  private appAttestValidator(config: AttestationConfig, clock: SystemClock): AppAttestValidator {
+    return config.appAttestAppIds.length === 0
+      ? new UnconfiguredAppAttestValidator()
+      : new AppleAppAttestValidator(
+          {
+            appIds: config.appAttestAppIds,
+            rootCertificatePem: APPLE_APP_ATTESTATION_ROOT_CA_PEM,
+            environments: config.appAttestDevelopment
+              ? ['production', 'development']
+              : ['production'],
+          },
+          clock,
+        );
+  }
+
+  private turnstileValidator(config: AttestationConfig): TurnstileValidator {
+    return config.turnstileSecretKey === undefined
+      ? new UnconfiguredTurnstileValidator()
+      : new HttpTurnstileValidator(
+          {
+            secretKey: config.turnstileSecretKey,
+            hostnames: config.turnstileHostnames,
+            siteverifyUrl: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+          },
+          (url, init) => fetch(url, init),
+        );
+  }
+
   /**
    * Drops unset and empty variables, so optional settings are absent rather than `undefined`
    * (which `exactOptional` refuses) and defaults apply to empty ones.
@@ -457,6 +568,13 @@ export class CompositionRoot {
           trustProxy: env.TRUST_PROXY,
           webRoot: env.WEB_ROOT,
           corsOrigins: env.CORS_ORIGINS,
+          attestation: {
+            trustUnattested: env.TRUST_UNATTESTED_DEVICES,
+            appAttestAppIds: env.APP_ATTEST_APP_IDS,
+            appAttestDevelopment: env.APP_ATTEST_DEVELOPMENT,
+            turnstileSecretKey: env.TURNSTILE_SECRET_KEY,
+            turnstileHostnames: env.TURNSTILE_HOSTNAMES,
+          },
           imports: {
             overpassUrl: env.OVERPASS_URL,
             overpassAreaId: env.OVERPASS_AREA_ID,

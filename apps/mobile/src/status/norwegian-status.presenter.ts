@@ -91,7 +91,9 @@ export class NorwegianStatusPresenter implements StatusPresenter {
         return `Bekreftet med kjøp${this.on(date)}.`;
       case 'visit_report':
         return `Bekreftet ved besøk${this.on(date)}.`;
-      case 'user_report': {
+      // Answers from devices that are not attested count less, but read the same.
+      case 'user_report':
+      case 'unverified_report': {
         const reports = this.userReports(basis.userAccepted, basis.userRejected, date);
         return likely ? `${reports} Ett svar til gjør svaret sikrere.` : reports;
       }

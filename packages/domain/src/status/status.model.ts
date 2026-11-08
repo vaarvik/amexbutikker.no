@@ -18,6 +18,8 @@ export const DEFAULT_EVIDENCE_WEIGHTS: EvidenceWeightConfig = Object.freeze({
   visit_report: { weight: 0.8, halfLifeDays: 180 },
   user_report: { weight: 0.6, halfLifeDays: 180 },
   chain_confirmation: { weight: 0.5, halfLifeDays: 365 },
+  // Half a user report: four unattested devices are needed for a Ja.
+  unverified_report: { weight: 0.3, halfLifeDays: 180 },
   external_list: { weight: 0.25, halfLifeDays: 180 },
   checkout_logo: { weight: 0.1, halfLifeDays: 90 },
 });

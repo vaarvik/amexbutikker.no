@@ -41,6 +41,10 @@ describe('NorwegianStatusPresenter', () => {
         { kind: 'user_report' as const, userAccepted: 0, userRejected: 2, observedAt: null },
         '2 brukere er blitt avvist her.',
       ],
+      [
+        { kind: 'unverified_report' as const, userAccepted: 1, userRejected: 0 },
+        'Én bruker har fått betale med Amex her. Sist rapportert 3. nov. 2026.',
+      ],
     ])('explains %o', (basis, sentence) => {
       expect(presenter.basis(details({ observedAt, ...basis }))).toBe(sentence);
     });

@@ -7,12 +7,16 @@ import {
 } from '../shared/shared.model.js';
 import type { ChainId, EvidenceId, PlaceId, UserId } from '../shared/shared.model.js';
 
-/** Kinds of evidence, strongest first. */
+/**
+ * Kinds of evidence, strongest first. `unverified_report` is an answer from a device that has not
+ * been attested (App Attest or Turnstile): it counts, but less, so fake devices are expensive.
+ */
 export type EvidenceKind =
   | 'transaction'
   | 'visit_report'
   | 'user_report'
   | 'chain_confirmation'
+  | 'unverified_report'
   | 'external_list'
   | 'checkout_logo';
 /** All evidence kinds, ordered strongest first. */
@@ -21,6 +25,7 @@ export const EVIDENCE_KINDS = [
   'visit_report',
   'user_report',
   'chain_confirmation',
+  'unverified_report',
   'external_list',
   'checkout_logo',
 ] as const satisfies readonly EvidenceKind[];
@@ -29,12 +34,13 @@ export const EvidenceKindSchema: z.ZodType<EvidenceKind> = z.enum(EVIDENCE_KINDS
 /** Evidence kinds that come from someone actually paying (or trying to) at this place. */
 export type DirectEvidenceKind = Extract<
   EvidenceKind,
-  'transaction' | 'visit_report' | 'user_report'
+  'transaction' | 'visit_report' | 'user_report' | 'unverified_report'
 >;
 export const DIRECT_EVIDENCE_KINDS = [
   'transaction',
   'visit_report',
   'user_report',
+  'unverified_report',
 ] as const satisfies readonly DirectEvidenceKind[];
 
 /** Whether the card was accepted. */
@@ -73,7 +79,7 @@ export const EvidenceTargetSchema: z.ZodType<EvidenceTarget> = z.discriminatedUn
  * Invariants:
  * - Append-only. Never updated or deleted; newer evidence supersedes older.
  * - `(source, sourceRef)` is unique, which makes imports idempotent.
- * - `userId` is set for user-originated kinds (`transaction`, `visit_report`, `user_report`)
+ * - `userId` is set for user-originated kinds (the direct kinds)
  *   and null for imported kinds.
  * - `result: 'withdrawn'` only occurs with a `userId`.
  * - `observedAt` is when the fact held. For imported claims it is the claim's `fetchedAt`,

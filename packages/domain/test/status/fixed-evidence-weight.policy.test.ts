@@ -16,6 +16,7 @@ describe('DefaultEvidenceWeightPolicy', () => {
       ['visit_report', 0.8, 180],
       ['user_report', 0.6, 180],
       ['chain_confirmation', 0.5, 365],
+      ['unverified_report', 0.3, 180],
       ['external_list', 0.25, 180],
       ['checkout_logo', 0.1, 90],
     ]);

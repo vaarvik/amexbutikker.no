@@ -1,6 +1,7 @@
 import type {
   Chain,
   Device,
+  DeviceAttestation,
   ChainHint,
   ChainId,
   Evidence,
@@ -36,6 +37,7 @@ export interface InMemoryTables {
   readonly statuses: Map<PlaceId, PlaceStatusSnapshot>;
   readonly importRuns: Map<ImportRunId, InMemoryImportRun>;
   readonly devices: Map<UserId, Device>;
+  readonly deviceAttestations: Map<UserId, DeviceAttestation>;
   /** Keyed by the normalised descriptor. */
   readonly unmatchedDescriptors: Map<string, UnmatchedDescriptor>;
 }

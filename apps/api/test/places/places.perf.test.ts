@@ -4,6 +4,7 @@ import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   CompositionRoot,
+  DEFAULT_ATTESTATION,
   DEFAULT_IMPORTS,
   DEFAULT_RATE_LIMITS,
 } from '../../src/composition-root.js';
@@ -178,6 +179,7 @@ beforeAll(async () => {
     corsOrigins: [],
     rateLimits: DEFAULT_RATE_LIMITS,
     imports: DEFAULT_IMPORTS,
+    attestation: DEFAULT_ATTESTATION,
   });
 }, 600_000);
 

@@ -1,3 +1,5 @@
+export * from './devices/attest-device.use-case.js';
+export * from './devices/issue-attestation-challenge.use-case.js';
 export * from './devices/register-device.use-case.js';
 export * from './imports/run-import.use-case.js';
 export * from './places/create-place.use-case.js';

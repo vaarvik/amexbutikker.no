@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import type {
   Clock,
+  DeviceReader,
   IdGenerator,
   InputValidator,
   PlaceStatusRefresher,
   RateLimiter,
+  ReportEvidencePolicy,
   StatusChangeOutput,
   SubmitReport,
   SubmitReportInput,
@@ -17,6 +19,8 @@ export class SubmitReportUseCase implements SubmitReport {
   public constructor(
     private readonly unitOfWork: UnitOfWork,
     private readonly refresher: PlaceStatusRefresher,
+    private readonly devices: DeviceReader,
+    private readonly policy: ReportEvidencePolicy,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
     private readonly rateLimiter: RateLimiter,
@@ -26,6 +30,10 @@ export class SubmitReportUseCase implements SubmitReport {
   public async execute(input: SubmitReportInput): Promise<StatusChangeOutput> {
     const note = input.note === undefined ? null : this.validator.validate(NoteSchema, input.note);
     await this.rateLimiter.consume({ action: 'submit_report', key: input.userId });
+    const evidence = this.policy.classify({
+      via: input.via ?? 'app',
+      attested: (await this.devices.findAttestation(input.userId)) !== null,
+    });
 
     return this.unitOfWork.run(async (ports) => {
       await ports.places.getById(input.placeId);
@@ -34,9 +42,7 @@ export class SubmitReportUseCase implements SubmitReport {
       await ports.evidence.append({
         id,
         target: { type: 'place', placeId: input.placeId },
-        ...(input.via === 'wallet'
-          ? { kind: 'visit_report' as const, source: 'wallet' }
-          : { kind: 'user_report' as const, source: 'app' }),
+        ...evidence,
         result: input.result,
         sourceRef: id,
         observedAt: now,

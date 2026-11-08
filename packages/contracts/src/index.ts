@@ -17,6 +17,7 @@ export * from './places/places.ports.js';
 export * from './places/places.use-cases.js';
 export * from './reports/reports.dtos.js';
 export * from './reports/reports.model.js';
+export * from './reports/reports.ports.js';
 export * from './reports/reports.use-cases.js';
 export * from './shared-match/shared-match.dtos.js';
 export * from './shared-match/shared-match.model.js';

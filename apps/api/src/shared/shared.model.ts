@@ -80,6 +80,9 @@ export interface DevicesTable {
   user_id: string;
   platform: string;
   created_at: Timestamp;
+  attestation_kind: string | null;
+  attested_at: ColumnType<Date | null, Date | string | null, Date | string | null>;
+  app_attest_key_id: string | null;
 }
 
 export interface UnmatchedDescriptorsTable {

@@ -2,6 +2,7 @@ import type { TransactionalPorts } from '@amexbutikker/contracts';
 import {
   describeChainReaderContract,
   describeChainWriterContract,
+  describeDeviceReaderContract,
   describeDeviceWriterContract,
   describeEvidenceContract,
   describeImportRunWriterContract,
@@ -93,7 +94,11 @@ describeUnitOfWorkContract('PgUnitOfWork', async () => {
   return { unitOfWork: new PgUnitOfWork(database.db, portsFor, errors), places };
 });
 
-describeDeviceWriterContract('PgDeviceRepository', async () => {
+async function freshDevices() {
   await database.reset();
-  return { writer: new PgDeviceRepository(database.db, errors) };
-});
+  const repository = new PgDeviceRepository(database.db, errors);
+  return { writer: repository, reader: repository };
+}
+
+describeDeviceWriterContract('PgDeviceRepository', freshDevices);
+describeDeviceReaderContract('PgDeviceRepository', freshDevices);
