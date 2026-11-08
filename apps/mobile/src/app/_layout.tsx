@@ -10,6 +10,12 @@ import { ShareIntentRouter } from '../ui/share-intent-router';
 import { VisitNotificationRouter } from '../ui/visit-notification-router';
 import { usePalette } from '../ui/theme';
 
+/**
+ * The tabs sit under every other screen, also when a link (a payment, a widget tap) opens the
+ * app on one: closing it then lands on the tabs instead of nowhere.
+ */
+export const unstable_settings = { anchor: '(tabs)' };
+
 export default function RootLayout() {
   // Built once per app start; screens reach it through useServices().
   const [services] = useState(() => CompositionRoot.fromEnv());
@@ -57,7 +63,7 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="paid"
-            options={{ title: 'Betaling', presentation: 'modal' }}
+            options={{ title: 'Betalt med Amex', presentation: 'modal' }}
             // A new payment while one is shown opens its own screen instead of reusing that one.
             dangerouslySingular={(_name, params) => JSON.stringify(params)}
           />

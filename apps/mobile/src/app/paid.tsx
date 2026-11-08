@@ -4,7 +4,7 @@ import type {
   PlaceId,
   PlaceStatusDto,
 } from '@amexbutikker/contracts';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -62,22 +62,51 @@ export default function PaidScreen() {
   const amountNote =
     purchase === null ? null : `${spendingPresenter.amount(purchase.amountNok)} er lagt i Bonus.`;
 
-  const done = (
-    <Pressable
-      onPress={() => {
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/');
-        }
+  const close = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
+  };
+
+  // Ferdig sits in the header (where iOS puts it on a sheet) and as a full button at the bottom.
+  const header = (
+    <Stack.Screen
+      options={{
+        headerRight: () => (
+          <Pressable onPress={close} accessibilityRole="button" hitSlop={12}>
+            <Text style={[styles.headerButton, { color: palette.accent }]}>Ferdig</Text>
+          </Pressable>
+        ),
       }}
+    />
+  );
+
+  /** Filled where it is the main way on; outlined next to another filled button. */
+  const doneButton = (primary: boolean) => (
+    <Pressable
+      onPress={close}
       accessibilityRole="button"
-      hitSlop={8}
-      style={styles.done}
+      style={({ pressed }) => [
+        primary
+          ? [styles.primary, { backgroundColor: palette.accent }]
+          : [styles.secondary, styles.wide, { borderColor: palette.border }],
+        { opacity: pressed ? 0.7 : 1 },
+      ]}
     >
-      <Text style={[styles.link, { color: palette.accent }]}>Ferdig</Text>
+      <Text
+        style={
+          primary
+            ? [styles.primaryText, { color: palette.onAccent }]
+            : [styles.secondaryText, { color: palette.text }]
+        }
+      >
+        Ferdig
+      </Text>
     </Pressable>
   );
+  const done = doneButton(true);
 
   const answerRow = (placeId: PlaceId, result: AcceptanceResult) => {
     setRows((current) => ({ ...current, [placeId]: 'sending' }));
@@ -151,7 +180,7 @@ export default function PaidScreen() {
           >
             <Text style={[styles.primaryText, { color: palette.onAccent }]}>Prøv igjen</Text>
           </Pressable>
-          {done}
+          {doneButton(false)}
         </>
       );
       break;
@@ -171,7 +200,7 @@ export default function PaidScreen() {
           >
             <Text style={[styles.primaryText, { color: palette.onAccent }]}>Legg til stedet</Text>
           </Pressable>
-          {done}
+          {doneButton(false)}
         </>
       );
       break;
@@ -179,6 +208,9 @@ export default function PaidScreen() {
       const { candidate, status } = screen;
       body = (
         <>
+          <Text style={[styles.note, text]}>
+            Takk! Du betalte med Amex hos {candidate.place.name}, så vi har lagret at de tar Amex.
+          </Text>
           <View style={[styles.group, styles.answered, { backgroundColor: palette.card }]}>
             <View style={styles.place}>
               <CategoryIcon category={candidate.place.category} />
@@ -186,7 +218,10 @@ export default function PaidScreen() {
                 <Text style={[styles.name, text]} numberOfLines={1}>
                   {candidate.place.name}
                 </Text>
-                <Text style={muted}>Takk! Svaret ditt er lagret.</Text>
+                <Text style={muted} numberOfLines={1}>
+                  {presenter.address(candidate.place) ??
+                    presenter.category(candidate.place.category)}
+                </Text>
               </View>
             </View>
             <StatusAnswer
@@ -369,6 +404,7 @@ export default function PaidScreen() {
       style={{ backgroundColor: palette.background }}
       contentContainerStyle={styles.content}
     >
+      {header}
       {body}
       {note === null ? null : (
         <Text accessibilityLiveRegion="polite" style={[styles.note, text]}>
@@ -400,6 +436,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   secondaryText: { fontSize: 15, fontWeight: '600' },
+  wide: { flex: 0, alignSelf: 'stretch' },
   primary: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', minHeight: 48 },
   primaryText: { fontSize: 17, fontWeight: '700' },
   buttons: { flexDirection: 'row', gap: 8, paddingLeft: 48 },
@@ -414,4 +451,5 @@ const styles = StyleSheet.create({
   answerText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   done: { alignSelf: 'center', paddingVertical: 8 },
   link: { fontSize: 17 },
+  headerButton: { fontSize: 17, fontWeight: '600' },
 });
