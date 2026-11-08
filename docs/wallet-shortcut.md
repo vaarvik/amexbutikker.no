@@ -30,8 +30,10 @@ payment's purchase is removed from Bonus when the user taps **Kortet ble avvist*
 
 ## Set it up on the phone (by hand)
 
-This works today without anything shared. It's also what Settings → Apple Pay shows while
-`EXPO_PUBLIC_WALLET_SHORTCUT_URL` is empty.
+This works today without anything shared. It's also what the Apple Pay setup screen shows while
+`EXPO_PUBLIC_WALLET_SHORTCUT_URL` is empty. The app opens that screen from a prompt on Steder
+(shown until the user taps **Det er satt opp** or **Ikke nå**, or a payment link arrives) and from
+Settings → Apple Pay.
 
 1. Snarveier → **Automatisering** → **+** → **Transaksjon**.
 2. Tick the Amex card, leave the other options as they are and choose **Kjør umiddelbart** (run
@@ -51,8 +53,8 @@ TestFlight). Expo Go uses its own scheme, so the link does not reach it there.
 
 An automation cannot be shared, but a shortcut can. Build a shortcut **Tar de Amex?** with the
 three actions above, taking its input from the automation. Share it via iCloud and put the link in
-`EXPO_PUBLIC_WALLET_SHORTCUT_URL` for the build. Settings then shows **Legg til snarveien** and the
-shorter steps. Users still create the automation themselves (trigger plus "Kjør snarvei: Tar de
+`EXPO_PUBLIC_WALLET_SHORTCUT_URL` for the build. The setup screen then shows **Legg til
+snarveien** instead of the steps. Users still create the automation themselves (trigger plus "Kjør snarvei: Tar de
 Amex?"), since iOS asks the user for that.
 
 Before sharing, check on a phone:
