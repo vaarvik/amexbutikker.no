@@ -12,7 +12,7 @@ export type LocalDate = string;
 
 export const LocalDateSchema: z.ZodType<LocalDate> = z.iso.date();
 
-/** Where an amount came from. Only `manual` exists today; the others arrive with Phases 13 and 14d. */
+/** Where an amount came from: typed in, an Apple Wallet payment (Phase 13), or a statement (14d, not built). */
 export type SpendingSource = 'manual' | 'wallet' | 'statement';
 
 export const SpendingSourceSchema: z.ZodType<SpendingSource> = z.enum([

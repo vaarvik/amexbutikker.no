@@ -41,3 +41,18 @@ export interface MatchDecider {
    */
   decide(candidates: readonly PlaceCandidate[]): MatchDecision;
 }
+
+/**
+ * Turns the merchant name of a card payment ("SQ *KAFFEBRENNERIET AS", "REMA 1000 MAJORSTUEN")
+ * into a name to match places on. Pure, no network.
+ */
+export interface MerchantNameParser {
+  /**
+   * Drops payment-processor prefixes ("SQ *", "SumUp *", "Zettle_*"), company suffixes ("AS",
+   * "ASA") and reference numbers, and collapses whitespace. Keeps branch and city words; the
+   * matcher's scoring handles them.
+   *
+   * @returns the cleaned name, or null when nothing is left.
+   */
+  parse(merchant: string): string | null;
+}

@@ -1,4 +1,5 @@
 import type { AcceptanceResult } from '../evidence/evidence.model.js';
+import type { ReportChannel } from './reports.model.js';
 import type { PlaceId, UserId } from '../shared/shared.model.js';
 import type { ChainHint, PlaceStatus } from '../status/status.model.js';
 
@@ -7,6 +8,8 @@ export interface SubmitReportInput {
   readonly placeId: PlaceId;
   readonly result: AcceptanceResult;
   readonly note?: string;
+  /** Defaults to `app`. */
+  readonly via?: ReportChannel;
 }
 
 export interface StatusChangeOutput {
@@ -17,7 +20,7 @@ export interface StatusChangeOutput {
 /** "Det funket" / "Ble avvist". */
 export interface SubmitReport {
   /**
-   * Appends a user_report, then recalculates the place status and the chain hint, in one unit of work.
+   * Appends a user_report (a `visit_report` with source `wallet` when `via` is `wallet`), then recalculates the place status and the chain hint, in one unit of work.
    * A user has at most one active report per place: the new one supersedes the old.
    *
    * @throws NotFoundError when the place does not exist.

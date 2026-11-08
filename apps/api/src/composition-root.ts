@@ -4,6 +4,7 @@ import {
   ListNearbyPlacesUseCase,
   ListPlacesInAreaUseCase,
   GetPlaceDetailsUseCase,
+  MatchPaymentUseCase,
   MatchSharedPlaceUseCase,
   RegisterDeviceUseCase,
   RemoveMyReportUseCase,
@@ -35,6 +36,7 @@ import {
   ProportionChainHintCalculator,
   RegexSharedTextParser,
   SupersedingEvidenceSelector,
+  RegexMerchantNameParser,
   ThresholdMatchDecider,
   TrigramNameSimilarity,
 } from '@amexbutikker/domain';
@@ -273,6 +275,11 @@ export class CompositionRoot {
 
     const auth = new BearerTokenAuthenticator(tokens);
     const dtos = new AllowlistHttpDtoMapper();
+    const placeMatcher = new TrigramGeoPlaceMatcher(places, names, {
+      radiusM: 300,
+      searchLimit: 20,
+      minimumScore: 0.25,
+    });
     this.httpServer = new FastifyHttpServer(
       [
         new PlacesController(
@@ -321,13 +328,17 @@ export class CompositionRoot {
           new MatchSharedPlaceUseCase(
             new RegexSharedTextParser(),
             new NullSharedLinkResolver(),
-            new TrigramGeoPlaceMatcher(places, names, {
-              radiusM: 300,
-              searchLimit: 20,
-              minimumScore: 0.25,
-            }),
+            placeMatcher,
             new ThresholdMatchDecider({ openThreshold: 0.6, minimumLead: 0.15 }),
             statuses,
+          ),
+          // A clear payment match is saved as an answer without asking, so it needs more.
+          new MatchPaymentUseCase(
+            new RegexMerchantNameParser(),
+            placeMatcher,
+            new ThresholdMatchDecider({ openThreshold: 0.7, minimumLead: 0.2 }),
+            statuses,
+            validator,
           ),
           validator,
           dtos,

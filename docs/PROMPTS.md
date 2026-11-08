@@ -363,7 +363,7 @@ user give Trolig ja / Trolig nei. Sources are stored, never shown.
 
 ---
 
-## Phase 13: Answer from Apple Pay (on hold)
+## Phase 13: Answer from Apple Pay (built; shared shortcut and phone test open)
 
 ```
 An iOS Shortcuts "Transaction" automation (iOS 17+) on the user's Amex in Wallet hands merchant, amount and
@@ -378,9 +378,14 @@ card to a shortcut, which opens amexbutikker://paid?merchant=…[&amount=…].
 - Works without it; the shortcut is a bonus.
 ```
 
+Built: `POST /v1/match/payment` (`MatchPaymentUseCase`, `RegexMerchantNameParser`, stricter decider: 0.7 / 0.2),
+`via: 'wallet'` on reports, the `paid` screen, `apps/mobile/src/payments/`, Settings → Apple Pay with the steps.
+Open: the owner builds and shares the shortcut (`EXPO_PUBLIC_WALLET_SHORTCUT_URL`) and tests a declined tap on a
+phone. See docs/wallet-shortcut.md.
+
 ---
 
-## Phase 14: Spending and milestones (on the phone only; 14a and 14b done)
+## Phase 14: Spending and milestones (on the phone only; 14a, 14b and 14c done)
 
 A personal tab: how much the user has spent on the card and how far they are from a bonus milestone.
 Amounts never leave the phone; the server keeps no amounts (unchanged rule).
@@ -404,7 +409,8 @@ them against the issuer's terms before release. Elite is left out: no source agr
 - data/card-programmes.yaml: card name, milestones (target, period kind, reward), sourceUrl, fetchedAt.
   Shown with "Sjekk vilkårene hos kortutsteder" and the fetch date; terms change, presets are hints.
 - "Velg kort" adds its milestones; custom milestones alongside. Presets only from sources the owner checks.
-14c. Wallet amounts: Phase 13's link also takes the amount and stores a `wallet` purchase.
+14c. Wallet amounts (done): Phase 13's link also takes the amount and stores a `wallet` purchase; a declined
+    payment's purchase is removed again.
 14d. Statement import: CSV/PDF export from the Amex site, parsed on the phone; needs an anonymised sample.
 ```
 

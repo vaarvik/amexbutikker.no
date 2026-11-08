@@ -1,6 +1,8 @@
 import type {
   CreatePlaceRequestDto,
   CreatePlaceResponseDto,
+  MatchPaymentRequestDto,
+  MatchPaymentResponseDto,
   MatchSharedResponseDto,
   NearbyPlacesQueryDto,
   PlaceFilterQueryDto,
@@ -28,6 +30,8 @@ export interface PlacesApiClient {
   removeMyReport(placeId: PlaceId): Promise<StatusChangeResponseDto>;
   /** Matches text shared from a maps app to known places. The API never calls Google. */
   matchShared(text: string): Promise<MatchSharedResponseDto>;
+  /** Matches a card payment's merchant name and position to known places. Never the amount. */
+  matchPayment(input: MatchPaymentRequestDto): Promise<MatchPaymentResponseDto>;
 }
 
 /** Keeps the last nearby list across app starts. */

@@ -7,6 +7,7 @@ import type {
   MilestoneProgress,
   Purchase,
   SpendingEntry,
+  SpendingSource,
   SpendingState,
 } from './spending.model';
 
@@ -41,6 +42,8 @@ export interface NewPurchase {
   readonly amountNok: number;
   readonly merchant?: string;
   readonly placeId?: PlaceId;
+  /** Defaults to `manual`. */
+  readonly source?: SpendingSource;
 }
 
 export interface NewMilestone {
@@ -61,6 +64,8 @@ export interface SpendingOverview {
 export interface SpendingService {
   overview(): Promise<SpendingOverview>;
   addPurchase(purchase: NewPurchase): Promise<SpendingOverview>;
+  /** Adds a purchase like `addPurchase`, and returns it, with its id, instead of the overview. */
+  recordPurchase(purchase: NewPurchase): Promise<Purchase>;
   /** Records "spent so far in this milestone's period", as of today. */
   updateTotal(milestoneId: string, amountNok: number): Promise<SpendingOverview>;
   removeEntry(id: string): Promise<SpendingOverview>;

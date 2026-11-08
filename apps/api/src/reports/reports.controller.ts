@@ -30,6 +30,7 @@ export class ReportsController implements HttpController {
         placeId: id,
         result: body.result,
         ...(body.note === undefined ? {} : { note: body.note }),
+        ...(body.via === undefined ? {} : { via: body.via }),
       });
       return StatusChangeResponseDtoSchema.parse(this.dtos.statusChange(output));
     });

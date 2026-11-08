@@ -1,5 +1,6 @@
 import {
   CreatePlaceResponseDtoSchema,
+  MatchPaymentResponseDtoSchema,
   MatchSharedResponseDtoSchema,
   PlaceAreaResponseDtoSchema,
   PlaceDetailsResponseDtoSchema,
@@ -9,6 +10,8 @@ import {
 import type {
   CreatePlaceRequestDto,
   CreatePlaceResponseDto,
+  MatchPaymentRequestDto,
+  MatchPaymentResponseDto,
   MatchSharedResponseDto,
   NearbyPlacesQueryDto,
   PlaceAreaResponseDto,
@@ -108,6 +111,13 @@ export class FetchPlacesApiClient implements PlacesApiClient {
     return this.transport.request(
       { method: 'POST', path: '/v1/match/shared', body: { text } },
       MatchSharedResponseDtoSchema,
+    );
+  }
+
+  public matchPayment(input: MatchPaymentRequestDto): Promise<MatchPaymentResponseDto> {
+    return this.transport.request(
+      { method: 'POST', path: '/v1/match/payment', body: input },
+      MatchPaymentResponseDtoSchema,
     );
   }
 

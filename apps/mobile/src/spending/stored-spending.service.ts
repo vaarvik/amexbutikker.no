@@ -35,22 +35,23 @@ export class StoredSpendingService implements SpendingService {
     return this.present(await this.storage.find());
   }
 
-  public addPurchase(purchase: NewPurchase): Promise<SpendingOverview> {
-    return this.change((state) => ({
-      ...state,
-      entries: [
-        ...state.entries,
-        {
-          kind: 'purchase',
-          id: this.ids.next(),
-          date: purchase.date,
-          amountNok: purchase.amountNok,
-          merchant: purchase.merchant ?? null,
-          placeId: purchase.placeId ?? null,
-          source: 'manual',
-        },
-      ],
-    }));
+  public async addPurchase(purchase: NewPurchase): Promise<SpendingOverview> {
+    await this.recordPurchase(purchase);
+    return this.overview();
+  }
+
+  public async recordPurchase(purchase: NewPurchase): Promise<Purchase> {
+    const added: Purchase = {
+      kind: 'purchase',
+      id: this.ids.next(),
+      date: purchase.date,
+      amountNok: purchase.amountNok,
+      merchant: purchase.merchant ?? null,
+      placeId: purchase.placeId ?? null,
+      source: purchase.source ?? 'manual',
+    };
+    await this.change((state) => ({ ...state, entries: [...state.entries, added] }));
+    return added;
   }
 
   public updateTotal(milestoneId: string, amountNok: number): Promise<SpendingOverview> {

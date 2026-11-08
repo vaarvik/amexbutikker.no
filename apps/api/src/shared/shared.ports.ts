@@ -3,6 +3,8 @@ import type { Kysely } from 'kysely';
 import type {
   ChainHint,
   ChainHintDto,
+  MatchPaymentOutput,
+  MatchPaymentResponseDto,
   MatchSharedPlaceOutput,
   MatchSharedResponseDto,
   Place,
@@ -45,6 +47,7 @@ export interface HttpDtoMapper {
   placeDetails(details: PlaceDetails): PlaceDetailsResponseDto;
   statusChange(output: StatusChangeOutput): StatusChangeResponseDto;
   sharedMatch(output: MatchSharedPlaceOutput): MatchSharedResponseDto;
+  paymentMatch(output: MatchPaymentOutput): MatchPaymentResponseDto;
 }
 
 /** Maps any thrown value to an HTTP response. */

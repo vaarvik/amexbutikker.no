@@ -34,9 +34,10 @@ export class SubmitReportUseCase implements SubmitReport {
       await ports.evidence.append({
         id,
         target: { type: 'place', placeId: input.placeId },
-        kind: 'user_report',
+        ...(input.via === 'wallet'
+          ? { kind: 'visit_report' as const, source: 'wallet' }
+          : { kind: 'user_report' as const, source: 'app' }),
         result: input.result,
-        source: 'app',
         sourceRef: id,
         observedAt: now,
         importedAt: now,

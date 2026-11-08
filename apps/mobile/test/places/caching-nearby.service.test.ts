@@ -63,6 +63,10 @@ class StubPlacesApi implements PlacesApiClient {
   public matchShared(): Promise<MatchSharedResponseDto> {
     return Promise.reject(new Error('not used'));
   }
+
+  public matchPayment(): Promise<never> {
+    return Promise.reject(new Error('not used'));
+  }
 }
 
 class StubCache implements NearbyCache {

@@ -167,6 +167,22 @@ describe('FetchPlacesApiClient', () => {
     ]);
   });
 
+  it('matches a payment by merchant name and position, without a token', async () => {
+    const response = { merchantName: 'Kafé Åsen', candidates: [], decision: { type: 'none' } };
+    transport.answer(response);
+
+    await expect(
+      client.matchPayment({ merchant: 'Kafé Åsen', lat: 59.9, lng: 10.7 }),
+    ).resolves.toEqual(response);
+    expect(transport.requests).toEqual([
+      {
+        method: 'POST',
+        path: '/v1/match/payment',
+        body: { merchant: 'Kafé Åsen', lat: 59.9, lng: 10.7 },
+      },
+    ]);
+  });
+
   it('drops a rejected token, registers again and retries once', async () => {
     session.token = 'revoked';
     transport.answer(unauthorized(), statusChange);

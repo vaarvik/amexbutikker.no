@@ -9,6 +9,10 @@ import { CachingNearbyService } from './places/caching-nearby.service';
 import { FetchPlacesApiClient } from './places/fetch-places-api.client';
 import { KeyValueNearbyCache } from './places/key-value-nearby.cache';
 import type { NearbyService, PlacesApiClient } from './places/places.ports';
+import { KeyValueHandledPaymentStorage } from './payments/key-value-handled-payment.storage';
+import { MatchingPaymentService } from './payments/matching-payment.service';
+import type { PaymentService, WalletLinkParser } from './payments/payments.ports';
+import { ShortcutWalletLinkParser } from './payments/shortcut-wallet-link.parser';
 import { FetchJsonTransport } from './shared/fetch-json.transport';
 import type { KeyValueStorage } from './shared/shared.ports';
 import { SystemClock } from './shared/system.clock';
@@ -46,6 +50,11 @@ export interface AppServices {
   /** The Bonus tab: spending and milestones, stored on the phone only. */
   readonly spending: SpendingService;
   readonly spendingPresenter: SpendingPresenter;
+  /** Answers from Apple Wallet payments (the `paid` link the Shortcuts automation opens). */
+  readonly payments: PaymentService;
+  readonly walletLinks: WalletLinkParser;
+  /** The shared iCloud link to the shortcut; null until the owner has shared one. */
+  readonly walletShortcutUrl: string | null;
   /** False on the web: native-only features (share intake, visit detection) are hidden there. */
   readonly native: boolean;
 }
@@ -69,6 +78,7 @@ export interface MobileConfig {
   readonly apiUrl: string;
   /** How long the phone must be inside a place before leaving it triggers a question. */
   readonly visitMinDwellMs: number;
+  readonly walletShortcutUrl: string | null;
 }
 
 /** The API on this machine; phones on the LAN need EXPO_PUBLIC_API_URL set to its LAN address. */
@@ -88,6 +98,9 @@ export class CompositionRoot implements AppServices {
   public readonly widgets: NearbyWidgetService;
   public readonly spending: SpendingService;
   public readonly spendingPresenter: SpendingPresenter;
+  public readonly payments: PaymentService;
+  public readonly walletLinks: WalletLinkParser;
+  public readonly walletShortcutUrl: string | null;
   public readonly native: boolean;
 
   public constructor(config: MobileConfig, adapters: PlatformAdapters) {
@@ -120,6 +133,17 @@ export class CompositionRoot implements AppServices {
       new RandomIdGenerator(),
     );
     this.spendingPresenter = new NorwegianSpendingPresenter();
+    // Only the merchant name and the position reach the API; the amount goes to Bonus.
+    this.payments = new MatchingPaymentService(
+      this.places,
+      this.location,
+      this.spending,
+      new KeyValueHandledPaymentStorage(AsyncStorage, { key: 'handled-payments-v1' }),
+      clock,
+      { duplicateWindowMs: 10 * MINUTE_MS },
+    );
+    this.walletLinks = new ShortcutWalletLinkParser();
+    this.walletShortcutUrl = config.walletShortcutUrl;
     this.widgets = new SnapshotNearbyWidgetService(
       new StatusNearbyWidgetPropsMapper(this.presenter, {
         hereWithinM: 60,
@@ -183,6 +207,7 @@ export class CompositionRoot implements AppServices {
             CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_VISIT_MIN_DWELL_SECONDS) ??
               DEFAULT_VISIT_MIN_DWELL_S,
           ) * 1000,
+        walletShortcutUrl: CompositionRoot.nonEmpty(process.env.EXPO_PUBLIC_WALLET_SHORTCUT_URL),
       },
       new CurrentPlatform(),
     );

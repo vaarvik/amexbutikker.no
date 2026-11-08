@@ -3,6 +3,7 @@ import { PlaceDtoSchema } from '../places/places.dtos.js';
 import type { PlaceDto } from '../places/places.dtos.js';
 import {
   MatchReasonSchema,
+  PAYMENT_MERCHANT_MAX_LENGTH,
   SHARED_PLACE_PROVIDERS,
   SHARED_TEXT_MAX_LENGTH,
 } from './shared-match.model.js';
@@ -60,6 +61,44 @@ export const MatchSharedResponseDtoSchema: z.ZodType<MatchSharedResponseDto> = z
     postcode: z.string().nullable(),
     city: z.string().nullable(),
   }),
+  candidates: z.array(MatchCandidateDtoSchema).max(3),
+  decision: z.discriminatedUnion('type', [
+    z.object({ type: z.literal('open'), placeId: PlaceIdSchema }),
+    z.object({ type: z.literal('choose') }),
+    z.object({ type: z.literal('none') }),
+  ]),
+});
+
+// ---------------------------------------------------------------------------
+// POST /v1/match/payment  ->  MatchPaymentResponseDto
+
+export interface MatchPaymentRequestDto {
+  readonly merchant: string;
+  /** Both or neither. */
+  readonly lat?: number;
+  readonly lng?: number;
+}
+
+/** Strict: an amount, or any other field, is refused, so amounts can never reach the API. */
+export const MatchPaymentRequestDtoSchema: z.ZodType<MatchPaymentRequestDto> = z
+  .strictObject({
+    merchant: z.string().trim().min(1).max(PAYMENT_MERCHANT_MAX_LENGTH),
+    lat: z.number().min(-90).max(90).exactOptional(),
+    lng: z.number().min(-180).max(180).exactOptional(),
+  })
+  .refine((body) => (body.lat === undefined) === (body.lng === undefined), {
+    message: 'lat and lng go together',
+    path: ['lat'],
+  });
+
+export interface MatchPaymentResponseDto {
+  readonly merchantName: string | null;
+  readonly candidates: readonly MatchCandidateDto[];
+  readonly decision: MatchSharedResponseDto['decision'];
+}
+
+export const MatchPaymentResponseDtoSchema: z.ZodType<MatchPaymentResponseDto> = z.object({
+  merchantName: z.string().nullable(),
   candidates: z.array(MatchCandidateDtoSchema).max(3),
   decision: z.discriminatedUnion('type', [
     z.object({ type: z.literal('open'), placeId: PlaceIdSchema }),

@@ -5,6 +5,8 @@ import { GeoPointSchema } from '../shared/shared.model.js';
 import type { GeoPoint } from '../shared/shared.model.js';
 
 export const SHARED_TEXT_MAX_LENGTH = 2000;
+/** Longest merchant name accepted from a card payment. */
+export const PAYMENT_MERCHANT_MAX_LENGTH = 200;
 
 export type SharedPlaceProvider = 'google_maps' | 'apple_maps' | 'unknown';
 export const SHARED_PLACE_PROVIDERS = [

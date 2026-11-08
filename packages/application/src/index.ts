@@ -8,6 +8,7 @@ export * from './places/search-places.use-case.js';
 export * from './reports/remove-my-report.use-case.js';
 export * from './reports/submit-report.use-case.js';
 export * from './shared/zod-input.validator.js';
+export * from './shared-match/match-payment.use-case.js';
 export * from './shared-match/match-shared-place.use-case.js';
 export * from './status/calculating-place-status.refresher.js';
 export * from './status/refresh-stale-statuses.use-case.js';

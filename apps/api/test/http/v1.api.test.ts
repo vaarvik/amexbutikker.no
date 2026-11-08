@@ -414,6 +414,23 @@ describe('HTTP API (in-memory storage)', () => {
       expect(details.json()).toMatchObject({ basis: { userAccepted: 0, userRejected: 1 } });
     });
 
+    it('counts an answer from a wallet payment as a verified visit: Trolig ja', async () => {
+      const me = await registerDevice();
+      const id = await createCafe(me.authorization);
+
+      const response = await app.inject({
+        method: 'POST',
+        url: `/v1/places/${id}/reports`,
+        headers: { authorization: me.authorization },
+        payload: { result: 'accepted', via: 'wallet' },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        status: { status: 'likely_accepted', basis: 'visit_report', verified: true },
+      });
+    });
+
     it('rejects a malformed authorization header on an optional-auth route', async () => {
       const { authorization } = await registerDevice();
       const id = await createCafe(authorization);
@@ -522,6 +539,36 @@ describe('HTTP API (in-memory storage)', () => {
         candidates: [],
         decision: { type: 'none' },
       });
+    });
+  });
+
+  describe('POST /v1/match/payment', () => {
+    it('finds the place a card payment was made at from the merchant name and the position', async () => {
+      const { authorization } = await registerDevice();
+      const id = await createCafe(authorization);
+      await createCafe(authorization, 'Narvesen');
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/match/payment',
+        payload: { merchant: 'SQ *KAFE ASEN AS', lat: OSLO_S.lat, lng: OSLO_S.lng },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({
+        merchantName: 'KAFE ASEN',
+        decision: { type: 'open', placeId: id },
+      });
+    });
+
+    it('refuses an amount', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/match/payment',
+        payload: { merchant: 'Kafé Åsen', amount: 249 },
+      });
+
+      expect(response.statusCode).toBe(400);
     });
   });
 

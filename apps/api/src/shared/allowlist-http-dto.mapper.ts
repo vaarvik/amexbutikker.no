@@ -2,6 +2,8 @@ import type {
   ChainHint,
   ChainHintDto,
   MatchCandidateDto,
+  MatchPaymentOutput,
+  MatchPaymentResponseDto,
   MatchSharedPlaceOutput,
   MatchSharedResponseDto,
   Place,
@@ -90,13 +92,25 @@ export class AllowlistHttpDtoMapper implements HttpDtoMapper {
     const { provider, name, street, postcode, city } = output.parsed;
     return {
       parsed: { provider, name, street, postcode, city },
-      candidates: output.candidates.map((candidate): MatchCandidateDto => ({
-        place: this.place(candidate.place),
-        status: this.status(candidate.status),
-        score: candidate.score,
-        reasons: candidate.reasons,
-      })),
+      candidates: this.candidates(output.candidates),
       decision: output.decision,
     };
+  }
+
+  public paymentMatch(output: MatchPaymentOutput): MatchPaymentResponseDto {
+    return {
+      merchantName: output.merchantName,
+      candidates: this.candidates(output.candidates),
+      decision: output.decision,
+    };
+  }
+
+  private candidates(candidates: MatchSharedPlaceOutput['candidates']): MatchCandidateDto[] {
+    return candidates.map((candidate) => ({
+      place: this.place(candidate.place),
+      status: this.status(candidate.status),
+      score: candidate.score,
+      reasons: candidate.reasons,
+    }));
   }
 }

@@ -87,6 +87,38 @@ describe('StoredSpendingService', () => {
     expect((await storage.find()).milestones).toHaveLength(1);
   });
 
+  it('records a purchase from the wallet and returns it with its id', async () => {
+    const { service, storage } = setup();
+
+    const purchase = await service.recordPurchase({
+      date: '2026-11-07',
+      amountNok: 249,
+      merchant: 'Kaffebrenneriet',
+      source: 'wallet',
+    });
+
+    expect(purchase.id).not.toBe('');
+    expect(purchase).toEqual({
+      kind: 'purchase',
+      id: purchase.id,
+      date: '2026-11-07',
+      amountNok: 249,
+      merchant: 'Kaffebrenneriet',
+      placeId: null,
+      source: 'wallet',
+    });
+    expect((await storage.find()).entries).toEqual([purchase]);
+    expect((await service.overview()).purchases[0]?.source).toBe('wallet');
+  });
+
+  it('marks a typed purchase as manual', async () => {
+    const { service } = setup();
+
+    const overview = await service.addPurchase({ date: '2026-11-07', amountNok: 1 });
+
+    expect(overview.purchases[0]?.source).toBe('manual');
+  });
+
   it('lists purchases newest first, the last added first on the same day', async () => {
     const { service } = setup();
     await service.addPurchase({ date: '2026-03-01', amountNok: 1 });
