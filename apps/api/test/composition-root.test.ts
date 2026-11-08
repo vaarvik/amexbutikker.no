@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiConfigSchema } from '../src/composition-root.js';
+import { ApiConfigSchema, CompositionRoot } from '../src/composition-root.js';
 
 const base = {
   storage: 'memory',
@@ -27,4 +27,14 @@ describe('ApiConfigSchema', () => {
       expect(ApiConfigSchema.safeParse({ ...base, corsOrigins }).success).toBe(false);
     },
   );
+});
+
+describe('CompositionRoot.fromEnv', () => {
+  const env = { STORAGE: 'memory', DEVICE_TOKEN_SECRET: base.deviceTokenSecret };
+
+  it.each([[undefined], ['']])('starts without a web root (WEB_ROOT=%j)', (webRoot) => {
+    expect(() =>
+      CompositionRoot.fromEnv(webRoot === undefined ? env : { ...env, WEB_ROOT: webRoot }),
+    ).not.toThrow();
+  });
 });

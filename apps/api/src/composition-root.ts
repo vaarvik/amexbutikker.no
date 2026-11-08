@@ -426,28 +426,47 @@ export class CompositionRoot {
     );
   }
 
+  /**
+   * Drops unset and empty variables, so optional settings are absent rather than `undefined`
+   * (which `exactOptional` refuses) and defaults apply to empty ones.
+   */
+  private static withoutUnset<T extends Record<string, unknown>>(values: T): T {
+    return Object.fromEntries(
+      Object.entries(values)
+        .filter(([, value]) => value !== undefined && value !== '')
+        .map(([key, value]) => [
+          key,
+          typeof value === 'object' && value !== null
+            ? CompositionRoot.withoutUnset(value as Record<string, unknown>)
+            : value,
+        ]),
+    ) as T;
+  }
+
   /** Reads config from the environment. @throws ZodError when it is incomplete. */
   public static fromEnv(env: NodeJS.ProcessEnv): CompositionRoot {
     return new CompositionRoot(
-      ApiConfigSchema.parse({
-        storage: env.STORAGE,
-        databaseUrl: env.DATABASE_URL,
-        deviceTokenSecret: env.DEVICE_TOKEN_SECRET,
-        host: env.HOST,
-        port: env.PORT,
-        logLevel: env.LOG_LEVEL,
-        trustProxy: env.TRUST_PROXY,
-        webRoot: env.WEB_ROOT,
-        corsOrigins: env.CORS_ORIGINS,
-        imports: {
-          overpassUrl: env.OVERPASS_URL,
-          overpassAreaId: env.OVERPASS_AREA_ID,
-          cacheDir: env.IMPORT_CACHE_DIR,
-          cacheMaxAgeHours: env.IMPORT_CACHE_MAX_AGE_HOURS,
-          curatedClaimsPath: env.CURATED_CLAIMS_PATH,
-          statementPath: env.STATEMENT_PATH,
-        },
-      }),
+      ApiConfigSchema.parse(
+        CompositionRoot.withoutUnset({
+          storage: env.STORAGE,
+          databaseUrl: env.DATABASE_URL,
+          deviceTokenSecret: env.DEVICE_TOKEN_SECRET,
+          host: env.HOST,
+          port: env.PORT,
+          logLevel: env.LOG_LEVEL,
+          trustProxy: env.TRUST_PROXY,
+          webRoot: env.WEB_ROOT,
+          corsOrigins: env.CORS_ORIGINS,
+          imports: {
+            overpassUrl: env.OVERPASS_URL,
+            overpassAreaId: env.OVERPASS_AREA_ID,
+            cacheDir: env.IMPORT_CACHE_DIR,
+            cacheMaxAgeHours: env.IMPORT_CACHE_MAX_AGE_HOURS,
+            curatedClaimsPath: env.CURATED_CLAIMS_PATH,
+            statementPath: env.STATEMENT_PATH,
+          },
+        }),
+      ),
     );
   }
 
