@@ -51,6 +51,16 @@ Check on a phone:
 - how the amount arrives as text in Norwegian and English iOS (`kr 1 299,50`, `NOK 1,299.50`).
   `ShortcutWalletLinkParser` reads both.
 
+### Other cards (optional)
+
+A second action, **Registrer annen betaling** (`RecordOtherPaymentIntent.swift`), is for a
+second Transaction automation with the user's other cards ticked. It takes only **Forhandler**
+and opens `amexbutikker://paid?merchant=…&card=other`. Paying with another card says nothing
+about Amex, so the app saves nothing on its own: for one clear place it asks **Tar de Amex?**
+(Ja / Nei / Vet ikke; Ja and Nei are wallet reports). It stays quiet, closing after a moment,
+when no place is clear, the place already has Ja or Nei, or it asked about that place in the
+last 30 days (`asked-places-v1` on the phone). No amount goes to Bonus.
+
 Each iPhone needs its own automation: the Transaction trigger fires only for payments made with
 the Wallet on that phone. Two people sharing an Amex account (a supplementary card) each set it
 up on their own phone. Once set up, the setup screen shows how to delete it again.
@@ -60,3 +70,4 @@ up on their own phone. Once set up, the setup screen shows how to delete it agai
 - In a development build: Settings → **Send testbetaling** (only in `__DEV__`).
 - From the Mac, with the simulator running:
   `xcrun simctl openurl booted 'amexbutikker://paid?merchant=Kaf%C3%A9%20%C3%85sen&amount=kr%2049%2C00'`
+- Another card: the same link with `&card=other`.

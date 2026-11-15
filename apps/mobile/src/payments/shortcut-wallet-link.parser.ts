@@ -11,7 +11,8 @@ const OTHER_CURRENCY = /[$€£¥]|\b(?!nok\b)[a-z]{3}\b/iu;
 const SPACES = /[\s']/gu;
 
 /**
- * Reads `merchant` and `amount` from the link. The amount comes as Shortcuts formats it, e.g.
+ * Reads `merchant`, `amount` and `card` from the link. `card=other` comes from "Registrer annen
+ * betaling"; anything else is an Amex payment, as links from before the parameter are. The amount comes as Shortcuts formats it, e.g.
  * `kr 1 299,50`, `1 299,50 kr`, `NOK 249.00` or `249`; it is rounded to whole kroner.
  */
 export class ShortcutWalletLinkParser implements WalletLinkParser {
@@ -21,7 +22,11 @@ export class ShortcutWalletLinkParser implements WalletLinkParser {
       return null;
     }
     const amount = this.first(params.amount);
-    return { merchant, amountNok: amount === undefined ? null : this.kroner(amount) };
+    return {
+      merchant,
+      amountNok: amount === undefined ? null : this.kroner(amount),
+      card: this.first(params.card) === 'other' ? 'other' : 'amex',
+    };
   }
 
   private first(value: string | readonly string[] | undefined): string | undefined {

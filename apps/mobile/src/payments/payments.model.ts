@@ -1,6 +1,13 @@
-import type { MatchCandidateDto, PlaceStatusDto } from '@amexbutikker/contracts';
+import { PlaceIdSchema } from '@amexbutikker/contracts';
+import type { MatchCandidateDto, PlaceId, PlaceStatusDto } from '@amexbutikker/contracts';
 import { z } from 'zod';
 import type { Purchase } from '../spending/spending.model';
+
+/**
+ * Which automation sent the payment: `amex` ("Registrer Amex-betaling") or `other`
+ * ("Registrer annen betaling", run for the user's other cards, `card=other` in the link).
+ */
+export type PaymentCard = 'amex' | 'other';
 
 /**
  * A card payment handed over by the iOS Shortcuts "Transaction" automation, which opens
@@ -10,6 +17,7 @@ export interface WalletPayment {
   readonly merchant: string;
   /** Whole kroner; null when the shortcut sent none or it was not in NOK. Stays on the phone. */
   readonly amountNok: number | null;
+  readonly card: PaymentCard;
 }
 
 /** What happened to a payment, for the screen to show. */
@@ -35,7 +43,17 @@ export type PaymentOutcome =
   /** No known place: the user may search or add it. */
   | { readonly type: 'none'; readonly merchantName: string; readonly purchase: Purchase | null }
   /** The API could not be reached; the amount is saved anyway. */
-  | { readonly type: 'offline'; readonly merchantName: string; readonly purchase: Purchase | null };
+  | { readonly type: 'offline'; readonly merchantName: string; readonly purchase: Purchase | null }
+  /**
+   * Paid with another card at one clear place: paying with another card says nothing about Amex,
+   * so the user is asked "Tar de Amex?" and nothing is saved until they answer.
+   */
+  | { readonly type: 'ask'; readonly candidate: MatchCandidateDto }
+  /**
+   * Paid with another card, and nothing to ask: no clear place, the place already has a firm
+   * answer, or the user was asked about it lately. The screen closes by itself.
+   */
+  | { readonly type: 'quiet'; readonly candidate: MatchCandidateDto | null };
 
 /** A payment the app has handled, to ignore it if it comes in again. */
 export interface HandledPayment {
@@ -54,3 +72,14 @@ export const HandledPaymentSchema: z.ZodType<HandledPayment> = z.object({
  */
 export const WalletSetupStateSchema = z.enum(['new', 'done']);
 export type WalletSetupState = z.infer<typeof WalletSetupStateSchema>;
+
+/** A place the user was asked "Tar de Amex?" about after paying with another card. */
+export interface AskedPlace {
+  readonly placeId: PlaceId;
+  readonly askedAt: string;
+}
+
+export const AskedPlaceSchema: z.ZodType<AskedPlace> = z.object({
+  placeId: PlaceIdSchema,
+  askedAt: z.iso.datetime(),
+});

@@ -25,21 +25,7 @@ struct RecordAmexPaymentIntent: AppIntent {
 
   @MainActor
   func perform() async throws -> some IntentResult {
-    var query = "merchant=\(Self.encode(merchant))"
-    if let amount, !amount.isEmpty {
-      query += "&amount=\(Self.encode(amount))"
-    }
-    if let url = URL(string: "amexbutikker://paid?\(query)") {
-      await UIApplication.shared.open(url)
-    }
+    await PaymentLink.open(["merchant": merchant, "amount": amount])
     return .result()
-  }
-
-  /// Percent-encodes everything but unreserved characters, so `&`, `+` and `=` in a merchant
-  /// name stay part of the value.
-  private static func encode(_ value: String) -> String {
-    var allowed = CharacterSet.alphanumerics
-    allowed.insert(charactersIn: "-._~")
-    return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? ""
   }
 }

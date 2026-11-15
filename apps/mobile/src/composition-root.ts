@@ -17,6 +17,7 @@ import { CachingNearbyService } from './places/caching-nearby.service';
 import { FetchPlacesApiClient } from './places/fetch-places-api.client';
 import { KeyValueNearbyCache } from './places/key-value-nearby.cache';
 import type { NearbyService, PlacesApiClient } from './places/places.ports';
+import { KeyValueAskedPlaceStorage } from './payments/key-value-asked-place.storage';
 import { KeyValueHandledPaymentStorage } from './payments/key-value-handled-payment.storage';
 import { MatchingPaymentService } from './payments/matching-payment.service';
 import { KeyValueWalletSetupStorage } from './payments/key-value-wallet-setup.storage';
@@ -206,8 +207,9 @@ export class CompositionRoot implements AppServices {
       this.location,
       this.spending,
       new KeyValueHandledPaymentStorage(AsyncStorage, { key: 'handled-payments-v1' }),
+      new KeyValueAskedPlaceStorage(AsyncStorage, { key: 'asked-places-v1' }),
       clock,
-      { duplicateWindowMs: 10 * MINUTE_MS },
+      { duplicateWindowMs: 10 * MINUTE_MS, askAgainAfterMs: 30 * DAY_MS },
     );
     this.walletLinks = new ShortcutWalletLinkParser();
     this.walletSetup = new KeyValueWalletSetupStorage(AsyncStorage, { key: 'wallet-setup-v1' });

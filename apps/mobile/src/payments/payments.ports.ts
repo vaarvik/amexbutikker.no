@@ -1,6 +1,7 @@
 import type { AcceptanceResult, PlaceId, StatusChangeResponseDto } from '@amexbutikker/contracts';
 import type { Purchase } from '../spending/spending.model';
 import type {
+  AskedPlace,
   HandledPayment,
   PaymentOutcome,
   WalletPayment,
@@ -23,12 +24,22 @@ export interface HandledPaymentStorage {
   save(payments: readonly HandledPayment[]): Promise<void>;
 }
 
+/** The places the user was asked about after paying with another card, on the phone. */
+export interface AskedPlaceStorage {
+  /** Empty when nothing is stored or the stored value is unreadable. */
+  list(): Promise<AskedPlace[]>;
+  save(places: readonly AskedPlace[]): Promise<void>;
+}
+
 /** Turns a wallet payment into an answer and, with an amount, a purchase in Bonus. */
 export interface PaymentService {
   /**
    * Saves the amount as a `wallet` purchase, matches the merchant and the phone's position to
    * a place and, when one place is clear, answers "Tar Amex" there. Never throws: a failing API
    * gives `offline`.
+   *
+   * A payment with another card saves nothing and answers nothing: it gives `ask` for one clear
+   * place without a firm answer that the user was not asked about lately, and `quiet` otherwise.
    */
   handle(payment: WalletPayment): Promise<PaymentOutcome>;
   /** Matches again after `offline`, without saving the purchase a second time. */

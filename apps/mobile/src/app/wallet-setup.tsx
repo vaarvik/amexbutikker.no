@@ -16,10 +16,16 @@ const STEPS = [
   'Søk etter «Registrer Amex-betaling» og velg den. Trykk Forhandler og velg Forhandler, så Beløp og velg Beløp.',
 ] as const;
 
+/** Optional: a second automation for the other cards, so the app can ask "Tar de Amex?". */
+const OTHER_STEPS = [
+  'Lag en ny Transaksjon-automatisering og velg de andre kortene dine.',
+  'Søk etter «Registrer annen betaling». Trykk Forhandler og velg Forhandler.',
+] as const;
+
 /** The app cannot remove an automation; the user does it in Snarveier. */
 const REMOVE_STEPS = [
   'Åpne Snarveier og gå til Automatisering.',
-  'Sveip til venstre på Transaksjon-automatiseringen og trykk Slett.',
+  'Sveip til venstre på Transaksjon-automatiseringene og trykk Slett.',
 ] as const;
 
 function close() {
@@ -142,6 +148,12 @@ function SetUp() {
 
       <Steps steps={STEPS} />
 
+      <Text style={[styles.subtitle, text]}>Valgfritt: andre kort</Text>
+      <Text style={[styles.body, muted]}>
+        Betaler du med et annet kort, spør appen om stedet tar Amex.
+      </Text>
+      <Steps steps={OTHER_STEPS} />
+
       <Pressable
         onPress={() => {
           void Linking.openURL('shortcuts://');
@@ -181,6 +193,7 @@ function SetUp() {
 const styles = StyleSheet.create({
   content: { padding: 20, gap: 14, maxWidth: 640, width: '100%', alignSelf: 'center' },
   title: { fontSize: 24, fontWeight: '700' },
+  subtitle: { fontSize: 18, fontWeight: '700', marginTop: 8 },
   body: { fontSize: 16, lineHeight: 22 },
   card: { borderRadius: 12, paddingHorizontal: 16, marginVertical: 6 },
   step: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 12 },

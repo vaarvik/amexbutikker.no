@@ -29,6 +29,17 @@ type Screen =
 
 type RowState = 'idle' | 'sending' | AcceptanceResult | 'failed';
 
+/** How long the screen stays after a payment with another card that needs no answer. */
+const QUIET_CLOSE_MS = 1500;
+
+function close() {
+  if (router.canGoBack()) {
+    router.back();
+  } else {
+    router.replace('/');
+  }
+}
+
 /**
  * Opened by the Shortcuts "Transaction" automation after a payment with the card in Apple
  * Wallet: `amexbutikker://paid?merchant=…&amount=…`. See docs/wallet-shortcut.md.
@@ -47,6 +58,17 @@ export default function PaidScreen() {
   const [note, setNote] = useState<string | null>(null);
   const started = useRef(false);
 
+  // Nothing to ask after a payment with another card: say so briefly and go.
+  useEffect(() => {
+    if (screen.type !== 'quiet') {
+      return;
+    }
+    const timer = setTimeout(close, QUIET_CLOSE_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [screen.type]);
+
   useEffect(() => {
     // Once per screen: the payment must not be handled twice when the effect runs again.
     if (payment === null || started.current) {
@@ -55,7 +77,8 @@ export default function PaidScreen() {
     started.current = true;
     // A link from the automation means it is set up, so the app stops prompting for it.
     // The dev-only test payment in Settings says `test=1` and does not count.
-    if (params.test !== '1') {
+    // A link from "Registrer annen betaling" says nothing about the Amex automation.
+    if (params.test !== '1' && payment.card === 'amex') {
       void walletSetup.save('done').catch(() => undefined);
     }
     void payments.handle(payment).then(setScreen);
@@ -66,14 +89,6 @@ export default function PaidScreen() {
   const purchase = 'purchase' in screen ? screen.purchase : null;
   const amountNote =
     purchase === null ? null : `${spendingPresenter.amount(purchase.amountNok)} er lagt i Bonus.`;
-
-  const close = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/');
-    }
-  };
 
   // Ferdig sits in the header (where iOS puts it on a sheet) and as a full button at the bottom.
   const header = (
@@ -309,6 +324,78 @@ export default function PaidScreen() {
       );
       break;
     }
+    case 'quiet':
+      body = (
+        <>
+          <Text style={[styles.note, muted]}>
+            {screen.candidate === null
+              ? 'Betalt med annet kort.'
+              : `Betalt med annet kort hos ${screen.candidate.place.name}.`}
+          </Text>
+          {done}
+        </>
+      );
+      break;
+    case 'ask': {
+      const { candidate } = screen;
+      const row = rows[candidate.place.id] ?? 'idle';
+      const answered = row === 'accepted' || row === 'rejected';
+      body = (
+        <>
+          <Text style={[styles.note, muted]}>Du betalte med et annet kort.</Text>
+          <View style={[styles.group, styles.answered, { backgroundColor: palette.card }]}>
+            <View style={styles.place}>
+              <CategoryIcon category={candidate.place.category} />
+              <View style={styles.text}>
+                <Text style={[styles.name, text]} numberOfLines={1}>
+                  {candidate.place.name}
+                </Text>
+                <Text style={muted} numberOfLines={1}>
+                  {row === 'failed'
+                    ? 'Noe gikk galt. Prøv igjen.'
+                    : answered
+                      ? 'Takk! Svaret er lagret.'
+                      : (presenter.address(candidate.place) ??
+                        presenter.category(candidate.place.category))}
+                </Text>
+              </View>
+            </View>
+          </View>
+          {answered ? (
+            done
+          ) : (
+            <>
+              <Text style={[styles.question, text]}>Tar de Amex?</Text>
+              <View style={styles.actions}>
+                {(['accepted', 'rejected'] as const).map((result) => (
+                  <Pressable
+                    key={result}
+                    disabled={row === 'sending'}
+                    onPress={() => {
+                      answerRow(candidate.place.id, result);
+                    }}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.answer,
+                      {
+                        backgroundColor: STATUS_COLORS[result],
+                        opacity: pressed || row === 'sending' ? 0.7 : 1,
+                      },
+                    ]}
+                  >
+                    <Text style={styles.answerText}>{result === 'accepted' ? 'Ja' : 'Nei'}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Pressable onPress={close} accessibilityRole="button" hitSlop={8} style={styles.done}>
+                <Text style={[styles.link, { color: palette.accent }]}>Vet ikke</Text>
+              </Pressable>
+            </>
+          )}
+        </>
+      );
+      break;
+    }
     case 'choose':
     case 'pick': {
       const candidates = screen.candidates;
@@ -457,4 +544,5 @@ const styles = StyleSheet.create({
   done: { alignSelf: 'center', paddingVertical: 8 },
   link: { fontSize: 17 },
   headerButton: { fontSize: 17, fontWeight: '600' },
+  question: { fontSize: 20, fontWeight: '700', paddingHorizontal: 4, paddingTop: 4 },
 });
