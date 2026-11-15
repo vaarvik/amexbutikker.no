@@ -94,6 +94,7 @@ export default function PaidScreen() {
   const header = (
     <Stack.Screen
       options={{
+        ...(payment?.card === 'other' ? { title: 'Annet kort' } : {}),
         headerRight: () => (
           <Pressable onPress={close} accessibilityRole="button" hitSlop={12}>
             <Text style={[styles.headerButton, { color: palette.accent }]}>Ferdig</Text>
