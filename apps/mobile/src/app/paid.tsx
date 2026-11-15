@@ -366,31 +366,35 @@ export default function PaidScreen() {
             done
           ) : (
             <>
-              <Text style={[styles.question, text]}>Tar de Amex?</Text>
+              <Text style={[styles.question, text]}>Tok de ikke Amex?</Text>
               <View style={styles.actions}>
-                {(['accepted', 'rejected'] as const).map((result) => (
-                  <Pressable
-                    key={result}
-                    disabled={row === 'sending'}
-                    onPress={() => {
-                      answerRow(candidate.place.id, result);
-                    }}
-                    accessibilityRole="button"
-                    style={({ pressed }) => [
-                      styles.answer,
-                      {
-                        backgroundColor: STATUS_COLORS[result],
-                        opacity: pressed || row === 'sending' ? 0.7 : 1,
-                      },
-                    ]}
-                  >
-                    <Text style={styles.answerText}>{result === 'accepted' ? 'Ja' : 'Nei'}</Text>
-                  </Pressable>
-                ))}
+                <Pressable
+                  disabled={row === 'sending'}
+                  onPress={() => {
+                    answerRow(candidate.place.id, 'rejected');
+                  }}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.answer,
+                    {
+                      backgroundColor: STATUS_COLORS.rejected,
+                      opacity: pressed || row === 'sending' ? 0.7 : 1,
+                    },
+                  ]}
+                >
+                  <Text style={styles.answerText}>Tok ikke Amex</Text>
+                </Pressable>
+                <Pressable
+                  onPress={close}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [
+                    styles.secondary,
+                    { borderColor: palette.border, opacity: pressed ? 0.7 : 1 },
+                  ]}
+                >
+                  <Text style={[styles.secondaryText, text]}>Vet ikke</Text>
+                </Pressable>
               </View>
-              <Pressable onPress={close} accessibilityRole="button" hitSlop={8} style={styles.done}>
-                <Text style={[styles.link, { color: palette.accent }]}>Vet ikke</Text>
-              </Pressable>
             </>
           )}
         </>

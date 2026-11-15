@@ -56,8 +56,8 @@ Check on a phone:
 A second action, **Registrer annen betaling** (`RecordOtherPaymentIntent.swift`), is for a
 second Transaction automation with the user's other cards ticked. It takes only **Forhandler**
 and opens `amexbutikker://paid?merchant=…&card=other`. Paying with another card says nothing
-about Amex, so the app saves nothing on its own: for one clear place it asks **Tar de Amex?**
-(Ja / Nei / Vet ikke; Ja and Nei are wallet reports). It stays quiet, closing after a moment,
+about Amex, so the app saves nothing on its own: for one clear place it asks **Tok de ikke Amex?**
+(**Tok ikke Amex**, a rejected wallet report, or **Vet ikke**, nothing). It stays quiet, closing after a moment,
 when no place is clear, the place already has Ja or Nei, or it asked about that place in the
 last 30 days (`asked-places-v1` on the phone). No amount goes to Bonus.
 

@@ -1,13 +1,13 @@
 import AppIntents
 
 /// "Registrer annen betaling": run by a second "Transaksjon" automation for the user's other
-/// cards. It opens `amexbutikker://paid?merchant=…&card=other`, and the app asks "Tar de Amex?"
+/// cards. It opens `amexbutikker://paid?merchant=…&card=other`, and the app asks "Tok de ikke Amex?"
 /// instead of saving anything. Paying with another card says nothing about Amex by itself.
 @available(iOS 16.0, *)
 struct RecordOtherPaymentIntent: AppIntent {
   static var title: LocalizedStringResource = "Registrer annen betaling"
   static var description = IntentDescription(
-    "Åpner Tar de Amex? og spør om stedet tar Amex. Beløpet lagres ikke."
+    "Åpner Tar de Amex? og spør om stedet ikke tok Amex. Beløpet lagres ikke."
   )
   static var openAppWhenRun: Bool = true
 

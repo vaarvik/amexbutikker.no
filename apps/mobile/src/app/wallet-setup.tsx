@@ -16,7 +16,7 @@ const STEPS = [
   'Søk etter «Registrer Amex-betaling» og velg den. Trykk Forhandler og velg Forhandler, så Beløp og velg Beløp.',
 ] as const;
 
-/** Optional: a second automation for the other cards, so the app can ask "Tar de Amex?". */
+/** Optional: a second automation for the other cards, so the app can ask "Tok de ikke Amex?". */
 const OTHER_STEPS = [
   'Lag en ny Transaksjon-automatisering og velg de andre kortene dine.',
   'Søk etter «Registrer annen betaling». Trykk Forhandler og velg Forhandler.',
@@ -150,7 +150,7 @@ function SetUp() {
 
       <Text style={[styles.subtitle, text]}>Valgfritt: andre kort</Text>
       <Text style={[styles.body, muted]}>
-        Betaler du med et annet kort, spør appen om stedet tar Amex.
+        Betaler du med et annet kort, spør appen om stedet ikke tok Amex.
       </Text>
       <Steps steps={OTHER_STEPS} />
 

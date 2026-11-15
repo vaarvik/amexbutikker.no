@@ -46,7 +46,7 @@ export type PaymentOutcome =
   | { readonly type: 'offline'; readonly merchantName: string; readonly purchase: Purchase | null }
   /**
    * Paid with another card at one clear place: paying with another card says nothing about Amex,
-   * so the user is asked "Tar de Amex?" and nothing is saved until they answer.
+   * so the user is asked "Tok de ikke Amex?" and nothing is saved unless they say so.
    */
   | { readonly type: 'ask'; readonly candidate: MatchCandidateDto }
   /**
@@ -73,7 +73,7 @@ export const HandledPaymentSchema: z.ZodType<HandledPayment> = z.object({
 export const WalletSetupStateSchema = z.enum(['new', 'done']);
 export type WalletSetupState = z.infer<typeof WalletSetupStateSchema>;
 
-/** A place the user was asked "Tar de Amex?" about after paying with another card. */
+/** A place the user was asked "Tok de ikke Amex?" about after paying with another card. */
 export interface AskedPlace {
   readonly placeId: PlaceId;
   readonly askedAt: string;
