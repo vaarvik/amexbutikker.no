@@ -1619,3 +1619,23 @@ claims:
     source: owner
     sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
     fetchedAt: 2026-11-06
+
+  # Places at Storo, from the app owner, 2026-11-15.
+  - target: place
+    name: 'Princess Storo – Thon Senter Storo'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-15
+  - target: place
+    name: 'Elkjøp Storo'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-15
+  - target: place
+    name: 'Kiwi Storo'
+    result: accepted
+    source: owner
+    sourceUrl: https://github.com/vaarvik/amexbutikker.no/blob/main/data/curated-claims.yaml
+    fetchedAt: 2026-11-15
