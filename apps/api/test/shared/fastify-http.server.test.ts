@@ -2,8 +2,11 @@ import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { pino } from 'pino';
 import { describe, expect, it } from 'vitest';
 import { DomainHttpErrorMapper } from '../../src/shared/domain-http-error.mapper.js';
+import { NullAccessAuthenticator } from '../../src/shared/null-access.authenticator.js';
 import { FastifyHttpServer } from '../../src/shared/fastify-http.server.js';
-import type { HttpController } from '../../src/shared/shared.ports.js';
+import { HealthController } from '../../src/shared/health.controller.js';
+import type { AccessAuthenticator, HttpController } from '../../src/shared/shared.ports.js';
+import { UnauthenticatedError } from '@amexbutikker/contracts';
 
 class FailingController implements HttpController {
   public register(app: FastifyInstance): void {
@@ -26,11 +29,13 @@ function serverWith(errors: string[]): FastifyHttpServer {
     },
     { write: () => undefined },
   );
-  return new FastifyHttpServer([new FailingController()], new DomainHttpErrorMapper(), logger, {
-    bodyLimit: 1024,
-    trustProxy: false,
-    corsOrigins: [],
-  });
+  return new FastifyHttpServer(
+    [new FailingController()],
+    new DomainHttpErrorMapper(),
+    logger,
+    new NullAccessAuthenticator(),
+    { bodyLimit: 1024, trustProxy: false, corsOrigins: [] },
+  );
 }
 
 describe('FastifyHttpServer', () => {
@@ -59,5 +64,32 @@ describe('FastifyHttpServer', () => {
 
   it('closes cleanly when never started', async () => {
     await expect(serverWith([]).close()).resolves.toBeUndefined();
+  });
+
+  it('asks the access authenticator for every path but /health', async () => {
+    class ClosedDoor implements AccessAuthenticator {
+      public readonly seen: string[] = [];
+
+      public requireAccess(request: { url: string }): Promise<void> {
+        this.seen.push(request.url);
+        return Promise.reject(new UnauthenticatedError('Sign in through Cloudflare Access.'));
+      }
+    }
+    const door = new ClosedDoor();
+    const server = new FastifyHttpServer(
+      [new HealthController(), new FailingController()],
+      new DomainHttpErrorMapper(),
+      pino({ level: 'silent' }),
+      door,
+      { bodyLimit: 1024, trustProxy: false, corsOrigins: [] },
+    );
+
+    const health = await server.app().inject({ method: 'GET', url: '/health?x=1' });
+    const other = await server.app().inject({ method: 'GET', url: '/boom' });
+
+    expect(health.statusCode).toBe(200);
+    expect(other.statusCode).toBe(401);
+    expect(door.seen).toEqual(['/boom']);
+    await server.close();
   });
 });

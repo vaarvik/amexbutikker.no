@@ -38,6 +38,15 @@ export interface RequestAuthenticator {
   optionalUser(request: FastifyRequest): Promise<UserId | null>;
 }
 
+/**
+ * Lets a request in only when it carries a valid Cloudflare Access login, for a private
+ * deployment behind Access (docs/hosting.md). A second lock behind the gate at the edge.
+ */
+export interface AccessAuthenticator {
+  /** @throws UnauthenticatedError when the request has no valid Access login. */
+  requireAccess(request: FastifyRequest): Promise<void>;
+}
+
 /** Turns use case output into wire DTOs. */
 export interface HttpDtoMapper {
   place(place: Place): PlaceDto;

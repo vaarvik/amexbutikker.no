@@ -1,7 +1,12 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
-import type { HttpController, HttpErrorMapper, HttpServer } from './shared.ports.js';
+import type {
+  AccessAuthenticator,
+  HttpController,
+  HttpErrorMapper,
+  HttpServer,
+} from './shared.ports.js';
 
 export interface FastifyHttpServerConfig {
   /** Max request body size in bytes. */
@@ -12,6 +17,9 @@ export interface FastifyHttpServerConfig {
   readonly corsOrigins: readonly string[];
 }
 
+/** Open without a login, so the host can check that the app runs. */
+const OPEN_PATHS: ReadonlySet<string> = new Set(['/health']);
+
 export class FastifyHttpServer implements HttpServer {
   private instance: FastifyInstance | undefined;
 
@@ -19,6 +27,7 @@ export class FastifyHttpServer implements HttpServer {
     private readonly controllers: readonly HttpController[],
     private readonly errors: HttpErrorMapper,
     private readonly logger: FastifyBaseLogger,
+    private readonly access: AccessAuthenticator,
     private readonly options: FastifyHttpServerConfig,
   ) {}
 
@@ -47,6 +56,11 @@ export class FastifyHttpServer implements HttpServer {
         request.log.error({ err: error }, 'Unhandled error');
       }
       return reply.status(response.statusCode).headers(response.headers).send(response.body);
+    });
+    app.addHook('onRequest', async (request) => {
+      if (!OPEN_PATHS.has(request.url.split('?')[0] ?? '')) {
+        await this.access.requireAccess(request);
+      }
     });
     app.setNotFoundHandler((request, reply) =>
       reply.status(404).send({

@@ -23,6 +23,35 @@ for amd64 and arm64. GHCR packages start private: make it public, or give simple
 | Nightly job           | same image, `node dist/src/cli.js refresh-statuses`                           |
 | Copies                | 1 (rate limits are per process)                                               |
 
+### Private: only invited people (Cloudflare Access)
+
+For a deployment only a few people may use (e.g. a household), put the app behind Cloudflare
+Access and let the API check the login too:
+
+1. simple-k8s → the app → **Require login**: allow the exact email addresses, nothing broader.
+   Set the Access session to a month in Zero Trust → Access → Applications, or the Home Screen
+   app asks for a code every day.
+2. Set on the app:
+
+| Setting                    | Value                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------- |
+| `ACCESS_TEAM_DOMAIN`       | `https://<team>.cloudflareaccess.com` (Zero Trust → Settings → Custom pages)     |
+| `ACCESS_AUD`               | the Access application's audience tag (Applications → the app → Overview)        |
+| `TRUST_UNATTESTED_DEVICES` | `true`: everyone who gets past Access is invited, so their answers count in full |
+
+With both Access settings, every request except `GET /health` needs a valid Access login
+(`Cf-Access-Jwt-Assertion` or the `CF_Authorization` cookie), checked against the team's keys,
+issuer and audience. Leave the Turnstile settings unset. The request log keeps paths only, never
+query strings (searches, positions).
+
+What still leaves the server: the web app loads map tiles from `tiles.openfreemap.org`, which
+sees the viewer's IP address and the map area. Cloudflare sees all traffic, as the tunnel and the
+login run through it.
+
+On iPhone: open `https://amex.johann.no` in Safari, sign in with the code from the email, then
+Share → **Add to Home Screen**. The Home Screen app keeps its own login and storage, apart from
+Safari. Shortcuts automations cannot reach it: Bonus purchases are typed in.
+
 Device attestation (Phase 16): without it, every answer counts as `unverified_report` (half a user
 report) and wallet answers get no extra weight. Set these on the app:
 

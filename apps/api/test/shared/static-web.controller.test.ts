@@ -5,6 +5,7 @@ import type { FastifyInstance } from 'fastify';
 import { pino } from 'pino';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DomainHttpErrorMapper } from '../../src/shared/domain-http-error.mapper.js';
+import { NullAccessAuthenticator } from '../../src/shared/null-access.authenticator.js';
 import { FastifyHttpServer } from '../../src/shared/fastify-http.server.js';
 import { HealthController } from '../../src/shared/health.controller.js';
 import { StaticWebController } from '../../src/shared/static-web.controller.js';
@@ -30,6 +31,7 @@ describe('StaticWebController', () => {
       [new HealthController(), new StaticWebController({ root })],
       new DomainHttpErrorMapper(),
       pino({ level: 'silent' }),
+      new NullAccessAuthenticator(),
       { bodyLimit: 1024, trustProxy: false, corsOrigins: [] },
     );
     app = server.app();

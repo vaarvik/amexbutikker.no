@@ -59,6 +59,7 @@ import { Kysely, PostgresDialect } from 'kysely';
 import { Migrator } from 'kysely/migration';
 import pg from 'pg';
 import { join } from 'node:path';
+import { createRemoteJWKSet } from 'jose';
 import { pino } from 'pino';
 import { z } from 'zod';
 import {
@@ -116,6 +117,8 @@ import { PlacesController } from './places/places.controller.js';
 import { PgPlaceRepository } from './places/pg-place.repository.js';
 import { ReportsController } from './reports/reports.controller.js';
 import { FastifyHttpServer } from './shared/fastify-http.server.js';
+import { JwksAccessAuthenticator } from './shared/jwks-access.authenticator.js';
+import { NullAccessAuthenticator } from './shared/null-access.authenticator.js';
 import { NullSharedLinkResolver } from './shared-match/null-shared-link.resolver.js';
 import { SharedMatchController } from './shared-match/shared-match.controller.js';
 import { TrigramGeoPlaceMatcher } from './shared-match/trigram-geo-place.matcher.js';
@@ -156,6 +159,18 @@ export interface ApiConfig {
   /** The web app's static export to serve at `/`; unset serves the API only. */
   readonly webRoot?: string;
   readonly attestation: AttestationConfig;
+  /**
+   * A private deployment behind Cloudflare Access: every request but `/health` must carry a
+   * valid Access login. Unset: open to everyone.
+   */
+  readonly access?: AccessConfig;
+}
+
+export interface AccessConfig {
+  /** The team domain, `https://<team>.cloudflareaccess.com`. */
+  readonly teamDomain: string;
+  /** The Access application's audience tag. */
+  readonly audience: string;
 }
 
 /** Phase 16: proving a device is a real install of the app (docs/hosting.md). */
@@ -271,6 +286,12 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
         turnstileHostnames: commaList,
       })
       .prefault({}),
+    access: z
+      .object({
+        teamDomain: z.url({ protocol: /^https$/ }).transform((url) => new URL(url).origin),
+        audience: z.string().min(1),
+      })
+      .exactOptional(),
     imports: z
       .object({
         overpassUrl: z.url({ protocol: /^https?$/ }).default(DEFAULT_IMPORTS.overpassUrl),
@@ -461,7 +482,22 @@ export class CompositionRoot {
         ),
       ],
       new DomainHttpErrorMapper(),
-      pino({ level: config.logLevel }),
+      pino({
+        level: config.logLevel,
+        // Paths only: query strings hold searches and positions, which stay out of the logs.
+        serializers: {
+          req: (request: { method: string; url: string }) => ({
+            method: request.method,
+            url: request.url.split('?')[0],
+          }),
+        },
+      }),
+      config.access === undefined
+        ? new NullAccessAuthenticator()
+        : new JwksAccessAuthenticator(
+            createRemoteJWKSet(new URL('/cdn-cgi/access/certs', config.access.teamDomain)),
+            { issuer: config.access.teamDomain, audience: config.access.audience },
+          ),
       { bodyLimit: 16 * 1024, trustProxy: config.trustProxy, corsOrigins: config.corsOrigins },
     );
 
@@ -601,6 +637,9 @@ export class CompositionRoot {
           trustProxy: env.TRUST_PROXY,
           webRoot: env.WEB_ROOT,
           corsOrigins: env.CORS_ORIGINS,
+          ...(env.ACCESS_TEAM_DOMAIN === undefined && env.ACCESS_AUD === undefined
+            ? {}
+            : { access: { teamDomain: env.ACCESS_TEAM_DOMAIN, audience: env.ACCESS_AUD } }),
           attestation: {
             trustUnattested: env.TRUST_UNATTESTED_DEVICES,
             appAttestAppIds: env.APP_ATTEST_APP_IDS,

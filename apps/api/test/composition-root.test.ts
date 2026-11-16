@@ -37,4 +37,24 @@ describe('CompositionRoot.fromEnv', () => {
       CompositionRoot.fromEnv(webRoot === undefined ? env : { ...env, WEB_ROOT: webRoot }),
     ).not.toThrow();
   });
+
+  it('locks every path but /health behind Cloudflare Access when it is configured', async () => {
+    const root = CompositionRoot.fromEnv({
+      ...env,
+      ACCESS_TEAM_DOMAIN: 'https://team.cloudflareaccess.com/',
+      ACCESS_AUD: 'aud-tag',
+    });
+    const app = root.httpServer.app();
+
+    const health = await app.inject({ method: 'GET', url: '/health' });
+    const places = await app.inject({ method: 'GET', url: '/v1/places/search?q=kiwi' });
+
+    expect(health.statusCode).toBe(200);
+    expect(places.statusCode).toBe(401);
+    await root.httpServer.close();
+  });
+
+  it('needs both Access settings', () => {
+    expect(() => CompositionRoot.fromEnv({ ...env, ACCESS_AUD: 'aud-tag' })).toThrow();
+  });
 });
