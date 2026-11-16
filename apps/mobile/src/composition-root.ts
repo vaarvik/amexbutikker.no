@@ -46,6 +46,8 @@ import { PeriodMilestoneProgressCalculator } from './spending/period-milestone-p
 import { RandomIdGenerator } from './spending/random-id.generator';
 import type { SpendingPresenter, SpendingService } from './spending/spending.ports';
 import { StoredSpendingService } from './spending/stored-spending.service';
+import { EqualSpendingShareCalculator } from './spending/equal-spending-share.calculator';
+import { KeyValueMemberIdProvider } from './spending/key-value-member-id.provider';
 import { NorwegianStatusPresenter } from './status/norwegian-status.presenter';
 import type { StatusPresenter } from './status/status.ports';
 import { STATUS_COLORS } from './ui/theme';
@@ -182,6 +184,8 @@ export class CompositionRoot implements AppServices {
       replay,
       spendingChanges,
       clock,
+      new EqualSpendingShareCalculator(),
+      new KeyValueMemberIdProvider(AsyncStorage, new RandomIdGenerator(), { key: 'member-id-v1' }),
     );
     const households = new SyncingHouseholdService(
       new FetchHouseholdsApiClient(transport, this.session),

@@ -102,6 +102,8 @@ describe('StoredSpendingService', () => {
       merchant: 'Kaffebrenneriet',
       placeId: null,
       source: 'wallet',
+      paidBy: 'me',
+      split: 'shared',
     });
     expect((await storage.find()).entries).toEqual([purchase]);
     expect((await service.overview()).purchases[0]?.source).toBe('wallet');
@@ -258,6 +260,8 @@ describe('StoredSpendingService', () => {
           merchant: 'Kafé',
           placeId: null,
           source: 'wallet',
+          paidBy: 'partner',
+          split: 'shared',
         },
       },
     ]);
@@ -290,3 +294,60 @@ class FailingNotifier implements SpendingChangeNotifier {
     return Promise.reject(new Error('disk'));
   }
 }
+
+describe('StoredSpendingService members', () => {
+  it('records a private purchase when asked', async () => {
+    const { service } = setup();
+
+    const purchase = await service.recordPurchase({
+      date: '2026-11-07',
+      amountNok: 100,
+      split: 'private',
+    });
+
+    expect(purchase).toMatchObject({ paidBy: 'me', split: 'private' });
+  });
+
+  it('changes who paid and whom it is for', async () => {
+    const { service } = setup();
+    const purchase = await service.recordPurchase({ date: '2026-11-07', amountNok: 100 });
+
+    const overview = await service.updatePurchase(purchase.id, {
+      paidBy: 'partner',
+      split: 'private',
+    });
+
+    expect(overview.purchases[0]).toMatchObject({ paidBy: 'partner', split: 'private' });
+  });
+
+  it('names this phone, trimmed, and ignores an empty name', async () => {
+    const { service } = setup();
+
+    await service.nameMe('  Johann ');
+    const overview = await service.nameMe('   ');
+
+    expect(overview.me).toBe('me');
+    expect(overview.members).toEqual([{ id: 'me', name: 'Johann' }]);
+    expect(overview.shares).toBeNull();
+  });
+
+  it('splits shared purchases once two members paid', async () => {
+    const { service } = setup();
+    await service.nameMe('Johann');
+    await service.recordPurchase({ date: '2026-11-07', amountNok: 300 });
+    const theirs = await service.recordPurchase({ date: '2026-11-07', amountNok: 100 });
+
+    const overview = await service.updatePurchase(theirs.id, {
+      paidBy: 'partner',
+      split: 'shared',
+    });
+
+    expect(overview.shares).toMatchObject({
+      sharedNok: 400,
+      members: [
+        { member: { id: 'me', name: 'Johann' }, paidSharedNok: 300, balanceNok: 100 },
+        { member: { id: 'partner', name: '' }, paidSharedNok: 100, balanceNok: -100 },
+      ],
+    });
+  });
+});

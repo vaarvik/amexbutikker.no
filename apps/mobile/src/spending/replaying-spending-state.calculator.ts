@@ -1,10 +1,11 @@
-import type { Milestone, SpendingChange, SpendingState } from './spending.model';
+import type { Milestone, SpendingChange, SpendingEntry, SpendingState } from './spending.model';
 import type { SpendingStateCalculator } from './spending.ports';
 
 /**
  * Replays spending changes. Items are keyed by id: adding one that exists or was removed does
  * nothing, and a removal is remembered in `removedIds` so it stays final. `card_set` replaces the
- * card and its goals and keeps the user's own goals.
+ * card and its goals and keeps the user's own goals. `purchase_updated` and `member_named`
+ * replace what they name; the last one replayed wins.
  */
 export class ReplayingSpendingStateCalculator implements SpendingStateCalculator {
   public apply(state: SpendingState, changes: readonly SpendingChange[]): SpendingState {
@@ -14,6 +15,12 @@ export class ReplayingSpendingStateCalculator implements SpendingStateCalculator
   public changesFor(state: SpendingState, at: string): SpendingChange[] {
     const cardGoals = state.milestones.filter((milestone) => milestone.programmeId !== null);
     return [
+      ...state.members.map((member) => ({
+        id: `snapshot:member:${member.id}`,
+        at,
+        kind: 'member_named' as const,
+        member,
+      })),
       ...(state.card === null && cardGoals.length === 0
         ? []
         : [
@@ -65,6 +72,24 @@ export class ReplayingSpendingStateCalculator implements SpendingStateCalculator
           state.milestones.some((milestone) => milestone.id === change.milestone.id)
           ? state
           : { ...state, milestones: [...state.milestones, change.milestone] };
+      case 'purchase_updated':
+        return {
+          ...state,
+          entries: state.entries.map((entry): SpendingEntry =>
+            entry.kind === 'purchase' && entry.id === change.entryId
+              ? { ...entry, paidBy: change.paidBy, split: change.split }
+              : entry,
+          ),
+        };
+      case 'member_named':
+        return {
+          ...state,
+          members: state.members.some((member) => member.id === change.member.id)
+            ? state.members.map((member) =>
+                member.id === change.member.id ? change.member : member,
+              )
+            : [...state.members, change.member],
+        };
       case 'milestone_removed':
         return this.withMilestones(
           { ...state, removedIds: this.remember(state, change.milestoneId) },

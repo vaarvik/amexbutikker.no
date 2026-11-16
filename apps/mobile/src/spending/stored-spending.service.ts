@@ -6,15 +6,19 @@ import type {
   SpendingChange,
   SpendingState,
 } from './spending.model';
+import { MEMBER_NAME_MAX_LENGTH } from './spending.model';
 import type {
   IdGenerator,
   LocalDateProvider,
+  MemberIdProvider,
   MilestoneProgressCalculator,
   NewMilestone,
   NewPurchase,
+  PurchaseUpdate,
   SpendingOverview,
   SpendingChangeNotifier,
   SpendingService,
+  SpendingShareCalculator,
   SpendingStateCalculator,
   SpendingStorage,
   YearSpendingSummarizer,
@@ -42,6 +46,8 @@ export class StoredSpendingService implements SpendingService {
     private readonly replay: SpendingStateCalculator,
     private readonly notifier: SpendingChangeNotifier,
     private readonly clock: Clock,
+    private readonly shares: SpendingShareCalculator,
+    private readonly me: MemberIdProvider,
   ) {}
 
   public async overview(): Promise<SpendingOverview> {
@@ -62,6 +68,8 @@ export class StoredSpendingService implements SpendingService {
       merchant: purchase.merchant ?? null,
       placeId: purchase.placeId ?? null,
       source: purchase.source ?? 'manual',
+      paidBy: await this.me.current(),
+      split: purchase.split ?? 'shared',
     };
     await this.change(() => [{ kind: 'entry_added', entry: added }]);
     return added;
@@ -84,6 +92,21 @@ export class StoredSpendingService implements SpendingService {
 
   public removeEntry(id: string): Promise<SpendingOverview> {
     return this.change(() => [{ kind: 'entry_removed', entryId: id }]);
+  }
+
+  public updatePurchase(id: string, update: PurchaseUpdate): Promise<SpendingOverview> {
+    return this.change(() => [
+      { kind: 'purchase_updated', entryId: id, paidBy: update.paidBy, split: update.split },
+    ]);
+  }
+
+  public async nameMe(name: string): Promise<SpendingOverview> {
+    const trimmed = name.trim().slice(0, MEMBER_NAME_MAX_LENGTH);
+    if (trimmed === '') {
+      return this.overview();
+    }
+    const id = await this.me.current();
+    return this.change(() => [{ kind: 'member_named', member: { id, name: trimmed } }]);
   }
 
   public addMilestone(milestone: NewMilestone): Promise<SpendingOverview> {
@@ -155,8 +178,9 @@ export class StoredSpendingService implements SpendingService {
     return this.present(next);
   }
 
-  private present(state: SpendingState): SpendingOverview {
+  private async present(state: SpendingState): Promise<SpendingOverview> {
     const today = this.dates.today();
+    const me = await this.me.current();
     const purchases = state.entries
       .filter((entry): entry is Purchase => entry.kind === 'purchase')
       .reverse()
@@ -169,6 +193,9 @@ export class StoredSpendingService implements SpendingService {
       purchases,
       year: this.years.summarize(purchases, today),
       card: state.card,
+      me,
+      members: state.members,
+      shares: this.shares.calculate(purchases, state.members),
     };
   }
 }

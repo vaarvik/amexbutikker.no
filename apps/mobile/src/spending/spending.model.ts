@@ -21,6 +21,14 @@ export const SpendingSourceSchema: z.ZodType<SpendingSource> = z.enum([
   'statement',
 ]);
 
+/**
+ * Who a purchase is for, in a household sharing a card: `shared` (split equally between the
+ * members, the default) or `private` (only the one who paid).
+ */
+export type PurchaseSplit = 'shared' | 'private';
+
+export const PurchaseSplitSchema: z.ZodType<PurchaseSplit> = z.enum(['shared', 'private']);
+
 /** One purchase on the card. Whole kroner. */
 export interface Purchase {
   readonly kind: 'purchase';
@@ -30,6 +38,12 @@ export interface Purchase {
   readonly merchant: string | null;
   readonly placeId: PlaceId | null;
   readonly source: SpendingSource;
+  /**
+   * The member (phone) that paid: the one that recorded it, until someone changes it. Null for
+   * purchases stored before members existed.
+   */
+  readonly paidBy: string | null;
+  readonly split: PurchaseSplit;
 }
 
 /**
@@ -57,6 +71,9 @@ export const SpendingEntrySchema: z.ZodType<SpendingEntry> = z.discriminatedUnio
     merchant: z.string().nullable(),
     placeId: PlaceIdSchema.nullable(),
     source: SpendingSourceSchema,
+    // Stored before members: nobody, shared.
+    paidBy: z.string().min(1).nullable().default(null),
+    split: PurchaseSplitSchema.default('shared'),
   }),
   z.object({
     kind: z.literal('total'),
@@ -114,6 +131,22 @@ export const ChosenCardSchema: z.ZodType<ChosenCard> = z.object({
   shortName: z.string().min(1),
 });
 
+/**
+ * One phone in the household, by the name its owner gave it. Every phone has a member id, also
+ * without a household; the id is random and the name is sealed like the rest of spending.
+ */
+export interface SpendingMember {
+  readonly id: string;
+  readonly name: string;
+}
+
+export const MEMBER_NAME_MAX_LENGTH = 40;
+
+export const SpendingMemberSchema: z.ZodType<SpendingMember> = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(MEMBER_NAME_MAX_LENGTH),
+});
+
 /** Everything the Bonus tab stores, as one document. */
 export interface SpendingState {
   /** The card the user has; the Bonus tab always tracks its goals. */
@@ -125,6 +158,8 @@ export interface SpendingState {
    * removal must stay final even when the addition arrives again or later.
    */
   readonly removedIds: readonly string[];
+  /** The members that have named themselves. */
+  readonly members: readonly SpendingMember[];
 }
 
 export const SpendingStateSchema: z.ZodType<SpendingState> = z.object({
@@ -134,6 +169,8 @@ export const SpendingStateSchema: z.ZodType<SpendingState> = z.object({
   entries: z.array(SpendingEntrySchema),
   // Stored before households: nothing removed.
   removedIds: z.array(z.string()).default([]),
+  // Stored before members: none.
+  members: z.array(SpendingMemberSchema).default([]),
 });
 
 export const EMPTY_SPENDING_STATE: SpendingState = {
@@ -141,6 +178,7 @@ export const EMPTY_SPENDING_STATE: SpendingState = {
   milestones: [],
   entries: [],
   removedIds: [],
+  members: [],
 };
 
 /**
@@ -175,6 +213,28 @@ export interface MonthSpending {
   readonly nok: number;
 }
 
+/** What one member paid, and where they stand on the shared purchases. */
+export interface MemberShare {
+  readonly member: SpendingMember;
+  readonly paidSharedNok: number;
+  readonly privateNok: number;
+  /**
+   * Paid for shared purchases minus an equal share of them: above 0 the others owe this member,
+   * below 0 this member owes.
+   */
+  readonly balanceNok: number;
+}
+
+/** How a household's purchases split between its members. */
+export interface SpendingShares {
+  /** Shared purchases with a known payer. */
+  readonly sharedNok: number;
+  /** In member order: the named members, then anyone who paid without a name. */
+  readonly members: readonly MemberShare[];
+  /** Purchases from before members, which count for nobody. */
+  readonly unassignedNok: number;
+}
+
 /** Purchases registered in the app this calendar year, for the Bonus tab's progress. */
 export interface YearSpending {
   readonly year: number;
@@ -190,6 +250,8 @@ export interface YearSpending {
  * - `entry_added` / `entry_removed`: purchases and typed totals, by id; a removal is final.
  * - `card_set`: the household's card and its goals, replacing the previous card's goals.
  * - `milestone_added` / `milestone_removed`: the user's own goals, e.g. a welcome bonus.
+ * - `purchase_updated`: who paid and whether it is shared; the latest wins.
+ * - `member_named`: a phone's owner names themselves; the latest wins.
  */
 export type SpendingChange = { readonly id: string; readonly at: string } & (
   | { readonly kind: 'entry_added'; readonly entry: SpendingEntry }
@@ -201,6 +263,13 @@ export type SpendingChange = { readonly id: string; readonly at: string } & (
     }
   | { readonly kind: 'milestone_added'; readonly milestone: Milestone }
   | { readonly kind: 'milestone_removed'; readonly milestoneId: string }
+  | {
+      readonly kind: 'purchase_updated';
+      readonly entryId: string;
+      readonly paidBy: string | null;
+      readonly split: PurchaseSplit;
+    }
+  | { readonly kind: 'member_named'; readonly member: SpendingMember }
 );
 
 const changeBase = { id: z.string().min(1), at: z.iso.datetime() };
@@ -220,4 +289,12 @@ export const SpendingChangeSchema: z.ZodType<SpendingChange> = z.discriminatedUn
     kind: z.literal('milestone_removed'),
     milestoneId: z.string().min(1),
   }),
+  z.object({
+    ...changeBase,
+    kind: z.literal('purchase_updated'),
+    entryId: z.string().min(1),
+    paidBy: z.string().min(1).nullable(),
+    split: PurchaseSplitSchema,
+  }),
+  z.object({ ...changeBase, kind: z.literal('member_named'), member: SpendingMemberSchema }),
 ]);

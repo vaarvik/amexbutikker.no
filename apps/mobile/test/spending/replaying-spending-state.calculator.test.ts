@@ -81,6 +81,7 @@ describe('ReplayingSpendingStateCalculator', () => {
       milestones: [goal, own],
       entries: [purchase('2026-11-01', 100, 'p1'), total('2026-11-02', 900, 'g1')],
       removedIds: [],
+      members: [{ id: 'me', name: 'Johann' }],
     };
 
     const changes = calculator.changesFor(state, AT);
@@ -92,5 +93,37 @@ describe('ReplayingSpendingStateCalculator', () => {
 
   it('has nothing to share for an empty state', () => {
     expect(calculator.changesFor(EMPTY_SPENDING_STATE, AT)).toEqual([]);
+  });
+
+  it('updates who paid a purchase, the latest change winning, and skips other ids', () => {
+    const start: SpendingState = {
+      ...EMPTY_SPENDING_STATE,
+      entries: [purchase('2026-11-01', 100, 'p1'), total('2026-11-02', 900, 'g1')],
+    };
+
+    const state = calculator.apply(start, [
+      { id: 'u1', at: AT, kind: 'purchase_updated', entryId: 'p1', paidBy: 'a', split: 'private' },
+      { id: 'u2', at: AT, kind: 'purchase_updated', entryId: 'p1', paidBy: 'b', split: 'shared' },
+      { id: 'u3', at: AT, kind: 'purchase_updated', entryId: 'g1', paidBy: 'a', split: 'shared' },
+      { id: 'u4', at: AT, kind: 'purchase_updated', entryId: 'x', paidBy: 'a', split: 'shared' },
+    ]);
+
+    expect(state.entries).toEqual([
+      { ...purchase('2026-11-01', 100, 'p1'), paidBy: 'b', split: 'shared' },
+      total('2026-11-02', 900, 'g1'),
+    ]);
+  });
+
+  it('adds a member and renames it', () => {
+    const state = calculator.apply(EMPTY_SPENDING_STATE, [
+      { id: 'n1', at: AT, kind: 'member_named', member: { id: 'a', name: 'Jo' } },
+      { id: 'n2', at: AT, kind: 'member_named', member: { id: 'b', name: 'Kari' } },
+      { id: 'n3', at: AT, kind: 'member_named', member: { id: 'a', name: 'Johann' } },
+    ]);
+
+    expect(state.members).toEqual([
+      { id: 'a', name: 'Johann' },
+      { id: 'b', name: 'Kari' },
+    ]);
   });
 });

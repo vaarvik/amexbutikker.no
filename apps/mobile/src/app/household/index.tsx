@@ -6,12 +6,68 @@ import {
   Share,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import type { HouseholdStatus } from '../../households/households.model';
 import { QrCode } from '../../ui/qr-code';
 import { useServices } from '../../ui/services';
+import { MEMBER_NAME_MAX_LENGTH } from '../../spending/spending.model';
 import { STATUS_COLORS, usePalette } from '../../ui/theme';
+
+/** "Ditt navn": how the other phones show who paid. Saved when the field is left. */
+function NameField() {
+  const { spending, households } = useServices();
+  const palette = usePalette();
+  const [name, setName] = useState('');
+  const [saved, setSaved] = useState('');
+
+  useEffect(() => {
+    void spending.overview().then((overview) => {
+      const mine = overview.members.find((member) => member.id === overview.me)?.name ?? '';
+      setName(mine);
+      setSaved(mine);
+    });
+  }, [spending]);
+
+  const save = () => {
+    if (name.trim() === '' || name.trim() === saved) {
+      return;
+    }
+    void spending
+      .nameMe(name)
+      .then(() => {
+        setSaved(name.trim());
+        return households.sync();
+      })
+      .catch(() => undefined);
+  };
+
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.label, { color: palette.muted }]}>Ditt navn</Text>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        onBlur={save}
+        onSubmitEditing={save}
+        placeholder="F.eks. Johann"
+        placeholderTextColor={palette.muted}
+        maxLength={MEMBER_NAME_MAX_LENGTH}
+        autoCapitalize="words"
+        returnKeyType="done"
+        accessibilityLabel="Ditt navn"
+        style={[
+          styles.input,
+          { color: palette.text, backgroundColor: palette.card, borderColor: palette.border },
+        ]}
+      />
+      <Text style={[styles.hint, { color: palette.muted }]}>
+        {saved === '' ? 'Vises på kjøpene du betaler.' : 'Lagret. Vises på kjøpene du betaler.'}
+      </Text>
+    </View>
+  );
+}
 
 /** Settings → Del med husstand: start a household, show its invite, or leave it. */
 export default function HouseholdScreen() {
@@ -83,6 +139,7 @@ export default function HouseholdScreen() {
               ? 'Bare deg så langt'
               : `${String(status.memberCount)} telefoner deler Bonus`}
           </Text>
+          <NameField />
           <Text style={[styles.body, muted]}>
             Den andre skanner koden med kameraet på sin telefon.
           </Text>
@@ -137,4 +194,14 @@ const styles = StyleSheet.create({
   outlined: { borderWidth: 1.5 },
   buttonText: { fontSize: 17, fontWeight: '600' },
   later: { alignItems: 'center', paddingVertical: 8 },
+  field: { gap: 6 },
+  label: { fontSize: 13, fontWeight: '600', letterSpacing: 0.2 },
+  input: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 17,
+  },
+  hint: { fontSize: 13 },
 });

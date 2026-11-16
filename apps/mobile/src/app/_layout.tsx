@@ -53,6 +53,7 @@ export default function RootLayout() {
             name="spending/purchase"
             options={{ title: 'Legg til kjøp', presentation: 'modal' }}
           />
+          <Stack.Screen name="spending/split" options={{ title: 'Kjøp', presentation: 'modal' }} />
           <Stack.Screen
             name="spending/total"
             options={{ title: 'Oppdater total', presentation: 'modal' }}

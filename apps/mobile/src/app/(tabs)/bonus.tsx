@@ -2,8 +2,15 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { MilestoneProgress, Purchase, YearSpending } from '../../spending/spending.model';
+import type {
+  MilestoneProgress,
+  Purchase,
+  SpendingShares,
+  YearSpending,
+} from '../../spending/spending.model';
 import type { SpendingOverview } from '../../spending/spending.ports';
+import { Choice } from '../../ui/form';
+import { memberLabel } from '../../ui/members';
 import { useServices } from '../../ui/services';
 import { STATUS_COLORS, usePalette } from '../../ui/theme';
 
@@ -25,6 +32,19 @@ const MONTH_NAMES = [
   'desember',
 ] as const;
 const CHART_HEIGHT = 96;
+
+/** Which purchases the list shows: all, the shared ones, or those one member paid. */
+type PurchaseFilter = 'all' | 'shared' | `paid:${string}`;
+
+function matches(purchase: Purchase, filter: PurchaseFilter): boolean {
+  if (filter === 'all') {
+    return true;
+  }
+  if (filter === 'shared') {
+    return purchase.split === 'shared';
+  }
+  return purchase.paidBy === filter.slice('paid:'.length);
+}
 
 /**
  * The goal shown big at the top: the card's first goal not yet reached (its companion ticket),
@@ -56,6 +76,7 @@ export default function BonusScreen() {
   const [sharedWith, setSharedWith] = useState<number | null>(null);
   // Removing a purchase takes two taps: the first arms the button, the second removes.
   const [armed, setArmed] = useState<string | null>(null);
+  const [filter, setFilter] = useState<PurchaseFilter>('all');
 
   useFocusEffect(
     useCallback(() => {
@@ -87,6 +108,25 @@ export default function BonusScreen() {
   const muted = { color: palette.muted };
   const lead = overview === null ? null : leadOf(overview.progress);
   const others = overview?.progress.filter((item) => item !== lead) ?? [];
+  const shares = overview?.shares ?? null;
+  const filters: { readonly value: PurchaseFilter; readonly label: string }[] =
+    overview === null || shares === null
+      ? []
+      : [
+          { value: 'all', label: 'Alle' },
+          { value: 'shared', label: 'Felles' },
+          ...shares.members.map((share) => ({
+            value: `paid:${share.member.id}` as const,
+            label: memberLabel(share.member.id, overview.members, overview.me),
+          })),
+        ];
+  const shown =
+    overview?.purchases.filter((purchase) => matches(purchase, shares === null ? 'all' : filter)) ??
+    [];
+  const unnamed =
+    overview !== null &&
+    sharedWith !== null &&
+    !overview.members.some((member) => member.id === overview.me);
 
   return (
     <ScrollView
@@ -126,14 +166,42 @@ export default function BonusScreen() {
           <Text style={[styles.primaryText, { color: palette.onAccent }]}>Legg til kjøp</Text>
         </Pressable>
 
+        {unnamed ? (
+          <Pressable
+            onPress={() => {
+              router.push('/household');
+            }}
+            accessibilityRole="button"
+            style={[styles.card, { backgroundColor: palette.card }]}
+          >
+            <Text style={{ color: palette.text }}>
+              Skriv navnet ditt, så ser dere hvem som betalte.
+            </Text>
+            <Text style={[styles.action, { color: palette.accent }]}>Skriv navn ›</Text>
+          </Pressable>
+        ) : null}
+
+        {overview === null || shares === null ? null : (
+          <SharesCard shares={shares} overview={overview} />
+        )}
+
         {overview !== null && overview.purchases.length > 0 ? (
           <>
             <Text style={[styles.section, muted]}>SISTE KJØP</Text>
+            {filters.length === 0 ? null : (
+              <Choice value={filter} options={filters} onChange={setFilter} />
+            )}
             <View style={[styles.list, { backgroundColor: palette.card }]}>
-              {overview.purchases.slice(0, SHOWN_PURCHASES).map((purchase, index) => (
+              {shown.length === 0 ? <Text style={[styles.row, muted]}>Ingen kjøp her.</Text> : null}
+              {shown.slice(0, SHOWN_PURCHASES).map((purchase, index) => (
                 <PurchaseRow
                   key={purchase.id}
                   purchase={purchase}
+                  payer={
+                    shares === null
+                      ? null
+                      : memberLabel(purchase.paidBy, overview.members, overview.me)
+                  }
                   first={index === 0}
                   armed={armed === purchase.id}
                   onRemove={() => {
@@ -424,8 +492,65 @@ function MilestoneCard(props: { readonly progress: MilestoneProgress }) {
   );
 }
 
+/** The household's shared spending and who owes whom. */
+function SharesCard(props: {
+  readonly shares: SpendingShares;
+  readonly overview: SpendingOverview;
+}) {
+  const { spendingPresenter: format } = useServices();
+  const palette = usePalette();
+  const { shares, overview } = props;
+  const name = (id: string) => memberLabel(id, overview.members, overview.me);
+  const mine = shares.members.find((share) => share.member.id === overview.me);
+  const others = shares.members.filter((share) => share.member.id !== overview.me);
+  const other = others.length === 1 ? others[0] : undefined;
+
+  const balance = (() => {
+    if (mine === undefined) {
+      return null;
+    }
+    const amount = format.amount(Math.abs(mine.balanceNok));
+    if (mine.balanceNok === 0) {
+      return 'Dere er skuls.';
+    }
+    if (other !== undefined) {
+      return mine.balanceNok > 0
+        ? `${name(other.member.id)} skylder deg ${amount}.`
+        : `Du skylder ${name(other.member.id)} ${amount}.`;
+    }
+    return mine.balanceNok > 0
+      ? `Du har betalt ${amount} mer enn din del.`
+      : `Du har betalt ${amount} mindre enn din del.`;
+  })();
+
+  return (
+    <View style={[styles.card, { backgroundColor: palette.card }]}>
+      <Text style={[styles.cardTitle, { color: palette.text }]}>Felles</Text>
+      <Text style={[styles.amount, { color: palette.text }]}>
+        {format.amount(shares.sharedNok)}
+      </Text>
+      {balance === null ? null : <Text style={{ color: palette.text }}>{balance}</Text>}
+      {shares.members.map((share) => (
+        <View key={share.member.id} style={styles.shareRow}>
+          <Text style={[styles.grow, { color: palette.text }]}>{name(share.member.id)}</Text>
+          <Text style={[styles.small, { color: palette.muted }]}>
+            felles {format.amount(share.paidSharedNok)} · privat {format.amount(share.privateNok)}
+          </Text>
+        </View>
+      ))}
+      {shares.unassignedNok > 0 ? (
+        <Text style={[styles.small, { color: palette.muted }]}>
+          {format.amount(shares.unassignedNok)} fra før er ikke fordelt.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 function PurchaseRow(props: {
   readonly purchase: Purchase;
+  /** Who paid, shown when the household has members; null otherwise. */
+  readonly payer: string | null;
   readonly first: boolean;
   readonly armed: boolean;
   readonly onRemove: () => void;
@@ -442,15 +567,24 @@ function PurchaseRow(props: {
           : { borderTopColor: palette.border, borderTopWidth: StyleSheet.hairlineWidth },
       ]}
     >
-      <View style={styles.grow}>
+      <Pressable
+        onPress={() => {
+          router.push({ pathname: '/spending/split', params: { id: purchase.id } });
+        }}
+        accessibilityRole="button"
+        accessibilityHint="Endre hvem som betalte"
+        style={styles.grow}
+      >
         <Text style={{ color: palette.text }} numberOfLines={1}>
           {purchase.merchant ?? 'Kjøp'}
         </Text>
         <Text style={[styles.small, { color: palette.muted }]}>
           {format.date(purchase.date)}
           {purchase.source === 'wallet' ? ' · Apple Pay' : ''}
+          {props.payer === null ? '' : ` · ${props.payer}`}
+          {purchase.split === 'private' ? ' · Privat' : ''}
         </Text>
-      </View>
+      </Pressable>
       <Text style={[styles.rowAmount, { color: palette.text }]}>
         {format.amount(purchase.amountNok)}
       </Text>
@@ -535,5 +669,6 @@ const styles = StyleSheet.create({
   list: { borderRadius: 14, paddingHorizontal: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11 },
   rowAmount: { fontSize: 16, fontWeight: '600' },
+  shareRow: { flexDirection: 'row', alignItems: 'baseline', gap: 12 },
   note: { fontSize: 13, paddingHorizontal: 16 },
 });

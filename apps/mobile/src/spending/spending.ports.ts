@@ -6,8 +6,11 @@ import type {
   MilestonePeriod,
   MilestoneProgress,
   Purchase,
+  PurchaseSplit,
   SpendingChange,
   SpendingEntry,
+  SpendingMember,
+  SpendingShares,
   SpendingSource,
   SpendingState,
   YearSpending,
@@ -55,6 +58,20 @@ export interface YearSpendingSummarizer {
   summarize(purchases: readonly Purchase[], today: LocalDate): YearSpending;
 }
 
+/** How purchases split between a household's members. Pure. */
+export interface SpendingShareCalculator {
+  /** Null with fewer than two members: there is nothing to split. */
+  calculate(
+    purchases: readonly Purchase[],
+    members: readonly SpendingMember[],
+  ): SpendingShares | null;
+}
+
+/** This phone's member id: random, made once and kept on the phone. */
+export interface MemberIdProvider {
+  current(): Promise<string>;
+}
+
 /** Today's date on the phone. */
 export interface LocalDateProvider {
   today(): LocalDate;
@@ -72,6 +89,14 @@ export interface NewPurchase {
   readonly placeId?: PlaceId;
   /** Defaults to `manual`. */
   readonly source?: SpendingSource;
+  /** Defaults to `shared`. Paid by this phone's member. */
+  readonly split?: PurchaseSplit;
+}
+
+/** A change to who paid a purchase and whom it is for. */
+export interface PurchaseUpdate {
+  readonly paidBy: string | null;
+  readonly split: PurchaseSplit;
 }
 
 export interface NewMilestone {
@@ -90,6 +115,12 @@ export interface SpendingOverview {
   readonly year: YearSpending;
   /** The card the user has chosen; null until then. */
   readonly card: ChosenCard | null;
+  /** This phone's member id. */
+  readonly me: string;
+  /** The household's named members, this phone's included once it is named. */
+  readonly members: readonly SpendingMember[];
+  /** Null with fewer than two members. */
+  readonly shares: SpendingShares | null;
 }
 
 /** Everything the Bonus tab does. Every change returns the new overview. */
@@ -101,6 +132,10 @@ export interface SpendingService {
   /** Records "spent so far in this milestone's period", as of today. */
   updateTotal(milestoneId: string, amountNok: number): Promise<SpendingOverview>;
   removeEntry(id: string): Promise<SpendingOverview>;
+  /** Changes who paid a purchase and whom it is for. */
+  updatePurchase(id: string, update: PurchaseUpdate): Promise<SpendingOverview>;
+  /** Names this phone's member, as the other phones in the household see it. */
+  nameMe(name: string): Promise<SpendingOverview>;
   addMilestone(milestone: NewMilestone): Promise<SpendingOverview>;
   /**
    * Chooses the user's card (null: none). Its yearly goals are added; goals of a card chosen

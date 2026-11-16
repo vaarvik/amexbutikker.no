@@ -20,6 +20,7 @@ describe('KeyValueSpendingStorage', () => {
       milestones: [milestone({ period: { kind: 'window', start: '2026-02-07', months: 9 } })],
       entries: [purchase('2026-03-01', 1_200), total('2026-03-02', 5_000)],
       removedIds: ['gone'],
+      members: [{ id: 'me', name: 'Johann' }],
     };
 
     await storage.save(state);

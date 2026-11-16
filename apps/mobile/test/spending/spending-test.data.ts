@@ -1,5 +1,6 @@
 import type { Milestone, Purchase, SpentTotal } from '../../src/spending/spending.model';
 import type { Clock } from '@amexbutikker/contracts';
+import { EqualSpendingShareCalculator } from '../../src/spending/equal-spending-share.calculator';
 import { CalendarYearSpendingSummarizer } from '../../src/spending/calendar-year-spending.summarizer';
 import { NullSpendingChangeNotifier } from '../../src/spending/null-spending-change.notifier';
 import { PeriodMilestoneProgressCalculator } from '../../src/spending/period-milestone-progress.calculator';
@@ -7,6 +8,7 @@ import { ReplayingSpendingStateCalculator } from '../../src/spending/replaying-s
 import type {
   IdGenerator,
   LocalDateProvider,
+  MemberIdProvider,
   SpendingChangeNotifier,
   SpendingStorage,
 } from '../../src/spending/spending.ports';
@@ -29,7 +31,17 @@ export function purchase(
   amountNok: number,
   id = `p-${date}-${String(amountNok)}`,
 ): Purchase {
-  return { kind: 'purchase', id, date, amountNok, merchant: null, placeId: null, source: 'manual' };
+  return {
+    kind: 'purchase',
+    id,
+    date,
+    amountNok,
+    merchant: null,
+    placeId: null,
+    source: 'manual',
+    paidBy: null,
+    split: 'shared',
+  };
 }
 
 export function total(
@@ -66,11 +78,20 @@ export class FixedClock implements Clock {
   }
 }
 
+export class FixedMemberIdProvider implements MemberIdProvider {
+  public constructor(public id = 'me') {}
+
+  public current(): Promise<string> {
+    return Promise.resolve(this.id);
+  }
+}
+
 /** A spending service with the real calculators, counting ids and a fixed clock. */
 export function spendingService(
   storage: SpendingStorage,
   dates: LocalDateProvider = new FixedLocalDateProvider('2026-11-07'),
   notifier: SpendingChangeNotifier = new NullSpendingChangeNotifier(),
+  me: MemberIdProvider = new FixedMemberIdProvider(),
 ): StoredSpendingService {
   return new StoredSpendingService(
     storage,
@@ -81,5 +102,7 @@ export function spendingService(
     new ReplayingSpendingStateCalculator(),
     notifier,
     new FixedClock(),
+    new EqualSpendingShareCalculator(),
+    me,
   );
 }
