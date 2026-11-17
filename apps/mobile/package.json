@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "web:export": "expo export --platform web",
+    "web:export": "expo export --platform web && node scripts/add-pwa-head.mts dist",
     "web:serve": "expo serve"
   },
   "dependencies": {
