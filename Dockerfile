@@ -39,4 +39,5 @@ COPY --from=web --chown=node:node /web ./web
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
-CMD ["node", "dist/src/server.js"]
+# Migrates to the latest schema, then serves. Migrations are idempotent, so every start runs them.
+CMD ["sh", "-c", "node dist/src/migrate.js && exec node dist/src/server.js"]

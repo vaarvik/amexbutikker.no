@@ -2,12 +2,12 @@
 # builds of this repo's images (never one running, a rollback target, one of
 # the newest 20 or younger than 7 days). It never runs on a push; builds don't use it.
 name: simple-k8s image cleanup
-run-name: "simple-k8s image cleanup ${{ inputs.mode }} ${{ inputs.request }}"
+run-name: 'simple-k8s image cleanup ${{ inputs.mode }} ${{ inputs.request }}'
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "preview (deletes nothing) or delete (only the ids from a preview)"
+        description: 'preview (deletes nothing) or delete (only the ids from a preview)'
         type: choice
         options: [preview, delete]
         default: preview
@@ -20,21 +20,21 @@ on:
         type: string
         required: true
       keep_newest:
-        description: "Keep the newest N builds (at least 20)"
+        description: 'Keep the newest N builds (at least 20)'
         type: string
-        default: "20"
+        default: '20'
       min_age_days:
-        description: "Keep builds younger than D days (at least 7)"
+        description: 'Keep builds younger than D days (at least 7)'
         type: string
-        default: "7"
+        default: '7'
       keep:
-        description: "Digests and tags that must stay (running, rollback targets)"
+        description: 'Digests and tags that must stay (running, rollback targets)'
         type: string
-        default: ""
+        default: ''
       ids:
-        description: "delete: the version ids from the preview"
+        description: 'delete: the version ids from the preview'
         type: string
-        default: ""
+        default: ''
 permissions: {}
 jobs:
   cleanup:

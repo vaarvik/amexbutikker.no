@@ -17,7 +17,7 @@ for amd64 and arm64. GHCR packages start private: make it public, or give simple
 | Image                 | `ghcr.io/vaarvik/amexbutikker:main` (or a `sha-…` tag to pin a release)       |
 | Port                  | `3000`; health check `GET /health`                                            |
 | URL                   | `amex.johann.no`                                                              |
-| Command               | `sh -c "node dist/src/migrate.js && node dist/src/server.js"`                 |
+| Command               | leave empty: the image migrates, then serves                                  |
 | Database              | Postgres 16 with the PostGIS, pg_trgm and unaccent extensions available       |
 | Environment           | `DATABASE_URL`, `DEVICE_TOKEN_SECRET` (secret, 32+ chars), `TRUST_PROXY=true` |
 | Nightly job           | same image, `node dist/src/cli.js refresh-statuses`                           |
