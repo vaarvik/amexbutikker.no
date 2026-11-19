@@ -24,11 +24,25 @@ export class M0007TrigramOperatorCostsMigration implements Migration {
     await this.setCost(db, 1);
   }
 
+  /**
+   * The functions belong to the extension's owner. Where the app's login doesn't own them (a
+   * managed database where a trusted extension was created by the app: its objects belong to the
+   * bootstrap superuser), ALTER FUNCTION is refused; searches then work at the default cost, only
+   * slower. The DO block catches that one refusal inside the migration's transaction and says so
+   * as a warning; any other error still fails the migration.
+   */
   private async setCost(db: Kysely<unknown>, cost: number): Promise<void> {
     for (const name of TRIGRAM_OPERATORS) {
-      await sql`ALTER FUNCTION ${sql.raw(name)}(text, text) COST ${sql.raw(String(cost))}`.execute(
-        db,
-      );
+      const statement = `ALTER FUNCTION ${name}(text, text) COST ${String(cost)}`;
+      await sql`
+        DO $$
+        BEGIN
+          EXECUTE ${sql.lit(statement)};
+        EXCEPTION WHEN insufficient_privilege THEN
+          RAISE WARNING '% skipped: the login does not own the function (searches use the default cost)', ${sql.lit(name)};
+        END
+        $$
+      `.execute(db);
     }
   }
 }
