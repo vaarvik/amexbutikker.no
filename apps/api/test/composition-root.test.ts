@@ -38,7 +38,7 @@ describe('CompositionRoot.fromEnv', () => {
     ).not.toThrow();
   });
 
-  it('locks every path but /health behind Cloudflare Access when it is configured', async () => {
+  it('locks the API behind Cloudflare Access when it is configured', async () => {
     const root = CompositionRoot.fromEnv({
       ...env,
       ACCESS_TEAM_DOMAIN: 'https://team.cloudflareaccess.com/',
@@ -56,5 +56,49 @@ describe('CompositionRoot.fromEnv', () => {
 
   it('needs both Access settings', () => {
     expect(() => CompositionRoot.fromEnv({ ...env, ACCESS_AUD: 'aud-tag' })).toThrow();
+  });
+
+  it('locks the API behind passkeys, leaving sign-in open', async () => {
+    const root = CompositionRoot.fromEnv({
+      ...env,
+      PASSKEY_ORIGIN: 'https://amex.example.test',
+      PASSKEY_INVITE_CODE: 'blue-otter-42',
+    });
+    const app = root.httpServer.app();
+
+    const places = await app.inject({ method: 'GET', url: '/v1/places/search?q=kiwi' });
+    const session = await app.inject({ method: 'POST', url: '/v1/access/session' });
+    const signIn = await app.inject({ method: 'POST', url: '/v1/access/sign-in/options' });
+    const wrong = await app.inject({
+      method: 'POST',
+      url: '/v1/access/registration/options',
+      payload: { inviteCode: 'red-otter-42' },
+    });
+    const invited = await app.inject({
+      method: 'POST',
+      url: '/v1/access/registration/options',
+      payload: { inviteCode: 'blue-otter-42' },
+    });
+
+    expect(places.statusCode).toBe(401);
+    expect(session.statusCode).toBe(401);
+    expect(signIn.json()).toMatchObject({ options: { rpId: 'amex.example.test' } });
+    expect(wrong.statusCode).toBe(400);
+    expect(invited.json()).toMatchObject({ options: { rp: { id: 'amex.example.test' } } });
+    await root.httpServer.close();
+  });
+
+  it('takes an exact passkey origin, and not together with Cloudflare Access', () => {
+    expect(() =>
+      CompositionRoot.fromEnv({ ...env, PASSKEY_ORIGIN: 'https://amex.example.test/app' }),
+    ).toThrow();
+    expect(() =>
+      CompositionRoot.fromEnv({
+        ...env,
+        PASSKEY_ORIGIN: 'https://amex.example.test',
+        ACCESS_TEAM_DOMAIN: 'https://team.cloudflareaccess.com',
+        ACCESS_AUD: 'aud-tag',
+      }),
+    ).toThrow();
   });
 });

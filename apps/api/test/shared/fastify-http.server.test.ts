@@ -66,7 +66,7 @@ describe('FastifyHttpServer', () => {
     await expect(serverWith([]).close()).resolves.toBeUndefined();
   });
 
-  it('asks the access authenticator for every path but /health', async () => {
+  it('asks the access authenticator for the API, but not for /health, sign-in or the web app', async () => {
     class ClosedDoor implements AccessAuthenticator {
       public readonly seen: string[] = [];
 
@@ -85,11 +85,15 @@ describe('FastifyHttpServer', () => {
     );
 
     const health = await server.app().inject({ method: 'GET', url: '/health?x=1' });
-    const other = await server.app().inject({ method: 'GET', url: '/boom' });
+    const api = await server.app().inject({ method: 'GET', url: '/v1/places?q=x' });
+    const signIn = await server.app().inject({ method: 'POST', url: '/v1/access/sign-in' });
+    const web = await server.app().inject({ method: 'GET', url: '/boom' });
 
     expect(health.statusCode).toBe(200);
-    expect(other.statusCode).toBe(401);
-    expect(door.seen).toEqual(['/boom']);
+    expect(api.statusCode).toBe(401);
+    expect(signIn.statusCode).toBe(404);
+    expect(web.statusCode).toBe(500);
+    expect(door.seen).toEqual(['/v1/places?q=x']);
     await server.close();
   });
 });

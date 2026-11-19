@@ -17,8 +17,13 @@ export interface FastifyHttpServerConfig {
   readonly corsOrigins: readonly string[];
 }
 
-/** Open without a login, so the host can check that the app runs. */
-const OPEN_PATHS: ReadonlySet<string> = new Set(['/health']);
+/**
+ * Only the API is locked. `/health` stays open so the host can check that the app runs, the web
+ * app's files so it can show its sign-in screen, and `/v1/access/` so it can sign in.
+ */
+function isOpen(path: string): boolean {
+  return path === '/health' || !path.startsWith('/v1/') || path.startsWith('/v1/access/');
+}
 
 export class FastifyHttpServer implements HttpServer {
   private instance: FastifyInstance | undefined;
@@ -58,7 +63,7 @@ export class FastifyHttpServer implements HttpServer {
       return reply.status(response.statusCode).headers(response.headers).send(response.body);
     });
     app.addHook('onRequest', async (request) => {
-      if (!OPEN_PATHS.has(request.url.split('?')[0] ?? '')) {
+      if (!isOpen(request.url.split('?')[0] ?? '')) {
         await this.access.requireAccess(request);
       }
     });

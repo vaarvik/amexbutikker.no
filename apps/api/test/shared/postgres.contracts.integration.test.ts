@@ -6,6 +6,8 @@ import {
   describeDeviceWriterContract,
   describeHouseholdReaderContract,
   describeHouseholdWriterContract,
+  describePasskeyReaderContract,
+  describePasskeyWriterContract,
   describeEvidenceContract,
   describeImportRunWriterContract,
   describePlaceReaderContract,
@@ -17,6 +19,7 @@ import {
 import { TrigramNameSimilarity } from '@amexbutikker/domain';
 import type { Kysely } from 'kysely';
 import { afterAll, beforeAll } from 'vitest';
+import { PgPasskeyRepository } from '../../src/access/pg-passkey.repository.js';
 import { PgChainRepository } from '../../src/chains/pg-chain.repository.js';
 import { PgDeviceRepository } from '../../src/devices/pg-device.repository.js';
 import { PgHouseholdRepository } from '../../src/households/pg-household.repository.js';
@@ -118,3 +121,12 @@ async function freshHouseholds() {
 
 describeHouseholdWriterContract('PgHouseholdRepository', freshHouseholds);
 describeHouseholdReaderContract('PgHouseholdRepository', freshHouseholds);
+
+async function freshPasskeys() {
+  await database.reset();
+  const repository = new PgPasskeyRepository(database.db, errors);
+  return { writer: repository, reader: repository };
+}
+
+describePasskeyWriterContract('PgPasskeyRepository', freshPasskeys);
+describePasskeyReaderContract('PgPasskeyRepository', freshPasskeys);

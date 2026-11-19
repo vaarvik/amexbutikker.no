@@ -1,4 +1,9 @@
 import {
+  CompletePasskeyRegistrationUseCase,
+  CompletePasskeySignInUseCase,
+  RenewAccessSessionUseCase,
+  StartPasskeyRegistrationUseCase,
+  StartPasskeySignInUseCase,
   AppendHouseholdRecordsUseCase,
   AttestDeviceUseCase,
   CreateHouseholdUseCase,
@@ -24,6 +29,8 @@ import {
   ZodInputValidator,
 } from '@amexbutikker/application';
 import type {
+  PasskeyReader,
+  PasskeyWriter,
   HouseholdReader,
   HouseholdWriter,
   AppAttestValidator,
@@ -67,6 +74,7 @@ import {
   InMemoryChainRepository,
   InMemoryCardReader,
   InMemoryDeviceRepository,
+  InMemoryPasskeyRepository,
   InMemoryHouseholdRepository,
   InMemoryEvidenceRepository,
   InMemoryImportRunRepository,
@@ -79,6 +87,13 @@ import {
 import { PgChainRepository } from './chains/pg-chain.repository.js';
 import { HealthController } from './shared/health.controller.js';
 import { StaticWebController } from './shared/static-web.controller.js';
+import { AccessController } from './access/access.controller.js';
+import { FixedPasskeyInviteValidator } from './access/fixed-passkey-invite.validator.js';
+import { HmacAccessSessionService } from './access/hmac-access-session.service.js';
+import { HmacPasskeyChallengeService } from './access/hmac-passkey-challenge.service.js';
+import { PgPasskeyRepository } from './access/pg-passkey.repository.js';
+import { SessionCookieAccessAuthenticator } from './access/session-cookie-access.authenticator.js';
+import { WebAuthnPasskeyService } from './access/web-authn-passkey.service.js';
 import { CardsController } from './cards/cards.controller.js';
 import { CARD_CATALOGUE } from './cards/cards.model.js';
 import { AppleAppAttestValidator } from './devices/apple-app-attest.validator.js';
@@ -132,7 +147,7 @@ import type { Database } from './shared/shared.model.js';
 import { PgDatabaseErrorTranslator } from './shared/pg-database-error.translator.js';
 import { PgUnitOfWork } from './shared/pg.unit-of-work.js';
 import { PgPlaceStatusRepository } from './status/pg-place-status.repository.js';
-import type { HttpServer } from './shared/shared.ports.js';
+import type { AccessAuthenticator, HttpServer } from './shared/shared.ports.js';
 
 const RateLimitRuleSchema = z.object({
   limit: z.int().positive(),
@@ -164,6 +179,18 @@ export interface ApiConfig {
    * valid Access login. Unset: open to everyone.
    */
   readonly access?: AccessConfig;
+  /**
+   * A private deployment with its own sign-in: every `/v1` request but sign-in needs the session
+   * cookie of a stored passkey. Not together with `access`. Unset: open to everyone.
+   */
+  readonly passkeys?: PasskeysConfig;
+}
+
+export interface PasskeysConfig {
+  /** The site's exact origin, `https://amex.johann.no`; passkeys are bound to its host. */
+  readonly origin: string;
+  /** The code that lets someone add a passkey; unset, no one can add one. */
+  readonly inviteCode?: string;
 }
 
 export interface AccessConfig {
@@ -228,6 +255,7 @@ export const DEFAULT_RATE_LIMITS: ApiConfig['rateLimits'] = {
   create_household: { limit: 5, windowSeconds: 86400 },
   join_household: { limit: 10, windowSeconds: 3600 },
   append_household_records: { limit: 200, windowSeconds: 3600 },
+  start_passkey_registration: { limit: 10, windowSeconds: 3600 },
 };
 
 /** `a, b,` → `['a', 'b']`. */
@@ -292,6 +320,14 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
         audience: z.string().min(1),
       })
       .exactOptional(),
+    passkeys: z
+      .object({
+        origin: z.url({ protocol: /^https?$/ }).refine((url) => new URL(url).origin === url, {
+          message: 'PASSKEY_ORIGIN takes an exact origin: https://host, no path',
+        }),
+        inviteCode: z.string().trim().min(8).exactOptional(),
+      })
+      .exactOptional(),
     imports: z
       .object({
         overpassUrl: z.url({ protocol: /^https?$/ }).default(DEFAULT_IMPORTS.overpassUrl),
@@ -306,6 +342,10 @@ export const ApiConfigSchema: z.ZodType<ApiConfig> = z
   .refine((config) => config.storage === 'memory' || config.databaseUrl !== undefined, {
     message: 'DATABASE_URL is required when STORAGE is postgres',
     path: ['databaseUrl'],
+  })
+  .refine((config) => config.access === undefined || config.passkeys === undefined, {
+    message: 'Use either Cloudflare Access (ACCESS_*) or passkeys (PASSKEY_*), not both',
+    path: ['passkeys'],
   });
 
 interface Storage {
@@ -314,6 +354,7 @@ interface Storage {
   readonly evidence: EvidenceReader;
   readonly statuses: PlaceStatusReader;
   readonly devices: DeviceReader & DeviceWriter;
+  readonly passkeys: PasskeyReader & PasskeyWriter;
   readonly households: HouseholdReader & HouseholdWriter;
   readonly importRuns: ImportRunWriter;
   readonly unmatchedDescriptors: UnmatchedDescriptorWriter;
@@ -367,6 +408,7 @@ export class CompositionRoot {
       evidence,
       statuses,
       devices,
+      passkeys,
       households,
       importRuns,
       unmatchedDescriptors,
@@ -385,8 +427,25 @@ export class CompositionRoot {
       searchLimit: 20,
       minimumScore: 0.25,
     });
+    const sessions = new HmacAccessSessionService(config.deviceTokenSecret, clock);
+    const passkeyChallenges = new HmacPasskeyChallengeService(config.deviceTokenSecret, clock);
+    const accessControllers =
+      config.passkeys === undefined
+        ? []
+        : [
+            this.accessController(
+              config.passkeys,
+              passkeys,
+              sessions,
+              passkeyChallenges,
+              rateLimiter,
+              validator,
+              clock,
+            ),
+          ];
     this.httpServer = new FastifyHttpServer(
       [
+        ...accessControllers,
         new PlacesController(
           new SearchPlacesUseCase(places, statuses, validator),
           new ListNearbyPlacesUseCase(places, statuses, validator),
@@ -492,12 +551,7 @@ export class CompositionRoot {
           }),
         },
       }),
-      config.access === undefined
-        ? new NullAccessAuthenticator()
-        : new JwksAccessAuthenticator(
-            createRemoteJWKSet(new URL('/cdn-cgi/access/certs', config.access.teamDomain)),
-            { issuer: config.access.teamDomain, audience: config.access.audience },
-          ),
+      this.accessAuthenticator(sessions, passkeys),
       { bodyLimit: 16 * 1024, trustProxy: config.trustProxy, corsOrigins: config.corsOrigins },
     );
 
@@ -640,6 +694,9 @@ export class CompositionRoot {
           ...(env.ACCESS_TEAM_DOMAIN === undefined && env.ACCESS_AUD === undefined
             ? {}
             : { access: { teamDomain: env.ACCESS_TEAM_DOMAIN, audience: env.ACCESS_AUD } }),
+          ...(env.PASSKEY_ORIGIN === undefined && env.PASSKEY_INVITE_CODE === undefined
+            ? {}
+            : { passkeys: { origin: env.PASSKEY_ORIGIN, inviteCode: env.PASSKEY_INVITE_CODE } }),
           attestation: {
             trustUnattested: env.TRUST_UNATTESTED_DEVICES,
             appAttestAppIds: env.APP_ATTEST_APP_IDS,
@@ -677,6 +734,50 @@ export class CompositionRoot {
     await this.storage.close();
   }
 
+  private accessAuthenticator(
+    sessions: HmacAccessSessionService,
+    passkeys: PasskeyReader,
+  ): AccessAuthenticator {
+    if (this.config.passkeys !== undefined) {
+      return new SessionCookieAccessAuthenticator(sessions, passkeys);
+    }
+    if (this.config.access !== undefined) {
+      return new JwksAccessAuthenticator(
+        createRemoteJWKSet(new URL('/cdn-cgi/access/certs', this.config.access.teamDomain)),
+        { issuer: this.config.access.teamDomain, audience: this.config.access.audience },
+      );
+    }
+    return new NullAccessAuthenticator();
+  }
+
+  private accessController(
+    config: PasskeysConfig,
+    passkeys: PasskeyReader & PasskeyWriter,
+    sessions: HmacAccessSessionService,
+    challenges: HmacPasskeyChallengeService,
+    rateLimiter: InMemoryRateLimiter,
+    validator: ZodInputValidator,
+    clock: SystemClock,
+  ): AccessController {
+    const ceremony = new WebAuthnPasskeyService({
+      origin: config.origin,
+      rpName: 'Tar de Amex?',
+    });
+    return new AccessController(
+      new StartPasskeyRegistrationUseCase(
+        new FixedPasskeyInviteValidator(config.inviteCode ?? null),
+        challenges,
+        ceremony,
+        rateLimiter,
+      ),
+      new CompletePasskeyRegistrationUseCase(challenges, ceremony, passkeys, sessions, clock),
+      new StartPasskeySignInUseCase(challenges, ceremony),
+      new CompletePasskeySignInUseCase(challenges, ceremony, passkeys, passkeys, sessions),
+      new RenewAccessSessionUseCase(sessions, passkeys),
+      validator,
+    );
+  }
+
   private postgresStorage(db: Kysely<Database>, names: TrigramNameSimilarity): Storage {
     const errors = new PgDatabaseErrorTranslator();
     const portsFor = (executor: Kysely<Database>): TransactionalPorts => ({
@@ -688,6 +789,7 @@ export class CompositionRoot {
     return {
       ...portsFor(db),
       devices: new PgDeviceRepository(db, errors),
+      passkeys: new PgPasskeyRepository(db, errors),
       households: new PgHouseholdRepository(db, errors),
       importRuns: new PgImportRunRepository(db, errors),
       unmatchedDescriptors: new PgUnmatchedDescriptorRepository(db),
@@ -707,6 +809,7 @@ export class CompositionRoot {
     return {
       ...portsFor(tables),
       devices: new InMemoryDeviceRepository(tables),
+      passkeys: new InMemoryPasskeyRepository(),
       households: new InMemoryHouseholdRepository(tables),
       importRuns: new InMemoryImportRunRepository(tables),
       unmatchedDescriptors: new InMemoryUnmatchedDescriptorRepository(tables),

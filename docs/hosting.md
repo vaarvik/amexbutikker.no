@@ -23,30 +23,43 @@ for amd64 and arm64. GHCR packages start private: make it public, or give simple
 | Nightly job           | same image, `node dist/src/cli.js refresh-statuses`                           |
 | Copies                | 1 (rate limits are per process)                                               |
 
-### Private: only invited people (Cloudflare Access)
+### Private: only invited people (passkeys)
 
-For a deployment only a few people may use (e.g. a household), put the app behind Cloudflare
-Access and let the API check the login too:
+For a deployment only a few people may use (e.g. a household), the app signs in with passkeys
+(Face ID on an iPhone), no outside login service involved. Set on the app:
 
-1. simple-k8s → the app → **Require login**: allow the exact email addresses, nothing broader.
-   Set the Access session to a month in Zero Trust → Access → Applications, or the Home Screen
-   app asks for a code every day.
-2. Set on the app:
+| Setting                    | Value                                                                     |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `PASSKEY_ORIGIN`           | the site's exact origin, e.g. `https://amex.johann.no`                    |
+| `PASSKEY_INVITE_CODE`      | secret, 8+ chars: lets a phone add its passkey. Remove it once all are in |
+| `TRUST_UNATTESTED_DEVICES` | `true`: everyone who signs in is invited, so their answers count in full  |
 
-| Setting                    | Value                                                                            |
-| -------------------------- | -------------------------------------------------------------------------------- |
-| `ACCESS_TEAM_DOMAIN`       | `https://<team>.cloudflareaccess.com` (Zero Trust → Settings → Custom pages)     |
-| `ACCESS_AUD`               | the Access application's audience tag (Applications → the app → Overview)        |
-| `TRUST_UNATTESTED_DEVICES` | `true`: everyone who gets past Access is invited, so their answers count in full |
+Then, on each phone: open the site → type the invite code → **Lag passkey**. Later starts use
+**Logg inn**. Add the site to the Home Screen from Safari after signing in.
 
-With both Access settings, every request except `GET /health` needs a valid Access login
-(`Cf-Access-Jwt-Assertion` or the `CF_Authorization` cookie), checked against the team's keys,
-issuer and audience. Leave the Turnstile settings unset. The request log keeps paths only, never
-query strings (searches, positions).
+- Every `/v1` request except `/v1/access/*` needs the session cookie (`__Host-amex_session`,
+  HttpOnly, Secure, SameSite=Lax). The web app's files and `GET /health` stay open; they hold no
+  data.
+- A session lasts a year, and each app start renews it, so a phone in use stays signed in.
+- Sessions are signed with `DEVICE_TOKEN_SECRET`; changing it signs everyone out. Deleting a row
+  from `passkeys` signs that phone out.
+- Without `PASSKEY_INVITE_CODE`, no new passkey can be added. Guesses are rate limited per IP.
+- Passkeys belong to the origin: changing the domain means adding them again.
+- The native app cannot sign in with passkeys yet; it is for an open deployment.
+
+Leave the Turnstile settings unset. The request log keeps paths only, never query strings
+(searches, positions).
+
+#### Alternative: Cloudflare Access
+
+Instead of passkeys (not both), put the app behind simple-k8s **Require login** with the exact
+email addresses, and set `ACCESS_TEAM_DOMAIN` (`https://<team>.cloudflareaccess.com`) and
+`ACCESS_AUD` (the Access application's audience tag). Every `/v1` request then needs a valid
+Access login (`Cf-Access-Jwt-Assertion` or the `CF_Authorization` cookie).
 
 What still leaves the server: the web app loads map tiles from `tiles.openfreemap.org`, which
-sees the viewer's IP address and the map area. Cloudflare sees all traffic, as the tunnel and the
-login run through it.
+sees the viewer's IP address and the map area. Cloudflare sees all traffic when the tunnel runs
+through it.
 
 On iPhone: open `https://amex.johann.no` in Safari, sign in with the code from the email, then
 Share → **Add to Home Screen**. The Home Screen app keeps its own login and storage, apart from

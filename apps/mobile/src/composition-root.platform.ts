@@ -1,3 +1,4 @@
+import type { PasskeyPrompt } from './access/access.ports';
 import type { DevicePlatform } from '@amexbutikker/contracts';
 import { requireOptionalNativeModule } from 'expo';
 import * as Location from 'expo-location';
@@ -53,6 +54,8 @@ export class CurrentPlatform implements PlatformAdapters {
    * random source. Loaded optionally so builds made before it still start (households then fail
    * with an error instead of the whole app).
    */
+  /** Passkeys sign in to the web app only. */
+  public readonly passkeys: PasskeyPrompt | null = null;
   public readonly randomBytes: RandomBytesModule = CurrentPlatform.randomBytesModule();
   /** Share intake and visit detection exist only in the native app. */
   public readonly native = true;

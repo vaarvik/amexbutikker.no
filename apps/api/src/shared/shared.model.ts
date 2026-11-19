@@ -106,6 +106,15 @@ export interface HouseholdRecordsTable {
   created_at: Timestamp;
 }
 
+export interface PasskeysTable {
+  id: string;
+  public_key: string;
+  /** bigint; pg returns it as a string. */
+  counter: ColumnType<string, number, number>;
+  transports: string[];
+  created_at: Timestamp;
+}
+
 export interface UnmatchedDescriptorsTable {
   descriptor: string;
   first_seen_on: string;
@@ -124,6 +133,7 @@ export interface Database {
   household_members: HouseholdMembersTable;
   household_records: HouseholdRecordsTable;
   unmatched_descriptors: UnmatchedDescriptorsTable;
+  passkeys: PasskeysTable;
 }
 
 export interface HttpErrorResponse {

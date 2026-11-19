@@ -19,6 +19,7 @@
     "@noble/ciphers": "^2.4.0",
     "@noble/hashes": "^2.4.0",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@simplewebauthn/browser": "14.0.0",
     "expo": "~58.0.23",
     "expo-constants": "~58.0.15",
     "expo-crypto": "~58.0.7",

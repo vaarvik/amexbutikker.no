@@ -1,4 +1,6 @@
 import type { DevicePlatform } from '@amexbutikker/contracts';
+import { BrowserPasskeyClient } from './access/browser-passkey.client';
+import type { PasskeyPrompt } from './access/access.ports';
 import type { PlatformAdapters } from './composition-root';
 import type { AppAttestModule } from './devices/devices.ports';
 import { BrowserLocationProvider } from './location/browser-location.provider';
@@ -24,6 +26,7 @@ export class CurrentPlatform implements PlatformAdapters {
   public readonly widgetWriter: NearbyWidgetWriter = new NullNearbyWidgetWriter();
   /** Browsers attest with Turnstile instead (ui/turnstile-gate.web.tsx). */
   public readonly appAttest: AppAttestModule | null = null;
+  public readonly passkeys: PasskeyPrompt | null = new BrowserPasskeyClient();
   public readonly randomBytes: RandomBytesModule = {
     getRandomBytes: (count) => crypto.getRandomValues(new Uint8Array(count)),
   };

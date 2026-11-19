@@ -4,6 +4,9 @@ import { CalendarYearSpendingSummarizer } from './spending/calendar-year-spendin
 import { FetchCardsApiClient } from './spending/fetch-cards-api.client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CurrentPlatform } from './composition-root.platform';
+import type { AccessService, PasskeyPrompt } from './access/access.ports';
+import { FetchAccessApiClient } from './access/fetch-access-api.client';
+import { PasskeyAccessService } from './access/passkey-access.service';
 import type {
   AppAttestModule,
   DeviceAttestationService,
@@ -63,6 +66,8 @@ import type { NearbyWidgetService, NearbyWidgetWriter } from './widgets/widgets.
 
 /** What the screens get through `useServices()`. */
 export interface AppServices {
+  /** Signing in to a private deployment; `open` everywhere else. */
+  readonly access: AccessService;
   readonly places: PlacesApiClient;
   readonly nearby: NearbyService;
   readonly location: LocationProvider;
@@ -105,6 +110,8 @@ export interface PlatformAdapters {
   readonly widgetWriter: NearbyWidgetWriter;
   /** Apple App Attest; null where there is none. */
   readonly appAttest: AppAttestModule | null;
+  /** The browser's passkey dialogs; null in the native app. */
+  readonly passkeys: PasskeyPrompt | null;
   /** Secure random bytes for household keys and nonces. */
   readonly randomBytes: RandomBytesModule;
   readonly native: boolean;
@@ -126,6 +133,7 @@ const DAY_MS = 24 * 60 * MINUTE_MS;
 
 /** The only place in the app that constructs services. */
 export class CompositionRoot implements AppServices {
+  public readonly access: AccessService;
   public readonly places: PlacesApiClient;
   public readonly nearby: NearbyService;
   public readonly location: LocationProvider;
@@ -150,6 +158,7 @@ export class CompositionRoot implements AppServices {
       timeoutMs: 8000,
     });
     this.native = adapters.native;
+    this.access = new PasskeyAccessService(new FetchAccessApiClient(transport), adapters.passkeys);
     const devicesApi = new FetchDevicesApiClient(transport);
     this.session = new StoredDeviceSession(devicesApi, adapters.tokenStorage, {
       platform: adapters.platform,

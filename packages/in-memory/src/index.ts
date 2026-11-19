@@ -1,3 +1,4 @@
+export * from './access/in-memory-passkey.repository.js';
 export * from './cards/in-memory-card.reader.js';
 export * from './chains/in-memory-chain.repository.js';
 export * from './devices/in-memory-device.repository.js';

@@ -3,6 +3,7 @@ import { ShareIntentProvider } from 'expo-share-intent';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { CompositionRoot } from '../composition-root';
+import { AccessGate } from '../ui/access-gate';
 // Registers the background visit task; must load with the bundle.
 import '../composition-root.tasks';
 import { HouseholdSync } from '../ui/household-sync';
@@ -27,68 +28,73 @@ export default function RootLayout() {
   return (
     <ShareIntentProvider>
       <ServicesProvider services={services}>
-        {services.native ? (
-          <>
-            <ShareIntentRouter />
-            <VisitNotificationRouter />
-          </>
-        ) : null}
-        <TurnstileGate />
-        <HouseholdSync />
-        <StatusBar style="auto" />
-        <Stack
-          screenOptions={{
-            headerStyle: { backgroundColor: palette.background },
-            headerTintColor: palette.accent,
-            headerTitleStyle: { color: palette.text },
-            contentStyle: { backgroundColor: palette.background },
-            headerBackTitle: 'Tilbake',
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Tar de Amex?' }} />
-          <Stack.Screen name="place/[id]" options={{ title: '' }} />
-          <Stack.Screen name="add" options={{ title: 'Legg til sted', presentation: 'modal' }} />
-          <Stack.Screen name="shared" options={{ title: 'Delt sted' }} />
-          <Stack.Screen
-            name="spending/purchase"
-            options={{ title: 'Legg til kjøp', presentation: 'modal' }}
-          />
-          <Stack.Screen name="spending/split" options={{ title: 'Kjøp', presentation: 'modal' }} />
-          <Stack.Screen
-            name="spending/total"
-            options={{ title: 'Oppdater total', presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="spending/milestone"
-            options={{ title: 'Nytt mål', presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="spending/card"
-            options={{ title: 'Kortet ditt', presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="paid"
-            options={{ title: 'Betalt med Amex', presentation: 'modal' }}
-            // A new payment while one is shown opens its own screen instead of reusing that one.
-            dangerouslySingular={(_name, params) => JSON.stringify(params)}
-          />
-          <Stack.Screen
-            name="household/index"
-            options={{ title: 'Husstand', presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="household/join"
-            options={{ title: 'Husstand', presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="wallet-setup"
-            options={{ title: 'Apple Pay', presentation: 'modal' }}
-          />
-          <Stack.Screen
-            name="visit"
-            options={{ title: 'Hvor betalte du?', presentation: 'modal' }}
-          />
-        </Stack>
+        <AccessGate>
+          {services.native ? (
+            <>
+              <ShareIntentRouter />
+              <VisitNotificationRouter />
+            </>
+          ) : null}
+          <TurnstileGate />
+          <HouseholdSync />
+          <StatusBar style="auto" />
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: palette.background },
+              headerTintColor: palette.accent,
+              headerTitleStyle: { color: palette.text },
+              contentStyle: { backgroundColor: palette.background },
+              headerBackTitle: 'Tilbake',
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Tar de Amex?' }} />
+            <Stack.Screen name="place/[id]" options={{ title: '' }} />
+            <Stack.Screen name="add" options={{ title: 'Legg til sted', presentation: 'modal' }} />
+            <Stack.Screen name="shared" options={{ title: 'Delt sted' }} />
+            <Stack.Screen
+              name="spending/purchase"
+              options={{ title: 'Legg til kjøp', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="spending/split"
+              options={{ title: 'Kjøp', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="spending/total"
+              options={{ title: 'Oppdater total', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="spending/milestone"
+              options={{ title: 'Nytt mål', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="spending/card"
+              options={{ title: 'Kortet ditt', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="paid"
+              options={{ title: 'Betalt med Amex', presentation: 'modal' }}
+              // A new payment while one is shown opens its own screen instead of reusing that one.
+              dangerouslySingular={(_name, params) => JSON.stringify(params)}
+            />
+            <Stack.Screen
+              name="household/index"
+              options={{ title: 'Husstand', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="household/join"
+              options={{ title: 'Husstand', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="wallet-setup"
+              options={{ title: 'Apple Pay', presentation: 'modal' }}
+            />
+            <Stack.Screen
+              name="visit"
+              options={{ title: 'Hvor betalte du?', presentation: 'modal' }}
+            />
+          </Stack>
+        </AccessGate>
       </ServicesProvider>
     </ShareIntentProvider>
   );

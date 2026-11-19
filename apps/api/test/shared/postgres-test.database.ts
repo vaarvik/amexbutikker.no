@@ -51,7 +51,7 @@ export class PostgresTestDatabase {
   public async reset(): Promise<void> {
     await sql`
       TRUNCATE chains, places, evidence, place_status, chain_hints, import_runs, devices,
-        unmatched_descriptors, households, household_members, household_records
+        unmatched_descriptors, households, household_members, household_records, passkeys
         RESTART IDENTITY CASCADE
     `.execute(this.db);
   }
