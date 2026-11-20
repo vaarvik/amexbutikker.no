@@ -26,7 +26,10 @@ function joinError(error: unknown): string | null {
   }
 }
 
-/** Opened by the invite link (`amexbutikker://household/join?invite=…`) from a QR code or a message. */
+/**
+ * Opened by the invite link from a QR code or a message: `amexbutikker://household/join?invite=…`
+ * in the app, `…/household/join#invite=…` on the web, where the invite stays after `#`.
+ */
 export default function JoinHouseholdScreen() {
   const { households, presenter } = useServices();
   const palette = usePalette();
@@ -46,7 +49,7 @@ export default function JoinHouseholdScreen() {
     setBusy(true);
     setMessage(null);
     households
-      .join(invite ?? '')
+      .join(invite ?? (typeof location === 'undefined' ? '' : location.hash))
       .then(() => {
         router.replace('/household');
       })

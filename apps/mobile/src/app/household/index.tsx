@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -69,9 +70,59 @@ function NameField() {
   );
 }
 
+/**
+ * Web only: a link opened from a message lands in the browser, not in the Home Screen app, so
+ * the invite can be pasted here instead.
+ */
+function InviteField() {
+  const palette = usePalette();
+  const [link, setLink] = useState('');
+  const join = () => {
+    if (link.trim() !== '') {
+      router.push({ pathname: '/household/join', params: { invite: link.trim() } });
+    }
+  };
+
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.label, { color: palette.muted }]}>Fått en lenke? Lim den inn</Text>
+      <TextInput
+        value={link}
+        onChangeText={setLink}
+        onSubmitEditing={join}
+        placeholder="https://…/household/join#invite=…"
+        placeholderTextColor={palette.muted}
+        autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="go"
+        accessibilityLabel="Invitasjonslenke"
+        style={[
+          styles.input,
+          { color: palette.text, backgroundColor: palette.card, borderColor: palette.border },
+        ]}
+      />
+      <Pressable
+        onPress={join}
+        disabled={link.trim() === ''}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.button,
+          styles.outlined,
+          {
+            borderColor: palette.accent,
+            opacity: pressed || link.trim() === '' ? 0.5 : 1,
+          },
+        ]}
+      >
+        <Text style={[styles.buttonText, { color: palette.accent }]}>Bli med</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 /** Settings → Del med husstand: start a household, show its invite, or leave it. */
 export default function HouseholdScreen() {
-  const { households, presenter } = useServices();
+  const { households, presenter, native } = useServices();
   const palette = usePalette();
   const [status, setStatus] = useState<HouseholdStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -130,7 +181,13 @@ export default function HouseholdScreen() {
           >
             <Text style={[styles.buttonText, { color: palette.onAccent }]}>Lag husstand</Text>
           </Pressable>
-          <Text style={[styles.small, muted]}>Blir du invitert? Skann QR-koden med kameraet.</Text>
+          {native ? (
+            <Text style={[styles.small, muted]}>
+              Blir du invitert? Skann QR-koden med kameraet.
+            </Text>
+          ) : (
+            <InviteField />
+          )}
         </>
       ) : (
         <>
@@ -141,7 +198,9 @@ export default function HouseholdScreen() {
           </Text>
           <NameField />
           <Text style={[styles.body, muted]}>
-            Den andre skanner koden med kameraet på sin telefon.
+            {native
+              ? 'Den andre skanner koden med kameraet på sin telefon.'
+              : 'Send lenken til den andre. Den limes inn under Husstand i appen.'}
           </Text>
           <View style={styles.qr}>
             <QrCode value={status.inviteLink} size={240} />

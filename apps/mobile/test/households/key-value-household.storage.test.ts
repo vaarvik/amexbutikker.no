@@ -41,7 +41,16 @@ describe('KeyValueHouseholdStorage', () => {
 
     await expect(storage.find()).resolves.toEqual(household);
     expect(secure.values.get('h')).toContain(household.invite.key);
-    expect(plain.values.get('h')).not.toContain(household.invite.key);
+    expect(plain.values.get('h:progress')).not.toContain(household.invite.key);
+  });
+
+  it('keeps both apart when secure and plain storage are one (localStorage on the web)', async () => {
+    const shared = new MapKeyValueStorage();
+    const storage = new KeyValueHouseholdStorage(shared, shared, { key: 'h' });
+
+    await storage.save(household);
+
+    await expect(storage.find()).resolves.toEqual(household);
   });
 
   it('forgets the household', async () => {
@@ -74,7 +83,7 @@ describe('KeyValueHouseholdStorage', () => {
   it('starts over from the beginning when the progress is lost', async () => {
     const { plain, storage } = setup();
     await storage.save(household);
-    plain.values.delete('h');
+    plain.values.delete('h:progress');
 
     await expect(storage.find()).resolves.toEqual({
       invite: household.invite,

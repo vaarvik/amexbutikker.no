@@ -9,7 +9,8 @@ export interface KeyValueHouseholdStorageConfig {
 
 /**
  * The invite (with the key) in secure storage; the cursor and pending changes, which can outgrow
- * the keychain's size limit, in plain storage next to the spending document they come from.
+ * the keychain's size limit, in plain storage next to the spending document they come from. On the
+ * web both are localStorage, so the progress has its own key or it would overwrite the invite.
  */
 export class KeyValueHouseholdStorage implements HouseholdStorage {
   public constructor(
@@ -28,7 +29,7 @@ export class KeyValueHouseholdStorage implements HouseholdStorage {
       if (!invite.success) {
         return null;
       }
-      const rawProgress = await this.plain.getItem(this.config.key);
+      const rawProgress = await this.plain.getItem(this.progressKey());
       const progress = HouseholdProgressSchema.safeParse(
         rawProgress === null ? null : JSON.parse(rawProgress),
       );
@@ -46,12 +47,12 @@ export class KeyValueHouseholdStorage implements HouseholdStorage {
   public async save(household: StoredHousehold | null): Promise<void> {
     if (household === null) {
       await this.secure.removeItem(this.config.key);
-      await this.plain.removeItem(this.config.key);
+      await this.plain.removeItem(this.progressKey());
       return;
     }
     await this.secure.setItem(this.config.key, JSON.stringify(household.invite));
     await this.plain.setItem(
-      this.config.key,
+      this.progressKey(),
       JSON.stringify({
         cursor: household.cursor,
         pending: household.pending,
@@ -59,5 +60,9 @@ export class KeyValueHouseholdStorage implements HouseholdStorage {
         syncedAt: household.syncedAt,
       }),
     );
+  }
+
+  private progressKey(): string {
+    return `${this.config.key}:progress`;
   }
 }

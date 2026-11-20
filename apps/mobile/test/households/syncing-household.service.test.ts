@@ -43,7 +43,7 @@ function phone(server: FakeHouseholdServer, name: string, batchSize = 50) {
   const households = new SyncingHouseholdService(
     server.as(name),
     new XchachaHouseholdCipher(new NodeRandomBytes()),
-    new UrlHouseholdInviteTranslator(),
+    new UrlHouseholdInviteTranslator({ webOrigin: null }),
     storage,
     spendingStorage,
     new ReplayingSpendingStateCalculator(),
@@ -166,7 +166,7 @@ describe('SyncingHouseholdService', () => {
     const broken = new SyncingHouseholdService(
       api,
       new XchachaHouseholdCipher(new NodeRandomBytes()),
-      new UrlHouseholdInviteTranslator(),
+      new UrlHouseholdInviteTranslator({ webOrigin: null }),
       a.storage,
       new KeyValueSpendingStorage(new MapKeyValueStorage(), { key: 's' }),
       new ReplayingSpendingStateCalculator(),
@@ -219,9 +219,9 @@ describe('SyncingHouseholdService', () => {
     await expect(b.households.join(link)).resolves.toMatchObject({ memberCount: 2 });
 
     // Another household's invite (same key, so the fake accepts it): b leaves first, then joins.
-    const invite = new UrlHouseholdInviteTranslator().fromLink(link);
+    const invite = new UrlHouseholdInviteTranslator({ webOrigin: null }).fromLink(link);
     const otherId = '0190a000-0000-7000-8000-0000000000bb' as HouseholdId;
-    const otherLink = new UrlHouseholdInviteTranslator().toLink({
+    const otherLink = new UrlHouseholdInviteTranslator({ webOrigin: null }).toLink({
       householdId: otherId,
       key: invite?.key ?? '',
     });
@@ -237,5 +237,22 @@ describe('SyncingHouseholdService', () => {
 
     expect(server.records).toEqual([]);
     await expect(a.storage.find()).resolves.toBeNull();
+  });
+
+  it('leaves a household it lost the key to, then creates or joins anew', async () => {
+    const server = new FakeHouseholdServer();
+    const a = phone(server, 'a');
+    await a.households.create();
+    // The old web bug: the key is gone from this phone, the membership is not.
+    await a.storage.save(null);
+    server.members.add('a');
+
+    await expect(a.households.create()).resolves.toMatchObject({ kind: 'member' });
+
+    const b = phone(server, 'b');
+    server.members.add('b');
+    await expect(b.households.join(await linkOf(a.households))).resolves.toMatchObject({
+      kind: 'member',
+    });
   });
 });

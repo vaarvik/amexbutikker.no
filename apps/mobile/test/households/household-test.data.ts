@@ -46,6 +46,10 @@ class FakeHouseholdsApi implements HouseholdsApiClient {
 
   public create(joinToken: string): Promise<HouseholdResponseDto> {
     return this.reach(() => {
+      // As the API: a phone is in at most one household.
+      if (this.server.members.has(this.phone)) {
+        throw new ApiError('conflict', 409, 'Already in a household.');
+      }
       this.server.joinToken = joinToken;
       this.server.members.add(this.phone);
       return this.summary();
@@ -59,6 +63,9 @@ class FakeHouseholdsApi implements HouseholdsApiClient {
       }
       if (joinToken !== this.server.joinToken) {
         throw new ApiError('validation_failed', 400, 'Bad token.');
+      }
+      if (this.server.members.has(this.phone)) {
+        throw new ApiError('conflict', 409, 'Already in a household.');
       }
       this.server.members.add(this.phone);
       this.server.joinedIds.set(this.phone, householdId);

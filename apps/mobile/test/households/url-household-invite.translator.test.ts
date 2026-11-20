@@ -3,7 +3,8 @@ import { UrlHouseholdInviteTranslator } from '../../src/households/url-household
 import { HOUSEHOLD_ID } from './household-test.data';
 
 const KEY = 'A'.repeat(42) + 'Q';
-const translator = new UrlHouseholdInviteTranslator();
+const translator = new UrlHouseholdInviteTranslator({ webOrigin: null });
+const web = new UrlHouseholdInviteTranslator({ webOrigin: 'https://amex.example.test' });
 
 describe('UrlHouseholdInviteTranslator', () => {
   it('writes and reads the invite link', () => {
@@ -11,6 +12,17 @@ describe('UrlHouseholdInviteTranslator', () => {
 
     expect(link).toBe(`amexbutikker://household/join?invite=${HOUSEHOLD_ID}.${KEY}`);
     expect(translator.fromLink(` ${link} `)).toEqual({ householdId: HOUSEHOLD_ID, key: KEY });
+  });
+
+  it('writes a web link with the invite after #, and reads either link', () => {
+    const link = web.toLink({ householdId: HOUSEHOLD_ID, key: KEY });
+
+    expect(link).toBe(`https://amex.example.test/household/join#invite=${HOUSEHOLD_ID}.${KEY}`);
+    expect(web.fromLink(link)).toEqual({ householdId: HOUSEHOLD_ID, key: KEY });
+    expect(web.fromLink(translator.toLink({ householdId: HOUSEHOLD_ID, key: KEY }))).toEqual({
+      householdId: HOUSEHOLD_ID,
+      key: KEY,
+    });
   });
 
   it('reads the invite value alone, as a screen gets it', () => {

@@ -55,7 +55,8 @@ export class SyncingHouseholdService implements HouseholdService, SpendingChange
       return this.present(existing);
     }
     const key = this.cipher.newKey();
-    const created = await this.api.create(this.cipher.joinToken(key));
+    const joinToken = this.cipher.joinToken(key);
+    const created = await this.withoutLostHousehold(() => this.api.create(joinToken));
     const state = await this.spendingStorage.find();
     await this.storage.save({
       invite: { householdId: created.householdId, key },
@@ -80,7 +81,10 @@ export class SyncingHouseholdService implements HouseholdService, SpendingChange
     if (existing !== null) {
       await this.leave();
     }
-    const joined = await this.api.join(invite.householdId, this.cipher.joinToken(invite.key));
+    const joinToken = this.cipher.joinToken(invite.key);
+    const joined = await this.withoutLostHousehold(() =>
+      this.api.join(invite.householdId, joinToken),
+    );
     const state = await this.spendingStorage.find();
     await this.storage.save({
       invite,
@@ -109,6 +113,23 @@ export class SyncingHouseholdService implements HouseholdService, SpendingChange
       await this.storage.save(null);
     }
     return { kind: 'alone' };
+  }
+
+  /**
+   * Runs a create or join for a phone that keeps no household. A 409 then means the server still
+   * has it in one whose key this phone lost (an old bug stored the key where the progress
+   * overwrote it), so nothing in it can be read: leave that one and try once more.
+   */
+  private async withoutLostHousehold<T>(request: () => Promise<T>): Promise<T> {
+    try {
+      return await request();
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 409)) {
+        throw error;
+      }
+      await this.api.leave();
+      return request();
+    }
   }
 
   public async changed(changes: readonly SpendingChange[]): Promise<void> {

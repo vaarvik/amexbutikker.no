@@ -199,7 +199,10 @@ export class CompositionRoot implements AppServices {
     const households = new SyncingHouseholdService(
       new FetchHouseholdsApiClient(transport, this.session),
       new XchachaHouseholdCipher(new ModuleRandomBytesProvider(adapters.randomBytes)),
-      new UrlHouseholdInviteTranslator(),
+      // On the web, invite links open this site; in the app, the app.
+      new UrlHouseholdInviteTranslator({
+        webOrigin: adapters.native || typeof location === 'undefined' ? null : location.origin,
+      }),
       // The key in the keychain (localStorage on the web); progress next to the spending.
       new KeyValueHouseholdStorage(adapters.tokenStorage, AsyncStorage, { key: 'household-v1' }),
       spendingStorage,
