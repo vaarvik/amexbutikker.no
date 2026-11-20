@@ -136,7 +136,13 @@ export function AccessGate(props: { readonly children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  // Fills the window: outside the Stack nothing gives it a height, and the page shows through.
+  screen: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
   content: { gap: 14, maxWidth: 420, width: '100%' },
   title: { fontSize: 28, fontWeight: '700', textAlign: 'center', marginBottom: 12 },
   body: { fontSize: 16, lineHeight: 22, textAlign: 'center' },
