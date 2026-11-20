@@ -255,7 +255,8 @@ export const DEFAULT_RATE_LIMITS: ApiConfig['rateLimits'] = {
   create_household: { limit: 5, windowSeconds: 86400 },
   join_household: { limit: 10, windowSeconds: 3600 },
   append_household_records: { limit: 200, windowSeconds: 3600 },
-  start_passkey_registration: { limit: 10, windowSeconds: 3600 },
+  // One household shares an IP; a guessable code would need far more tries than this.
+  start_passkey_registration: { limit: 30, windowSeconds: 3600 },
 };
 
 /** `a, b,` → `['a', 'b']`. */
