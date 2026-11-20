@@ -42,6 +42,7 @@
     "expo-updates": "~58.0.21",
     "expo-web-browser": "~58.0.7",
     "expo-widgets": "~58.0.27",
+    "maplibre-gl": "5.24.0",
     "qrcode-generator": "^2.0.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",

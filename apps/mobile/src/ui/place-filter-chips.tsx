@@ -123,7 +123,8 @@ function Chip(props: {
       style={({ pressed }) => [
         styles.chip,
         props.selected
-          ? { backgroundColor: palette.card, borderColor: palette.card }
+          ? // The hero band is the same in both modes, so a selected chip is too: white on it.
+            { backgroundColor: palette.onHero, borderColor: palette.onHero }
           : { borderColor: palette.onHeroMuted },
         { opacity: pressed ? 0.7 : 1 },
       ]}

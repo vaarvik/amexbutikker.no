@@ -1,13 +1,14 @@
 import { ConflictError, NotFoundError } from '@amexbutikker/contracts';
 import type {
   ImportRunId,
+  ImportRunReader,
   ImportRunReport,
   ImportRunWriter,
   ImportSource,
 } from '@amexbutikker/contracts';
 import type { InMemoryTables } from '../shared/shared.ports.js';
 
-export class InMemoryImportRunRepository implements ImportRunWriter {
+export class InMemoryImportRunRepository implements ImportRunReader, ImportRunWriter {
   public constructor(private readonly tables: InMemoryTables) {}
 
   public create(
@@ -33,5 +34,12 @@ export class InMemoryImportRunRepository implements ImportRunWriter {
     }
     this.tables.importRuns.set(report.runId, { ...run, report });
     return Promise.resolve();
+  }
+
+  public findLastSucceededAt(source: ImportSource): Promise<Date | null> {
+    const starts = [...this.tables.importRuns.values()]
+      .filter((run) => run.source === source && !run.dryRun && run.report?.status === 'succeeded')
+      .map((run) => run.startedAt.getTime());
+    return Promise.resolve(starts.length === 0 ? null : new Date(Math.max(...starts)));
   }
 }

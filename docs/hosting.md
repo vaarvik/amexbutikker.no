@@ -23,6 +23,14 @@ for amd64 and arm64. GHCR packages start private: make it public, or give simple
 | Nightly job           | same image, `node dist/src/cli.js refresh-statuses`                           |
 | Copies                | 1 (rate limits are per process)                                               |
 
+### First start: the places
+
+A new database fills itself. Each start runs `node dist/src/cli.js seed` in the background: it
+imports OpenStreetMap, then Brønnøysundregisteret, then `data/curated-claims.yaml`, each until it
+has succeeded once, and later starts skip them. A failed import (Overpass is often busy) is retried
+every five minutes, six times, then on the next start. The first seed takes a few minutes; the app
+serves meanwhile.
+
 ### Private: only invited people (passkeys)
 
 For a deployment only a few people may use (e.g. a household), the app signs in with passkeys

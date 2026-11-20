@@ -9,6 +9,7 @@ import {
   describePasskeyReaderContract,
   describePasskeyWriterContract,
   describeEvidenceContract,
+  describeImportRunReaderContract,
   describeImportRunWriterContract,
   describePlaceReaderContract,
   describePlaceStatusContract,
@@ -84,10 +85,14 @@ describePlaceStatusContract('PgPlaceStatusRepository', async () => {
   return { reader: statuses, writer: statuses, places, chains };
 });
 
-describeImportRunWriterContract('PgImportRunRepository', async () => {
+async function freshImportRuns() {
   await database.reset();
-  return { writer: new PgImportRunRepository(database.db, errors) };
-});
+  const repository = new PgImportRunRepository(database.db, errors);
+  return { writer: repository, reader: repository };
+}
+
+describeImportRunWriterContract('PgImportRunRepository', freshImportRuns);
+describeImportRunReaderContract('PgImportRunRepository', freshImportRuns);
 
 describeUnmatchedDescriptorContract('PgUnmatchedDescriptorRepository', async () => {
   await database.reset();

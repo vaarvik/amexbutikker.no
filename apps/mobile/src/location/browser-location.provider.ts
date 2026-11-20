@@ -4,7 +4,7 @@ import type { BrowserGeolocation, LocationProvider } from './location.ports';
 export interface BrowserLocationProviderConfig {
   /** A cached browser position this fresh is accepted. */
   readonly maxAgeMs: number;
-  /** Gives up after this long; the browser's permission prompt counts towards it. */
+  /** Gives up after this long, also while the browser's permission prompt is still open. */
   readonly timeoutMs: number;
 }
 
@@ -21,11 +21,18 @@ export class BrowserLocationProvider implements LocationProvider {
       return Promise.resolve(null);
     }
     return new Promise((resolve) => {
+      // The browser's own timeout starts only once permission is given, so an unanswered prompt
+      // would wait for ever; searches and the list wait for this, so give up on our own too.
+      const giveUp = setTimeout(() => {
+        resolve(null);
+      }, this.config.timeoutMs);
       geolocation.getCurrentPosition(
         (position) => {
+          clearTimeout(giveUp);
           resolve({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
         () => {
+          clearTimeout(giveUp);
           resolve(null);
         },
         {

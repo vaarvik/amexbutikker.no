@@ -32,12 +32,16 @@ RUN cd apps/mobile && EXPO_PUBLIC_API_URL=/ EXPO_PUBLIC_TURNSTILE_SITE_KEY="$EXP
     pnpm exec expo export --platform web --output-dir /web && node scripts/add-pwa-head.mts /web
 
 FROM node:24-slim
-ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 STORAGE=postgres WEB_ROOT=/app/web
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000 STORAGE=postgres WEB_ROOT=/app/web \
+    IMPORT_CACHE_DIR=/tmp/import-cache CURATED_CLAIMS_PATH=/app/data/curated-claims.yaml
 WORKDIR /app
 COPY --from=api --chown=node:node /out .
 COPY --from=web --chown=node:node /web ./web
+COPY --chown=node:node data/curated-claims.yaml ./data/curated-claims.yaml
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
 # Migrates to the latest schema, then serves. Migrations are idempotent, so every start runs them.
-CMD ["sh", "-c", "node dist/src/migrate.js && exec node dist/src/server.js"]
+# Meanwhile `seed` fills a new database in the background: each import runs until it has succeeded
+# once (OSM, Brønnøysund, the curated claims), and later starts skip it.
+CMD ["sh", "-c", "node dist/src/migrate.js && { node dist/src/cli.js seed & } && exec node dist/src/server.js"]

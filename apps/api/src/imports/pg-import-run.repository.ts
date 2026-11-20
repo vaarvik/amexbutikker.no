@@ -1,16 +1,18 @@
 import { ConflictError, NotFoundError } from '@amexbutikker/contracts';
 import type {
   ImportRunId,
+  ImportRunReader,
   ImportRunReport,
   ImportRunWriter,
   ImportSource,
 } from '@amexbutikker/contracts';
 import { sql } from 'kysely';
 import type { Kysely } from 'kysely';
+import { z } from 'zod';
 import type { Database } from '../shared/shared.model.js';
 import type { DatabaseErrorTranslator } from '../shared/shared.ports.js';
 
-export class PgImportRunRepository implements ImportRunWriter {
+export class PgImportRunRepository implements ImportRunReader, ImportRunWriter {
   public constructor(
     private readonly db: Kysely<Database>,
     private readonly errors: DatabaseErrorTranslator,
@@ -50,5 +52,13 @@ export class PgImportRunRepository implements ImportRunWriter {
     throw rows.length === 0
       ? new NotFoundError('Import run', report.runId)
       : new ConflictError(`Import run ${report.runId} already finished.`);
+  }
+
+  public async findLastSucceededAt(source: ImportSource): Promise<Date | null> {
+    const { rows } = await sql`
+      SELECT max(started_at) AS started_at FROM import_runs
+      WHERE source = ${source} AND status = 'succeeded' AND NOT dry_run
+    `.execute(this.db);
+    return z.object({ started_at: z.date().nullable() }).parse(rows[0]).started_at;
   }
 }

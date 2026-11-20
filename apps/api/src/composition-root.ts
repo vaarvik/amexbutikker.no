@@ -24,11 +24,14 @@ import {
   RemoveMyReportUseCase,
   RefreshStaleStatusesUseCase,
   RunImportUseCase,
+  SeedImportsUseCase,
   SearchPlacesUseCase,
   SubmitReportUseCase,
   ZodInputValidator,
 } from '@amexbutikker/application';
 import type {
+  ImportRunReader,
+  SeedImports,
   PasskeyReader,
   PasskeyWriter,
   HouseholdReader,
@@ -357,7 +360,7 @@ interface Storage {
   readonly devices: DeviceReader & DeviceWriter;
   readonly passkeys: PasskeyReader & PasskeyWriter;
   readonly households: HouseholdReader & HouseholdWriter;
-  readonly importRuns: ImportRunWriter;
+  readonly importRuns: ImportRunReader & ImportRunWriter;
   readonly unmatchedDescriptors: UnmatchedDescriptorWriter;
   readonly unitOfWork: UnitOfWork;
   close(): Promise<void>;
@@ -370,6 +373,7 @@ interface Storage {
 export class CompositionRoot {
   public readonly httpServer: HttpServer;
   public readonly runImport: RunImport;
+  public readonly seedImports: SeedImports;
   public readonly refreshStaleStatuses: RefreshStaleStatuses;
   private readonly db: Kysely<Database> | null;
   private readonly storage: Storage;
@@ -631,6 +635,7 @@ export class CompositionRoot {
       ids,
       clock,
     );
+    this.seedImports = new SeedImportsUseCase(importRuns, this.runImport);
   }
 
   private appAttestValidator(config: AttestationConfig, clock: SystemClock): AppAttestValidator {

@@ -20,6 +20,12 @@ export interface ImportRunWriter {
   saveReport(report: ImportRunReport): Promise<void>;
 }
 
+/** Reads what earlier import runs did. */
+export interface ImportRunReader {
+  /** When the source last imported successfully for real (not a dry run); null if never. */
+  findLastSucceededAt(source: ImportSource): Promise<Date | null>;
+}
+
 export interface ImportContext {
   readonly runId: ImportRunId;
   readonly startedAt: Date;

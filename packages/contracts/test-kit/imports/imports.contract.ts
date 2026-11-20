@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ConflictError, NotFoundError } from '../../src/index.js';
 import type {
   ImportRunId,
+  ImportRunReader,
   ImportRunReport,
   ImportRunWriter,
   UnmatchedDescriptorReader,
@@ -76,6 +77,68 @@ export function describeImportRunWriterContract(
 
       await expect(fixture.current.writer.saveReport(report(runId))).rejects.toBeInstanceOf(
         ConflictError,
+      );
+    });
+  });
+}
+
+export interface ImportRunReaderFixture {
+  readonly writer: ImportRunWriter;
+  readonly reader: ImportRunReader;
+}
+
+/** Behaviour every ImportRunReader must have. */
+export function describeImportRunReaderContract(
+  name: string,
+  factory: FixtureFactory<ImportRunReaderFixture>,
+): void {
+  describe(`${name} satisfies ImportRunReader`, () => {
+    const fixture = new FixtureHolder(factory);
+
+    async function run(
+      startedAt: Date,
+      outcome: {
+        status: 'succeeded' | 'failed' | null;
+        dryRun?: boolean;
+        source?: 'osm_overpass' | 'curated_list';
+      },
+    ): Promise<void> {
+      const runId = new TestData().importRunId();
+      const source = outcome.source ?? 'osm_overpass';
+      const dryRun = outcome.dryRun ?? false;
+      await fixture.current.writer.create(runId, source, startedAt, dryRun);
+      if (outcome.status !== null) {
+        await fixture.current.writer.saveReport({
+          ...report(runId),
+          source,
+          dryRun,
+          status: outcome.status,
+          startedAt,
+          finishedAt: daysAfter(startedAt, 0.01),
+        });
+      }
+    }
+
+    it('finds nothing for a source that never ran', async () => {
+      await expect(fixture.current.reader.findLastSucceededAt('curated_list')).resolves.toBeNull();
+    });
+
+    it('ignores failed, unfinished and dry runs, and other sources', async () => {
+      await run(T0, { status: 'failed' });
+      await run(daysAfter(T0, 1), { status: null });
+      await run(daysAfter(T0, 2), { status: 'succeeded', dryRun: true });
+      await run(daysAfter(T0, 3), { status: 'succeeded', source: 'curated_list' });
+
+      await expect(fixture.current.reader.findLastSucceededAt('osm_overpass')).resolves.toBeNull();
+    });
+
+    it('finds the start of the latest successful run', async () => {
+      await run(T0, { status: 'succeeded' });
+      await run(daysAfter(T0, 2), { status: 'succeeded' });
+      await run(daysAfter(T0, 3), { status: 'failed' });
+
+      await expect(fixture.current.reader.findLastSucceededAt('osm_overpass')).resolves.toEqual(
+        daysAfter(T0, 2),
       );
     });
   });

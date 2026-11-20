@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { BrowserLocationProvider } from '../../src/location/browser-location.provider';
 import type { BrowserGeolocation } from '../../src/location/location.ports';
 
@@ -7,7 +7,9 @@ const config = { maxAgeMs: 300_000, timeoutMs: 10_000 };
 class FakeGeolocation implements BrowserGeolocation {
   public options: unknown = null;
 
-  public constructor(private readonly result: { lat: number; lng: number } | 'denied') {}
+  public constructor(
+    private readonly result: { lat: number; lng: number } | 'denied' | 'unanswered',
+  ) {}
 
   public getCurrentPosition(
     onSuccess: (position: { coords: { latitude: number; longitude: number } }) => void,
@@ -15,6 +17,9 @@ class FakeGeolocation implements BrowserGeolocation {
     options: { maximumAge: number; timeout: number; enableHighAccuracy: boolean },
   ): void {
     this.options = options;
+    if (this.result === 'unanswered') {
+      return;
+    }
     if (this.result === 'denied') {
       onError({ code: 1, message: 'User denied Geolocation' });
     } else {
@@ -46,5 +51,20 @@ describe('BrowserLocationProvider', () => {
 
   it('returns null in a browser without geolocation', async () => {
     await expect(new BrowserLocationProvider(undefined, config).findCurrent()).resolves.toBeNull();
+  });
+
+  it('gives up when the permission prompt stays unanswered', async () => {
+    vi.useFakeTimers();
+    try {
+      const found = new BrowserLocationProvider(
+        new FakeGeolocation('unanswered'),
+        config,
+      ).findCurrent();
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      await expect(found).resolves.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
