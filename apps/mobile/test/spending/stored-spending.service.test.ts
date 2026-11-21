@@ -320,6 +320,35 @@ describe('StoredSpendingService members', () => {
     expect(overview.purchases[0]).toMatchObject({ paidBy: 'partner', split: 'private' });
   });
 
+  it("corrects a purchase's amount, date and place, trimming the place", async () => {
+    const { service } = setup();
+    const purchase = await service.recordPurchase({
+      date: '2026-11-07',
+      amountNok: 100,
+      merchant: 'Kiwi',
+    });
+
+    const corrected = await service.updatePurchase(purchase.id, {
+      paidBy: 'me',
+      split: 'shared',
+      amountNok: 129,
+      date: '2026-11-06',
+      merchant: '  Rema 1000 ',
+    });
+    expect(corrected.purchases[0]).toMatchObject({
+      amountNok: 129,
+      date: '2026-11-06',
+      merchant: 'Rema 1000',
+    });
+
+    const cleared = await service.updatePurchase(purchase.id, {
+      paidBy: 'me',
+      split: 'shared',
+      merchant: null,
+    });
+    expect(cleared.purchases[0]).toMatchObject({ amountNok: 129, merchant: null });
+  });
+
   it('names this phone, trimmed, and ignores an empty name', async () => {
     const { service } = setup();
 

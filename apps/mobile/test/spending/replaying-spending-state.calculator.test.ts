@@ -114,6 +114,37 @@ describe('ReplayingSpendingStateCalculator', () => {
     ]);
   });
 
+  it("corrects a purchase's amount, date and place only when given", () => {
+    const start: SpendingState = {
+      ...EMPTY_SPENDING_STATE,
+      entries: [{ ...purchase('2026-11-01', 100, 'p1'), merchant: 'Kiwi' }],
+    };
+
+    const state = calculator.apply(start, [
+      {
+        id: 'u1',
+        at: AT,
+        kind: 'purchase_updated',
+        entryId: 'p1',
+        paidBy: 'a',
+        split: 'shared',
+        amountNok: 250,
+        date: '2026-11-03',
+        merchant: null,
+      },
+      { id: 'u2', at: AT, kind: 'purchase_updated', entryId: 'p1', paidBy: 'b', split: 'private' },
+    ]);
+
+    expect(state.entries).toEqual([
+      {
+        ...purchase('2026-11-03', 250, 'p1'),
+        merchant: null,
+        paidBy: 'b',
+        split: 'private',
+      },
+    ]);
+  });
+
   it('adds a member and renames it', () => {
     const state = calculator.apply(EMPTY_SPENDING_STATE, [
       { id: 'n1', at: AT, kind: 'member_named', member: { id: 'a', name: 'Jo' } },

@@ -2,22 +2,23 @@ import type { MemberShare, Purchase, SpendingMember, SpendingShares } from './sp
 import type { SpendingShareCalculator } from './spending.ports';
 
 /**
- * Splits shared purchases equally between everyone who is part of the household: the named
- * members and anyone else who paid. Private purchases count only for the one who paid. Rounded to
- * whole kroner per member.
+ * Splits shared purchases equally between this phone and everyone who paid something. A named
+ * member who never paid (a phone that left the household, a test) takes no part. Private
+ * purchases count only for the one who paid. Rounded to whole kroner per member.
  */
 export class EqualSpendingShareCalculator implements SpendingShareCalculator {
   public calculate(
     purchases: readonly Purchase[],
     members: readonly SpendingMember[],
+    me: string,
   ): SpendingShares | null {
-    const everyone = [...members];
-    for (const purchase of purchases) {
-      if (purchase.paidBy !== null && !everyone.some((member) => member.id === purchase.paidBy)) {
-        // Paid on a phone whose owner has not named themselves yet.
-        everyone.push({ id: purchase.paidBy, name: '' });
-      }
-    }
+    const ids = [me, ...purchases.flatMap((purchase) => purchase.paidBy ?? [])].filter(
+      (id, index, all) => all.indexOf(id) === index,
+    );
+    // A payer whose owner has not named themselves yet has no name.
+    const everyone = ids.map(
+      (id): SpendingMember => members.find((member) => member.id === id) ?? { id, name: '' },
+    );
     if (everyone.length < 2) {
       return null;
     }

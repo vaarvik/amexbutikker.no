@@ -60,10 +60,17 @@ export interface YearSpendingSummarizer {
 
 /** How purchases split between a household's members. Pure. */
 export interface SpendingShareCalculator {
-  /** Null with fewer than two members: there is nothing to split. */
+  /**
+   * Splits between this phone (`me`) and everyone who paid something. Named members who paid
+   * nothing, such as phones that left the household, are left out.
+   *
+   * @param members names the people; it does not decide who takes part.
+   * @returns null with fewer than two people: there is nothing to split.
+   */
   calculate(
     purchases: readonly Purchase[],
     members: readonly SpendingMember[],
+    me: string,
   ): SpendingShares | null;
 }
 
@@ -97,6 +104,11 @@ export interface NewPurchase {
 export interface PurchaseUpdate {
   readonly paidBy: string | null;
   readonly split: PurchaseSplit;
+  /** Corrections; left out, the purchase keeps what it has. */
+  readonly date?: LocalDate;
+  readonly amountNok?: number;
+  /** Null removes the place. */
+  readonly merchant?: string | null;
 }
 
 export interface NewMilestone {
@@ -132,7 +144,7 @@ export interface SpendingService {
   /** Records "spent so far in this milestone's period", as of today. */
   updateTotal(milestoneId: string, amountNok: number): Promise<SpendingOverview>;
   removeEntry(id: string): Promise<SpendingOverview>;
-  /** Changes who paid a purchase and whom it is for. */
+  /** Changes who paid a purchase and whom it is for, and corrects its amount, date or place. */
   updatePurchase(id: string, update: PurchaseUpdate): Promise<SpendingOverview>;
   /** Names this phone's member, as the other phones in the household see it. */
   nameMe(name: string): Promise<SpendingOverview>;

@@ -250,7 +250,8 @@ export interface YearSpending {
  * - `entry_added` / `entry_removed`: purchases and typed totals, by id; a removal is final.
  * - `card_set`: the household's card and its goals, replacing the previous card's goals.
  * - `milestone_added` / `milestone_removed`: the user's own goals, e.g. a welcome bonus.
- * - `purchase_updated`: who paid and whether it is shared; the latest wins.
+ * - `purchase_updated`: who paid and whether it is shared, and, when given, a corrected amount,
+ *   date or place; the latest wins. Phones on older versions ignore the corrections.
  * - `member_named`: a phone's owner names themselves; the latest wins.
  */
 export type SpendingChange = { readonly id: string; readonly at: string } & (
@@ -268,6 +269,9 @@ export type SpendingChange = { readonly id: string; readonly at: string } & (
       readonly entryId: string;
       readonly paidBy: string | null;
       readonly split: PurchaseSplit;
+      readonly date?: LocalDate;
+      readonly amountNok?: number;
+      readonly merchant?: string | null;
     }
   | { readonly kind: 'member_named'; readonly member: SpendingMember }
 );
@@ -295,6 +299,9 @@ export const SpendingChangeSchema: z.ZodType<SpendingChange> = z.discriminatedUn
     entryId: z.string().min(1),
     paidBy: z.string().min(1).nullable(),
     split: PurchaseSplitSchema,
+    date: LocalDateSchema.exactOptional(),
+    amountNok: amountNok.exactOptional(),
+    merchant: z.string().nullable().exactOptional(),
   }),
   z.object({ ...changeBase, kind: z.literal('member_named'), member: SpendingMemberSchema }),
 ]);

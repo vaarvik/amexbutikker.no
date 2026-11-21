@@ -33,7 +33,7 @@ const MONTH_NAMES = [
 ] as const;
 const CHART_HEIGHT = 96;
 
-/** Which purchases the list shows: all, the shared ones, or those one member paid. */
+/** Which purchases the list shows: all, the shared ones, or one member's private ones. */
 type PurchaseFilter = 'all' | 'shared' | `paid:${string}`;
 
 function matches(purchase: Purchase, filter: PurchaseFilter): boolean {
@@ -43,7 +43,8 @@ function matches(purchase: Purchase, filter: PurchaseFilter): boolean {
   if (filter === 'shared') {
     return purchase.split === 'shared';
   }
-  return purchase.paidBy === filter.slice('paid:'.length);
+  // A person's own: what they paid for themselves. Shared purchases are under Felles.
+  return purchase.split === 'private' && purchase.paidBy === filter.slice('paid:'.length);
 }
 
 /**

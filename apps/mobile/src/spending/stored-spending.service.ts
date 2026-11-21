@@ -96,7 +96,17 @@ export class StoredSpendingService implements SpendingService {
 
   public updatePurchase(id: string, update: PurchaseUpdate): Promise<SpendingOverview> {
     return this.change(() => [
-      { kind: 'purchase_updated', entryId: id, paidBy: update.paidBy, split: update.split },
+      {
+        kind: 'purchase_updated',
+        entryId: id,
+        paidBy: update.paidBy,
+        split: update.split,
+        ...(update.date === undefined ? {} : { date: update.date }),
+        ...(update.amountNok === undefined ? {} : { amountNok: update.amountNok }),
+        ...(update.merchant === undefined
+          ? {}
+          : { merchant: update.merchant === null ? null : update.merchant.trim() || null }),
+      },
     ]);
   }
 
@@ -195,7 +205,7 @@ export class StoredSpendingService implements SpendingService {
       card: state.card,
       me,
       members: state.members,
-      shares: this.shares.calculate(purchases, state.members),
+      shares: this.shares.calculate(purchases, state.members, me),
     };
   }
 }

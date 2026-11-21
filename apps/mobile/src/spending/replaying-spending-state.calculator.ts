@@ -5,7 +5,7 @@ import type { SpendingStateCalculator } from './spending.ports';
  * Replays spending changes. Items are keyed by id: adding one that exists or was removed does
  * nothing, and a removal is remembered in `removedIds` so it stays final. `card_set` replaces the
  * card and its goals and keeps the user's own goals. `purchase_updated` and `member_named`
- * replace what they name; the last one replayed wins.
+ * replace what they name (a purchase's corrections only when given); the last one replayed wins.
  */
 export class ReplayingSpendingStateCalculator implements SpendingStateCalculator {
   public apply(state: SpendingState, changes: readonly SpendingChange[]): SpendingState {
@@ -77,7 +77,14 @@ export class ReplayingSpendingStateCalculator implements SpendingStateCalculator
           ...state,
           entries: state.entries.map((entry): SpendingEntry =>
             entry.kind === 'purchase' && entry.id === change.entryId
-              ? { ...entry, paidBy: change.paidBy, split: change.split }
+              ? {
+                  ...entry,
+                  paidBy: change.paidBy,
+                  split: change.split,
+                  ...(change.date === undefined ? {} : { date: change.date }),
+                  ...(change.amountNok === undefined ? {} : { amountNok: change.amountNok }),
+                  ...(change.merchant === undefined ? {} : { merchant: change.merchant }),
+                }
               : entry,
           ),
         };
